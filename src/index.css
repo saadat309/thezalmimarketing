@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* CSS HSL 
+--vintage-grape: #413c58ff;
+--ash-grey: #a3c4bcff;
+--tea-green: #bfd7b5ff;
+--cream: #e7efc5ff;
+--vanilla-cream: #f2e7c9ff;  */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  /* ---break---  */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  /* ---break---  */
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+:root {
+  /* base palette */
+  --vintage-grape: oklch(0.3734 0.0477 292.12);
+  --ash-grey: oklch(0.7937 0.0372 178.96);
+  --tea-green: oklch(0.8522 0.0529 136.45);
+  --cream: oklch(0.9354 0.0557 116.25);
+  --vanilla-cream: oklch(0.9289 0.0412 90.25);
+  --white: oklch(1 0 0);
+  --black: oklch(0 0 0);
+
+  /* corporate reshuffle */
+  --radius: 0.625rem;
+
+ /*
+    LIGHT THEME (primary surface = cream)
+    - Background: cream
+    - Headings: vintage-grape
+    - Body text: black (high visibility)
+    - Cards / surfaces: white / vanilla-cream for subtle separation
+  */
+  --background: var(--cream);
+  --foreground: var(--black);
+
+  --card: var(--white);
+  --card-foreground: var(--black);
+
+  --popover: var(--vanilla-cream);
+  --popover-foreground: var(--black);
+
+  /* headings / primary actions use grape on light bg */
+  --primary: var(--vintage-grape);
+  --primary-foreground: var(--white);
+
+  --secondary: var(--tea-green);
+  --secondary-foreground: var(--black);
+
+  /* accents and highlights */
+  --accent: var(--tea-green);
+  --accent-foreground: var(--black);
+
+  /* muted / quiet UI surfaces */
+  --muted: var(--vanilla-cream);
+  --muted-foreground: var(--vintage-grape);
+
+  /* destructive / util */
+  --destructive: oklch(0.577 0.245 27.325);
+
+  /* borders / form surfaces */
+  --border: oklch(0.9289 0.03 90.25); /* subtle vanilla tint (derived) */
+  --input: var(--vanilla-cream);
+  --ring: var(--vintage-grape);
+
+  /* chart order kept sensible for corporate visuals */
+  --chart-1: oklch(0.398 0.07 227.392);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* sidebar on light theme: white surface, grape accents for headings */
+  --sidebar: var(--white);
+  --sidebar-foreground: var(--black);
+  --sidebar-primary: var(--vintage-grape);
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: var(--vanilla-cream);
+  --sidebar-accent-foreground: var(--vintage-grape);
+  --sidebar-border: var(--vanilla-cream);
+  --sidebar-ring: var(--vintage-grape);
+}
+
+/* DARK THEME
+   - Background: vintage-grape (grape-y surface)
+   - Foreground: light text (white) for readability
+   - Headings / highlights: cream (contrasting light accent)
+   - Cards: near-black to keep separation from grape surface
+*/
+.dark {
+  --background: var(--vintage-grape); /* grape background */
+  --foreground: var(--white);         /* primary readable text */
+
+  --card: var(--black);               /* card surface on grape */
+  --card-foreground: var(--white);
+
+  --popover: oklch(0.12 0.02 300);    /* subtle darkened surface (derived) */
+  --popover-foreground: var(--white);
+
+  /* make headings and primary CTAs light/contrasting */
+  --primary: var(--cream);
+  --primary-foreground: var(--vintage-grape); /* text on cream primary in dark mode */
+
+  /* secondary: soft neutral (use ash-grey as muted element) */
+  --secondary: var(--tea-green);
+  --secondary-foreground: var(--black);
+
+  /* muted areas use a darker grape/ash mix */
+  --muted: var(--vintage-grape);
+  --muted-foreground: var(--ash-grey);
+
+  /* accents remain cream for highlights */
+  --accent: var(--cream);
+  --accent-foreground: var(--vintage-grape);
+
+  --destructive: oklch(0.704 0.191 22.216);
+
+  /* borders / inputs subtle on dark grape */
+  --border: var(--white) / 10%;
+  --input: var(--white) / 12%;
+  --ring: var(--cream);
+
+  /* charts for dark: greener / lighter pops to show on grape */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  --sidebar: var(--vintage-grape);
+  --sidebar-foreground: var(--white);
+  --sidebar-primary: var(--cream);
+  --sidebar-primary-foreground: var(--vintage-grape);
+  --sidebar-accent: var(--ash-grey);
+  --sidebar-accent-foreground: var(--white);
+  --sidebar-border: var(--white) / 10%;
+  --sidebar-ring: var(--cream);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
