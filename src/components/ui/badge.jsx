@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva } from "class-variance-authority";
 
+import { Flame } from "lucide-react";
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
@@ -9,12 +10,18 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "border-transparent bg-primary text-primary-foreground shadow ",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-transparent bg-secondary text-secondary-foreground ",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+          "border-transparent bg-destructive text-white shadow ",
+        outline: "text-black border-black bg-white/20 backdrop-blur-sm",
+        sale: "border-transparent bg-green-500 text-white shadow",
+        rent: "border-transparent bg-orange-500 text-white shadow",
+        featured: "border-transparent bg-yellow-500 text-black shadow",
+        new: "border-transparent bg-blue-500 text-white shadow",
+        hot: "border-transparent bg-red-500 text-white shadow",
+        discounted: "border-transparent bg-purple-500 text-white shadow",
       },
     },
     defaultVariants: {
@@ -26,9 +33,15 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant,
+  children,
   ...props
 }) {
-  return (<div className={cn(badgeVariants({ variant }), className)} {...props} />);
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+      {variant === 'hot' && <Flame className="w-3 h-3 mr-1" />}
+      {children}
+    </div>
+  );
 }
 
 export { Badge, badgeVariants }

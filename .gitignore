@@ -1,8 +1,8 @@
 .env
-node_modules
 .tanstack
 MISC
-QWEN.md
+GEMINI.md
+
 
 # Logs
 logs

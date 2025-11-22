@@ -72,13 +72,15 @@
 
 :root {
   /* base palette */
-  --vintage-grape: oklch(0.3734 0.0477 292.12);
+  --vintage-grape: oklch(24.393% 0.06121 289.424);
   --ash-grey: oklch(0.7937 0.0372 178.96);
   --tea-green: oklch(0.8522 0.0529 136.45);
-  --cream: oklch(0.9354 0.0557 116.25);
-  --vanilla-cream: oklch(0.9289 0.0412 90.25);
+  --cream: oklch(99.396% 0.01849 116.718);
+  --vanilla-cream: oklch(89.63% 0.08672 90.101);
+  --vanilla-cream-dark: oklch(63.348% 0.08356 89.809); /* derived for dark mode */
   --white: oklch(1 0 0);
   --black: oklch(0 0 0);
+  --dark-gray: oklch(0.12 0.02 300);
 
   /* corporate reshuffle */
   --radius: 0.625rem;
@@ -91,36 +93,36 @@
     - Cards / surfaces: white / vanilla-cream for subtle separation
   */
   --background: var(--cream);
-  --foreground: var(--black);
+  --foreground: var(--dark-gray);
 
-  --card: var(--white);
-  --card-foreground: var(--black);
+  --card: var(--cream);
+  --card-foreground: var(--vintage-grape);
 
   --popover: var(--vanilla-cream);
-  --popover-foreground: var(--black);
+  --popover-foreground: var(--dark-gray);
 
   /* headings / primary actions use grape on light bg */
   --primary: var(--vintage-grape);
   --primary-foreground: var(--white);
 
   --secondary: var(--tea-green);
-  --secondary-foreground: var(--black);
+  --secondary-foreground: var(--dark-gray);
 
   /* accents and highlights */
   --accent: var(--tea-green);
-  --accent-foreground: var(--black);
+  --accent-foreground: var(--dark-gray);
 
   /* muted / quiet UI surfaces */
   --muted: var(--vanilla-cream);
-  --muted-foreground: var(--vintage-grape);
+  --muted-foreground: var(--dark-gray);
 
   /* destructive / util */
   --destructive: oklch(0.577 0.245 27.325);
 
   /* borders / form surfaces */
-  --border: oklch(0.9289 0.03 90.25); /* subtle vanilla tint (derived) */
+  --border: var(--vintage-grape); /* subtle vanilla tint (derived) */
   --input: var(--vanilla-cream);
-  --ring: var(--vintage-grape);
+  --ring: var(--vanilla-cream-dark);
 
   /* chart order kept sensible for corporate visuals */
   --chart-1: oklch(0.398 0.07 227.392);
@@ -130,14 +132,14 @@
   --chart-5: oklch(0.769 0.188 70.08);
 
   /* sidebar on light theme: white surface, grape accents for headings */
-  --sidebar: var(--white);
-  --sidebar-foreground: var(--black);
+  --sidebar: var(--cream);
+  --sidebar-foreground: var(--dark-gray);
   --sidebar-primary: var(--vintage-grape);
   --sidebar-primary-foreground: var(--white);
   --sidebar-accent: var(--vanilla-cream);
   --sidebar-accent-foreground: var(--vintage-grape);
-  --sidebar-border: var(--vanilla-cream);
-  --sidebar-ring: var(--vintage-grape);
+  --sidebar-border: var(--vintage-grape);
+  --sidebar-ring: var(--vanilla-cream-dark);
 }
 
 /* DARK THEME
@@ -203,4 +205,68 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+  /* wrapper helper not required */
+  .si-thumb,
+  .si-image,
+  .si-placeholder {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .si-visible {
+    opacity: 1;
+    transform: none;
+    transition: opacity .35s ease, filter .35s ease, transform .35s ease;
+  }
+
+  .si-hidden {
+    opacity: 0;
+    transform: scale(1.02);
+    pointer-events: none;
+  }
+
+  .si-thumb {
+    filter: blur(6px) saturate(.9);
+    transform: scale(1.03);
+  }
+
+  .si-placeholder {
+    background: linear-gradient(90deg,#efefef 0%,#f7f7f7 50%,#efefef 100%);
+    filter: blur(2px);
+  }
+
+  .si-image.si-visible {
+    transform: scale(1);
+  }
+
+  .si-error {
+    display: grid;
+    place-items: center;
+    background: #f3f4f6;
+    color: #9ca3af;
+    font-size: 13px;
+  }
+}
+
+/* small optional utility (can remain outside @layer) */
+.si-thumb,
+.si-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.checkbox-check-path {
+  stroke-dasharray: 28.3;
+  stroke-dashoffset: 28.3;
+  transition: stroke-dashoffset 0.8s ease-in-out;
+}
+
+[data-state=checked] .checkbox-check-path {
+  stroke-dashoffset: 0;
 }
