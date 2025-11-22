@@ -270,3 +270,52 @@
 [data-state=checked] .checkbox-check-path {
   stroke-dashoffset: 0;
 }
+
+/* nav link baseline - keeps text from shifting too much when becoming bold */
+        .nav-link {
+          position: relative;
+          display: inline-block;
+          
+          -webkit-font-smoothing:antialiased;
+          -moz-osx-font-smoothing:grayscale;
+          
+        }
+
+        /* animated underline */
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          left: 50%;
+          bottom: -6px; /* small gap from text baseline */
+          transform: translateX(-50%) scaleX(0);
+          transform-origin: center;
+          width: 100%;
+          height: 2px;
+          border-radius: 2px;
+          background: currentColor; /* follows text color (text-primary for active/hover) */
+          opacity: 0.95;
+          transition: transform 280ms cubic-bezier(.2,.8,.2,1), bottom 200ms ease;
+          pointer-events: none;
+        }
+
+        /* on hover - draw and float underline without moving text */
+        .nav-link:hover::after,
+        .nav-link:focus::after {
+          transform: translateX(-50%) scaleX(1) translateY(-6px);
+        }
+
+        /* active state: underline drawn and uses primary color */
+        .nav-link.active::after {
+          transform: translateX(-50%) scaleX(1) translateY(-6px);
+        }
+
+        /* subtle hover color transition (color changes handled by utility classes too) */
+        .nav-link,
+        .nav-link * {
+          transition: color 160ms ease;
+        }
+
+        .nav-link.active {
+          font-weight: 600; 
+          color: hsl(var(--primary));
+        }

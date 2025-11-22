@@ -1,85 +1,3 @@
-// import React from 'react';
-// import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-// import { Badge } from '@/components/ui/badge';
-// import { Search, Building, Home, Warehouse } from 'lucide-react';
-
-// const HeroSection = () => {
-//   return (
-//      <section className="w-full">
-//       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-//         {/* background layer (preserves 16:9) */}
-//         <div
-//           className="absolute inset-0 bg-center bg-cover"
-//           style={{ backgroundImage: `url('/lahore-city-pic.webp')` }}
-//           aria-hidden
-//         />
-        
-//         {/* content layer */}
-//         <div className="absolute inset-0 flex items-center justify-center px-4">
-      
-//           <div className="flex flex-col items-center justify-center gap-4 p-8 z-2 tex4t-center backdrop-blur-sm rounded-2xl">
-//             <Badge
-//               variant="outline"
-//               className="p-2 text-sm rounded-full text-primary bg-white/40 backdrop-blur-sm border-ring"
-//             >
-//               LET US GUIDE YOUR HOME
-//             </Badge>
-//             <h1 className="text-4xl font-bold text-primary md:text-6xl">
-//               Believe in finding it
-//             </h1>
-//             <p className="text-lg text-primary md:text-xl">
-//               Search properties for sale and to rent in the UK
-//             </p>
-
-//             <div className="w-full max-w-xl mt-4">
-//               <div className="relative grow">
-//                 <Input
-//                   type="text"
-//                   placeholder="Enter Name, Keywords..."
-//                   className="w-full p-6 pr-8 rounded-full bg-background "
-//                 />
-//                 <Button
-//                   variant="ghost"
-//                   size="icon"
-//                   className="absolute p-5 -translate-y-1/2 rounded-full right-2 bg-muted top-1/2"
-//                 >
-//                   <Search className="size-6" />
-//                 </Button>
-//               </div>
-//             </div>
-
-//             <div className="flex flex-col items-center justify-center gap-4 mt-4 md:flex-row">
-//               <div className="flex flex-wrap justify-center gap-2">
-//                 <Button  variant='outline' className="p-2 pl-0 rounded-full bg-white/40 backdrop-blur-sm">
-//                 <div className="p-2 mr-1 rounded-full bg-muted">
-//                   <Home />
-//                 </div>
-//                   Modern Villa
-//                 </Button>
-//                 <Button  variant='outline' className="p-2 pl-0 rounded-full bg-white/40 backdrop-blur-sm ">
-//                 <div className="p-2 mr-1 rounded-full bg-muted">
-//                   <Building/>
-//                 </div>
-//                   Apartment
-//                 </Button>
-//                 <Button  variant='outline' className="p-2 pl-0 rounded-full bg-white/40 backdrop-blur-sm ">
-//                 <div className="p-2 mr-1 rounded-full bg-muted">
-//                   <Warehouse/>
-//                 </div>
-//                   Town House
-//                 </Button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default HeroSection;
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -95,11 +13,9 @@ export default function HeroSection() {
         aria-hidden
       />
 
-      {/* whitish overlay to improve readability */}
-      {/* <div className="absolute inset-0 bg-white opacity-20 " aria-hidden /> */}
 
       {/* content container — fills section height */}
-      <div className="relative z-10 flex items-center justify-center h-full px-4 sm:px-6">
+      <div className="relative z-10 flex items-center justify-center h-full px-4 pt-18 sm:px-6">
         <div className="w-full max-w-4xl py-4 text-center">
           <div className="inline-block mb-4">
             <Badge
