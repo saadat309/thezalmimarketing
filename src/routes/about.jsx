@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import SmartImage from "@/components/ui/SmartImage";
+import SmartImage from "@/components/global/SmartImage";
 import { AlertTriangle } from "lucide-react";
-import { GlobalHero } from "@/components/home/GlobalHero";
+import { GlobalHero } from "@/components/global/GlobalHero";
 
 export const Route = createFileRoute("/about")({
   component: RouteComponent,
@@ -11,13 +11,10 @@ function RouteComponent() {
   return (
     <div>
       <GlobalHero>
-        
-            <h1 className='px-4 py-4 mx-auto text-4xl text-center rounded bg-muted w-fit'>Know About Us</h1>
-        
-        
-    </GlobalHero>
-      
-      
+        <h1 className="px-4 py-4 mx-auto text-4xl text-center rounded bg-muted w-fit">
+          Know About Us
+        </h1>
+      </GlobalHero>
 
       <div className="grid grid-cols-1 gap-8 px-2 md:grid-cols-2 lg:grid-cols-3">
         {/* Original Example */}

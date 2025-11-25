@@ -65,6 +65,15 @@ export default function Navbar() {
                 </li>
                 <li>
                   <Link
+                    to="/maps"
+                    className="nav-link font-base text-muted-foreground"
+                    activeProps={{ className: "nav-link active text-primary font-bold" }}
+                  >
+                    Maps
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/about"
                     className="nav-link font-base text-muted-foreground"
                     activeProps={{ className: "nav-link active text-primary font-bold" }}
@@ -96,21 +105,28 @@ export default function Navbar() {
 
                       <Link
                         to="/"
-                        className="py-2 nav-link font-base text-muted-foreground"
+                        className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
                       >
                         Home
                       </Link>
                       <Link
                         to="/properties"
-                        className="py-2 nav-link font-base text-muted-foreground"
+                        className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
                       >
                         Properties
                       </Link>
                       <Link
+                        to="/maps"
+                        className="nav-link font-base text-muted-foreground w-fit"
+                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                      >
+                        Maps
+                      </Link>
+                      <Link
                         to="/about"
-                        className="py-2 nav-link font-base text-muted-foreground"
+                        className="py-2 nav-link font-base text-muted-foreground w-fit" 
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
                       >
                         About
@@ -118,7 +134,7 @@ export default function Navbar() {
 
                       <Link
                         to="/contact"
-                        className="py-2 nav-link font-base text-muted-foreground"
+                        className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
                       >
                         Contact

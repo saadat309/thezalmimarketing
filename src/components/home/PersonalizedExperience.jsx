@@ -1,8 +1,8 @@
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MoveRight } from 'lucide-react';
-import SmartImage from '@/components/ui/SmartImage';
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { MoveRight } from "lucide-react";
+import SmartImage from "@/components/global/SmartImage";
 
 export default function PersonalizedExperience({ cards }) {
   return (
@@ -10,7 +10,10 @@ export default function PersonalizedExperience({ cards }) {
       <div className="container">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
           {cards.map((card, index) => (
-            <Card key={index} className={`flex flex-col-reverse items-center gap-4 p-6 rounded-lg ${card.backgroundColor} lg:flex-row lg:items-center lg:p-10 lg:gap-8 lg:min-h-68`}>
+            <Card
+              key={index}
+              className={`flex flex-col-reverse items-center gap-4 p-6 rounded-lg ${card.backgroundColor} lg:flex-row lg:items-center lg:p-10 lg:gap-8 lg:min-h-68`}
+            >
               <div className="flex flex-col items-center justify-center">
                 <h3 className="text-xl font-bold">{card.title}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -22,8 +25,15 @@ export default function PersonalizedExperience({ cards }) {
                   </a>
                 </Button>
               </div>
-              <div className="w-32 h-32 text-muted-foreground lg:ml-auto shrink-0"><SmartImage loading="lazy" thumb="/lahore-city-pic.webp" src={card.imagePath} alt={card.title} ratio={1/1}  /></div>
-              
+              <div className="w-32 h-32 text-muted-foreground lg:ml-auto shrink-0">
+                <SmartImage
+                  loading="lazy"
+                  thumb="/lahore-city-pic.webp"
+                  src={card.imagePath}
+                  alt={card.title}
+                  ratio={1 / 1}
+                />
+              </div>
             </Card>
           ))}
         </div>

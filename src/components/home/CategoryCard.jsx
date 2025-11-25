@@ -1,19 +1,24 @@
-import { Card } from '@/components/ui/card';
-import SmartImage from '../ui/SmartImage';
-import { Badge } from '@/components/ui/badge';
+import { Card } from "@/components/ui/card";
+import SmartImage from "../global/SmartImage";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button"; // Added Button import
+import { Map } from "lucide-react"; // Import Map icon
 
 export default function CategoryCard({
-  title = 'Category',
+  title = "Category",
   count = 0,
   src,
   thumb = null,
   ratio = 3 / 4,
-  className = '',
+  className = "",
   onClick = undefined,
+  filePath = "/maps/PHASE_8_Map.pdf", // Add filePath prop with a default value
 }) {
   // basic runtime validation
   if (!src) {
-    console.warn('CategoryCard: `src` prop is required. Rendering placeholder.');
+    console.warn(
+      "CategoryCard: `src` prop is required. Rendering placeholder."
+    );
   }
 
   return (
@@ -22,30 +27,63 @@ export default function CategoryCard({
       className={`overflow-hidden rounded-2xl shadow-md p-0 cursor-pointer group ${className}`}
     >
       {/* container that establishes aspect-ratio (tall card) */}
-      <div className="relative w-full" style={{ paddingBottom: `${100 / (ratio || 1)}%` }}>
+      <div
+        className="relative w-full"
+        style={{ paddingBottom: `${100 / (ratio || 1)}%` }}
+      >
         {/* Image fills card */}
         <SmartImage
-          src={src || '/lahore-city-pic.webp'}
-          thumb={thumb || '/lahore-city-pic.webp'}
+          src={src || "/lahore-city-pic.webp"}
+          thumb={thumb || "/lahore-city-pic.webp"}
           alt={title}
           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
           imgClassName=""
-          style={{ position: 'absolute', inset: 0 }}
+          style={{ position: "absolute", inset: 0 }}
           priority={false}
         />
 
         {/* subtle top-left content: title + count (matches provided design) */}
         <div className="absolute left-8 top-6 ">
-          <div className={'flex flex-col items-start'}>
-            <div className="text-3xl min-[425px]:text-2xl font-semibold leading-tight text-primary" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>
+          <div className={"flex flex-col items-start"}>
+            <div
+              className="text-3xl min-[425px]:text-2xl font-semibold leading-tight text-primary"
+              style={{ textShadow: "0 1px 0 rgba(255,255,255,0.6)" }}
+            >
               {title}
             </div>
-            <Badge variant={"featured"} className="mt-2 text-sm min-[425px]:text-xs">{count} {count === 1 ? 'Property' : 'Properties'}</Badge>
+            <Badge
+              variant={"featured"}
+              className="mt-2 text-sm min-[425px]:text-xs"
+            >
+              {count} {count === 1 ? "Property" : "Properties"}
+            </Badge>
           </div>
         </div>
 
         {/* optional top gradient to ensure legibility on very bright images */}
-        <div className="absolute top-0 left-0 right-0 h-24 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.2), transparent)' }} />
+        <div
+          className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
+          style={{
+            background: "linear-gradient(180deg, rgba(0,0,0,0.2), transparent)",
+          }}
+        />
+
+        {/* View Map Button - bottom right */}
+        <div className="absolute z-10 bottom-4 right-4">
+          <a
+            href={`${filePath}#navpanes=0&view=FitV`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Map size={16} /> View Map
+            </Button>
+          </a>
+        </div>
       </div>
     </Card>
   );

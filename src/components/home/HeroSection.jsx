@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Link } from '@tanstack/react-router';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Building, Home, Warehouse } from 'lucide-react';
@@ -56,26 +57,32 @@ export default function HeroSection() {
           {/* quick category buttons */}
           <div className="flex flex-col items-center justify-center gap-4 mt-6 md:flex-row">
             <div className="flex flex-wrap justify-center gap-2">
-              <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
-                <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
-                  <Home className="w-4 h-4" />
-                </div>
-                Modern Villa
-              </Button>
+              <Link to="/properties">
+                <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
+                  <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
+                    <Home className="w-4 h-4" />
+                  </div>
+                  Modern Villa
+                </Button>
+              </Link>
 
-              <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
-                <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
-                  <Building className="w-4 h-4" />
-                </div>
-                Apartment
-              </Button>
+              <Link to="/properties">
+                <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
+                  <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
+                    <Building className="w-4 h-4" />
+                  </div>
+                  Apartment
+                </Button>
+              </Link>
 
-              <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
-                <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
-                  <Warehouse className="w-4 h-4" />
-                </div>
-                Town House
-              </Button>
+              <Link to="/properties">
+                <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
+                  <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
+                    <Warehouse className="w-4 h-4" />
+                  </div>
+                  Town House
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
