@@ -138,8 +138,6 @@ const rawPropertyCardVariants = [
     property_type: "New Booking",
     societyName: "DHA",
     is_furnished: false,
-    phone: "+923001112233",
-    whatsapp: "923001112233",
   },
   {
     title: "Allocation Letter Bahria Town",

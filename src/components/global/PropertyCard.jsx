@@ -22,8 +22,8 @@ import {
 import { FaPhone, FaWhatsapp } from "react-icons/fa";
 import SmartImage from "@/components/global/SmartImage";
 
-const DEFAULT_PHONE_NUMBER = "+923001234567"; // Fallback phone number
-const DEFAULT_WHATSAPP_NUMBER = "923001234567"; // Fallback WhatsApp number (without +)
+const DEFAULT_PHONE_NUMBER = "+923145982936"; // Fallback phone number
+const DEFAULT_WHATSAPP_NUMBER = "923145982936"; // Fallback WhatsApp number (without +)
 
 function PropertyCard(props) {
   const {
@@ -327,7 +327,7 @@ function PropertyCard(props) {
 
         {is_file && (
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" size="icon" className="p-0 border-none hover:bg-transparent hover:scale-110 transition-transform duration-300"
+            <Button variant="ghost" size="icon" className="p-0 transition-transform duration-300 border-none hover:bg-transparent hover:scale-110"
               onClick={() => {
                 const phoneNumber = phoneProp || DEFAULT_PHONE_NUMBER;
                 window.location.href = `tel:${phoneNumber}`;
@@ -335,7 +335,7 @@ function PropertyCard(props) {
             >
               <FaPhone style={{ width: '2rem', height: '2rem' }} className="text-primary" />
             </Button>
-            <Button variant="ghost" size="icon" className="p-0 border-none hover:bg-transparent hover:scale-110 transition-transform duration-300"
+            <Button variant="ghost" size="icon" className="p-0 transition-transform duration-300 border-none hover:bg-transparent hover:scale-110"
               onClick={() => {
                 const whatsappNumber = whatsappProp || DEFAULT_WHATSAPP_NUMBER;
                 const whatsappMessage = `Hello, I'm interested in the property: ${title}.`;
