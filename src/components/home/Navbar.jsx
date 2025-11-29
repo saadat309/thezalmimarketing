@@ -6,7 +6,8 @@ hi, do you have access to Navbar.jsx file from the files i uploaded in this proj
 import React, { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Menu, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetFooter, SheetTrigger } from "@/components/ui/sheet";
 import { FaWhatsapp } from "react-icons/fa";
 import { MdOutlineRealEstateAgent } from "react-icons/md";
@@ -37,7 +38,7 @@ export default function Navbar() {
         <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
           <div className={`rounded-full bg-card shadow-md transition-transform duration-100 ${scrolled ? "translate-y-0" : "translate-y-0"}`}>
             <nav className="flex items-center justify-between w-full px-4 py-2">
-              <Link to="/" className="flex items-center gap-2 font-medium text-md sm:text-2xl md:text-xl text-primary">
+              <Link to="/" className="flex items-center gap-1 font-medium text-md sm:text-2xl md:text-xl text-primary">
                 <MdOutlineRealEstateAgent className="text-primary" style={{ width: 30, height: 30 }} />
                 The Zalmi Marketing
               </Link>
@@ -74,21 +75,41 @@ export default function Navbar() {
                 </li>
                 <li>
                   <Link
-                    to="/about"
+                    to="/files"
                     className="nav-link font-base text-muted-foreground"
                     activeProps={{ className: "nav-link active text-primary font-bold" }}
                   >
-                    About
+                    Files
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    to="/contact"
-                    className="nav-link font-base text-muted-foreground"
-                    activeProps={{ className: "nav-link active text-primary font-bold" }}
-                  >
-                    Contact
-                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="flex flex-row items-center gap-1 nav-link text-muted-foreground px-0 py-0 hover:bg-transparent">
+                        More
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-card">
+                      <DropdownMenuItem>
+                        <Link
+                          to="/about"
+                          className="w-full nav-link font-base text-muted-foreground"
+                          activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        >
+                          About
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link
+                          to="/contact"
+                          className="w-full nav-link font-base text-muted-foreground"
+                          activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        >
+                          Contact
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </li>
               </ul>
 
@@ -119,10 +140,17 @@ export default function Navbar() {
                       </Link>
                       <Link
                         to="/maps"
-                        className="nav-link font-base text-muted-foreground w-fit"
+                        className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
                       >
                         Maps
+                      </Link>
+                      <Link
+                        to="/files"
+                        className="py-2 nav-link font-base text-muted-foreground w-fit"
+                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                      >
+                        Files
                       </Link>
                       <Link
                         to="/about"

@@ -2,6 +2,7 @@
 .tanstack
 MISC
 GEMINI.md
+src/assets/**
 
 
 # Logs

@@ -1,54 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { queryOptions } from '@tanstack/react-query'; // Import queryOptions
+import { fetchMaps } from "@/lib/api"; // Import fetchMaps from your API
 import { GlobalHero } from "@/components/global/GlobalHero";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import SmartImage from "@/components/global/SmartImage";
 import MapCard from "@/components/global/MapCard";
-import { FileDown, Expand } from "lucide-react";
+
+
+// Define query options for maps data
+const mapsQueryOptions = () =>
+  queryOptions({
+    queryKey: ['maps'],
+    queryFn: () => fetchMaps(),
+  });
 
 export const Route = createFileRoute("/maps/")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(mapsQueryOptions()), // Use queryClient to fetch data
   component: RouteComponent,
 });
 
-const mapsData = [
-  {
-    title: "Phase 8 Map",
-    thumb: "/maps/thumbs/PHASE_8_Map.webp",
-    pdfPath: "/maps/PHASE_8_Map.pdf",
-    description: "Description and metadata about this map.",
-  },
-  {
-    title: "Phase 8 Map",
-    thumb: "/maps/thumbs/PHASE_8_Map.webp",
-    pdfPath: "/maps/PHASE_8_Map.pdf",
-    description: "Description and metadata about this map.",
-  },
-  {
-    title: "Phase 8 Map",
-    thumb: "/maps/thumbs/PHASE_8_Map.webp",
-    pdfPath: "/maps/PHASE_8_Map.pdf",
-    description: "Description and metadata about this map.",
-  },
-  {
-    title: "Phase 8 Map",
-    thumb: "/maps/thumbs/PHASE_8_Map.webp",
-    pdfPath: "/maps/PHASE_8_Map.pdf",
-    description:
-      "Description and metadata about this map. Description and Description and",
-  },
-];
-
 function RouteComponent() {
+  const maps = Route.useLoaderData(); // Get data from loader
+
   return (
     <div>
-      <GlobalHero>
-        <h1 className="px-4 py-4 mx-auto text-4xl text-center rounded bg-muted w-fit">
+      <GlobalHero
+        image="/images/architecture-5999913_1280.jpg"
+        overlay
+      >
+        <h1 className="px-4 py-4 mx-auto text-4xl text-center text-white">
           All Maps
         </h1>
       </GlobalHero>
       <div className="flex flex-row flex-wrap justify-center gap-4 px-6 py-4">
-        {mapsData.map((item, index) => (
-          <MapCard key={index} {...item} />
+        {maps.map((item) => ( // Use fetched maps
+          <MapCard key={item.id} {...item} /> // Use item.id for key
         ))}
       </div>
     </div>

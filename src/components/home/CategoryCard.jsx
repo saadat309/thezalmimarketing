@@ -12,7 +12,7 @@ export default function CategoryCard({
   ratio = 3 / 4,
   className = "",
   onClick = undefined,
-  filePath = "/maps/PHASE_8_Map.pdf", // Add filePath prop with a default value
+  filePath = null, 
 }) {
   // basic runtime validation
   if (!src) {
@@ -69,7 +69,7 @@ export default function CategoryCard({
         />
 
         {/* View Map Button - bottom right */}
-        <div className="absolute z-10 bottom-4 right-4">
+        {filePath && <div className="absolute z-10 bottom-4 right-4" onClick={(e) => e.stopPropagation()}>
           <a
             href={`${filePath}#navpanes=0&view=FitV`}
             target="_blank"
@@ -83,7 +83,8 @@ export default function CategoryCard({
               <Map size={16} /> View Map
             </Button>
           </a>
-        </div>
+          </div> }
+        
       </div>
     </Card>
   );

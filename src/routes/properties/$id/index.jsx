@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, Link } from '@tanstack/react-router'
 import { GlobalHero } from '@/components/global/GlobalHero'
-import { propertyCardVariants } from '..'
+
 import SmartImage from '@/components/global/SmartImage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,18 +10,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Bed, Bath, AreaChart, MapPin } from 'lucide-react';
 
+import { queryOptions } from '@tanstack/react-query'
+import { fetchProperties, fetchProperty } from '@/lib/api'
+
+const propertyQueryOptions = (id) =>
+  queryOptions({
+    queryKey: ['properties', id],
+    queryFn: () => fetchProperty(id),
+  });
+
+const propertiesQueryOptions = () =>
+  queryOptions({
+    queryKey: ['properties'],
+    queryFn: () => fetchProperties(),
+  });
+
+
 export const Route = createFileRoute('/properties/$id/')({
   component: RouteComponent,
-  loader: ({ params }) => {
-    const property = propertyCardVariants.find((p, index) => {
-      const slug = `${p.title.toLowerCase().replace(/\s+/g, '-')}-${index}`;
-      return slug === params.id;
-    });
-
-    if (!property) {
-      throw notFound();
+  loader: async ({ context: { queryClient }, params }) => {
+    const property = await queryClient.ensureQueryData(propertyQueryOptions(params.id))
+    const properties = await queryClient.ensureQueryData(propertiesQueryOptions())
+    if (!property || property.is_file) {
+      throw notFound()
     }
-    return { property };
+    return { property, properties }
   },
   notFoundComponent: () => {
     return <p>Property not found</p>;
@@ -29,15 +42,12 @@ export const Route = createFileRoute('/properties/$id/')({
 })
 
 function RouteComponent() {
-  const { property } = Route.useLoaderData();
+  const { property, properties } = Route.useLoaderData();
   const { id } = Route.useParams();
 
   // Filter out the current property and take the first 4 for the sidebar
-  const featuredProperties = propertyCardVariants
-    .filter((p, index) => {
-      const slug = `${p.title.toLowerCase().replace(/\s+/g, '-')}-${index}`;
-      return slug !== id;
-    })
+  const featuredProperties = properties
+    .filter((p) => p.id !== property.id && !p.is_file)
     .slice(0, 4);
 
   return (
@@ -127,10 +137,9 @@ function RouteComponent() {
             <div className="p-4 mt-8 border rounded-lg">
               <h3 className="mb-4 text-2xl font-bold">Featured Properties</h3>
               <div>
-                {featuredProperties.map((featured, index) => {
-                  const featuredId = `${featured.title.toLowerCase().replace(/\s+/g, '-')}-${propertyCardVariants.indexOf(featured)}`;
+                {featuredProperties.map((featured) => {
                   return (
-                    <Link to={`/properties/${featuredId}`} key={index} className="block pb-4 mb-4 border-b last:border-b-0 last:pb-0 last:mb-0">
+                    <Link to={`/properties/${featured.id}`} key={featured.id} className="block pb-4 mb-4 border-b last:border-b-0 last:pb-0 last:mb-0">
                       <div className="flex gap-4 group">
                         <div className='object-cover w-24 h-24 overflow-hidden rounded-lg'>
                           <SmartImage

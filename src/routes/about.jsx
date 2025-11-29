@@ -10,8 +10,11 @@ export const Route = createFileRoute("/about")({
 function RouteComponent() {
   return (
     <div>
-      <GlobalHero>
-        <h1 className="px-4 py-4 mx-auto text-4xl text-center rounded bg-muted w-fit">
+      <GlobalHero
+        image="/images/business-7111770_1280.jpg"
+        overlay
+      >
+        <h1 className="px-4 py-4 mx-auto text-4xl text-center text-white">
           Know About Us
         </h1>
       </GlobalHero>
