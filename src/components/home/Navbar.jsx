@@ -13,6 +13,8 @@ import { FaWhatsapp } from "react-icons/fa";
 import { MdOutlineRealEstateAgent } from "react-icons/md";
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  // State to control the mobile sheet's open/close state
+  const [isOpen, setIsOpen] = useState(false); 
   const gap = 14; // px
   const phoneNumber = "+923000000000"; // Replace with the actual phone number
   const whatsappMessage = "Hi, I want to know about your services.";
@@ -114,7 +116,8 @@ export default function Navbar() {
               </ul>
 
               <div className="flex items-center gap-2">
-                <Sheet>
+                {/* Add open and onOpenChange props to Sheet */}
+                <Sheet open={isOpen} onOpenChange={setIsOpen}>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="p-2 rounded-xl md:hidden" aria-label="Open menu">
                       <Menu style={{ width: 30, height: 30 }} />
@@ -128,6 +131,8 @@ export default function Navbar() {
                         to="/"
                         className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        // Close sheet on link click
+                        onClick={() => setIsOpen(false)}
                       >
                         Home
                       </Link>
@@ -135,6 +140,8 @@ export default function Navbar() {
                         to="/properties"
                         className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        // Close sheet on link click
+                        onClick={() => setIsOpen(false)}
                       >
                         Properties
                       </Link>
@@ -142,6 +149,8 @@ export default function Navbar() {
                         to="/maps"
                         className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        // Close sheet on link click
+                        onClick={() => setIsOpen(false)}
                       >
                         Maps
                       </Link>
@@ -149,6 +158,8 @@ export default function Navbar() {
                         to="/files"
                         className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        // Close sheet on link click
+                        onClick={() => setIsOpen(false)}
                       >
                         Files
                       </Link>
@@ -156,6 +167,8 @@ export default function Navbar() {
                         to="/about"
                         className="py-2 nav-link font-base text-muted-foreground w-fit" 
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        // Close sheet on link click
+                        onClick={() => setIsOpen(false)}
                       >
                         About
                       </Link>
@@ -164,6 +177,8 @@ export default function Navbar() {
                         to="/contact"
                         className="py-2 nav-link font-base text-muted-foreground w-fit"
                         activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        // Close sheet on link click
+                        onClick={() => setIsOpen(false)}
                       >
                         Contact
                       </Link>

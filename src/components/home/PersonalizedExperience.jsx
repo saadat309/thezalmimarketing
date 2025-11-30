@@ -14,7 +14,7 @@ export default function PersonalizedExperience({ cards }) {
               key={index}
               className={`flex flex-col-reverse items-center gap-4 p-6 rounded-lg ${card.backgroundColor} lg:flex-row lg:items-center lg:p-10 lg:gap-8 lg:min-h-68`}
             >
-              <div className="flex flex-col items-center justify-center">
+              <div className="flex flex-col flex-1 h-full justify-between text-center">
                 <h3 className="text-xl font-bold">{card.title}</h3>
                 <p className="text-sm text-muted-foreground">
                   {card.description}

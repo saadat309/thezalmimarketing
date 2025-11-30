@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import ImageSlider from '@/components/property/ImageSlider'; // Import ImageSlider
+
 import { Bed, Bath, AreaChart, MapPin } from 'lucide-react';
 
 import { queryOptions } from '@tanstack/react-query'
@@ -34,6 +36,7 @@ export const Route = createFileRoute('/properties/$id/')({
     if (!property || property.is_file) {
       throw notFound()
     }
+
     return { property, properties }
   },
   notFoundComponent: () => {
@@ -44,6 +47,9 @@ export const Route = createFileRoute('/properties/$id/')({
 function RouteComponent() {
   const { property, properties } = Route.useLoaderData();
   const { id } = Route.useParams();
+
+  // Prepare images for ImageSlider
+  const propertyImages = Array.isArray(property.images) ? property.images : (property.image ? [property.image] : []);
 
   // Filter out the current property and take the first 4 for the sidebar
   const featuredProperties = properties
@@ -60,15 +66,21 @@ function RouteComponent() {
         contentInnerClass="w-full max-w-7xl pt-6 px-4 text-white text-left mb-8"
       >
         <div>
-          <h1 className="text-5xl font-bold">{property.title}</h1>
-          <p className="text-xl">{`${property.location}, ${property.city}`}</p>
+          <h1 className="mb-2 text-5xl font-bold">{property.title}</h1>
+          <div className="flex items-center gap-2">
+                <MapPin className="text-white" />
+                <span>{property.location}, {property.city}</span>
+          </div>
         </div>
+        
       </GlobalHero>
       <div className="container py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Main Content */}
           <main className="lg:col-span-3">
-            <h2 className="mb-4 text-3xl font-bold">{property.title}</h2>
+            
+            <ImageSlider images={propertyImages} /> 
+            
             <div className="flex flex-wrap gap-2 mb-4">
               {property.badges?.map((badge, index) => (
                 <Badge key={index} variant={badge.variant}>
@@ -76,7 +88,8 @@ function RouteComponent() {
                 </Badge>
               ))}
             </div>
-            <div className="mb-6 text-3xl font-light text-primary">
+            
+            <div className="mb-6 text-3xl font-bold text-amber-500">
               {property.currency} {property.price.toLocaleString()}
               {property.priceType === 'rent' && ' / month'}
               {property.priceType === 'installment' && ` / ${property.installmentPeriod}`}
@@ -108,13 +121,8 @@ function RouteComponent() {
 
           {/* Right Sidebar */}
           <aside className="lg:col-span-1">
-            <div className="p-4 border rounded-lg">
-              <h3 className="mb-4 text-2xl font-bold">Location</h3>
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="text-primary" />
-                <span>{property.location}, {property.city}</span>
-              </div>
-              {property.locationMap && (
+            {property.locationMap && ( 
+              <div className="p-4 border rounded-lg">
                 <div className="h-64 overflow-hidden rounded-lg">
                   <iframe
                     src={property.locationMap}
@@ -126,8 +134,7 @@ function RouteComponent() {
                     referrerPolicy="no-referrer-when-downgrade"
                   ></iframe>
                 </div>
-              )}
-            </div>
+            </div> )}
 
             <div className="hidden p-4 mt-8 border rounded-lg lg:block">
               <h3 className="mb-4 text-2xl font-bold">Contact Agent</h3>

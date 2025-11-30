@@ -1,7 +1,21 @@
 // To simulate a real API, we'll use a short delay.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const rawPropertyCardVariants = [
+const ALL_PUBLIC_IMAGES = [
+  '/images/apartments-1845884_1280.jpg',
+  '/images/architecture-5999913_1280.jpg',
+  '/images/business-7111770_1280.jpg',
+  '/images/condominium-6377942_1280.jpg',
+  '/images/field-7808525_1280.jpg',
+  '/images/house-1353389_1280.jpg',
+  '/images/house-1867187_1280.jpg',
+  '/images/newport-1184695_1280.jpg',
+  '/images/purchase-3113198_1280.jpg',
+  '/images/real-estate-3337038_1280.jpg',
+  '/images/real-estate-6688945_1280.jpg',
+];
+
+const initialRawPropertyCardVariants = [
   {
     image: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde",
     title: "Student Hostel Room",
@@ -190,6 +204,46 @@ const rawPropertyCardVariants = [
 
 ];
 
+const enrichedRawPropertyCardVariants = initialRawPropertyCardVariants.map((p, index) => {
+  if (p.is_file) {
+    return p;
+  }
+
+  const imagesForProperty = [];
+  // Add the main image first
+  if (p.image) {
+    imagesForProperty.push(p.image);
+  } else {
+    // Fallback if no main image, use a public image
+    imagesForProperty.push(ALL_PUBLIC_IMAGES[index % ALL_PUBLIC_IMAGES.length]);
+  }
+
+  // Add a few more unique images from ALL_PUBLIC_IMAGES
+  // Use a simple selection logic based on index to make it varied but deterministic
+  const startIndex = index % ALL_PUBLIC_IMAGES.length;
+  for (let i = 0; imagesForProperty.length < 5 && i < ALL_PUBLIC_IMAGES.length; i++) {
+    const imgIndex = (startIndex + i) % ALL_PUBLIC_IMAGES.length;
+    const img = ALL_PUBLIC_IMAGES[imgIndex];
+    if (!imagesForProperty.includes(img)) {
+      imagesForProperty.push(img);
+    }
+  }
+
+  // If still less than 5, fill with any available images (should not happen if ALL_PUBLIC_IMAGES is large enough)
+  while (imagesForProperty.length < 5 && ALL_PUBLIC_IMAGES.length > 0) {
+    const randomImg = ALL_PUBLIC_IMAGES[Math.floor(Math.random() * ALL_PUBLIC_IMAGES.length)];
+    if (!imagesForProperty.includes(randomImg)) {
+      imagesForProperty.push(randomImg);
+    }
+  }
+
+  return {
+    ...p,
+    images: imagesForProperty,
+  };
+});
+
+
 const rawMapsData = [
   {
     title: "Phase 8 Map",
@@ -321,7 +375,7 @@ const rawReviewsData = [
 ];
 
 // Add unique IDs to the data, just like a real backend would provide
-export const propertyCardVariants = rawPropertyCardVariants.map((p, index) => ({
+export const propertyCardVariants = enrichedRawPropertyCardVariants.map((p, index) => ({
   ...p,
   id: `${p.title.toLowerCase().replace(/\s+/g, "-")}-${index}`,
 }));
