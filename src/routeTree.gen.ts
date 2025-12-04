@@ -9,14 +9,34 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PropertiesIndexRouteImport } from './routes/properties/index'
 import { Route as MapsIndexRouteImport } from './routes/maps/index'
 import { Route as FilesIndexRouteImport } from './routes/files/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardUsersRouteImport } from './routes/dashboard/users'
+import { Route as DashboardSocietiesRouteImport } from './routes/dashboard/societies'
+import { Route as DashboardQueriesRouteImport } from './routes/dashboard/queries'
+import { Route as DashboardPropertiesRouteImport } from './routes/dashboard/properties'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
+import { Route as DashboardPhasesRouteImport } from './routes/dashboard/phases'
+import { Route as DashboardMapsRouteImport } from './routes/dashboard/maps'
+import { Route as DashboardLandingPageRouteImport } from './routes/dashboard/landing-page'
+import { Route as DashboardFilesRouteImport } from './routes/dashboard/files'
+import { Route as DashboardCitiesRouteImport } from './routes/dashboard/cities'
+import { Route as DashboardCategoriesRouteImport } from './routes/dashboard/categories'
+import { Route as authSignupRouteImport } from './routes/(auth)/signup'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as PropertiesIdIndexRouteImport } from './routes/properties/$id/index'
 
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -47,6 +67,76 @@ const FilesIndexRoute = FilesIndexRouteImport.update({
   path: '/files/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardUsersRoute = DashboardUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSocietiesRoute = DashboardSocietiesRouteImport.update({
+  id: '/societies',
+  path: '/societies',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardQueriesRoute = DashboardQueriesRouteImport.update({
+  id: '/queries',
+  path: '/queries',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPropertiesRoute = DashboardPropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPhasesRoute = DashboardPhasesRouteImport.update({
+  id: '/phases',
+  path: '/phases',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMapsRoute = DashboardMapsRouteImport.update({
+  id: '/maps',
+  path: '/maps',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardLandingPageRoute = DashboardLandingPageRouteImport.update({
+  id: '/landing-page',
+  path: '/landing-page',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardFilesRoute = DashboardFilesRouteImport.update({
+  id: '/files',
+  path: '/files',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCitiesRoute = DashboardCitiesRouteImport.update({
+  id: '/cities',
+  path: '/cities',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const authSignupRoute = authSignupRouteImport.update({
+  id: '/(auth)/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: '/(auth)/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PropertiesIdIndexRoute = PropertiesIdIndexRouteImport.update({
   id: '/properties/$id/',
   path: '/properties/$id/',
@@ -57,6 +147,21 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof authLoginRoute
+  '/signup': typeof authSignupRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/cities': typeof DashboardCitiesRoute
+  '/dashboard/files': typeof DashboardFilesRoute
+  '/dashboard/landing-page': typeof DashboardLandingPageRoute
+  '/dashboard/maps': typeof DashboardMapsRoute
+  '/dashboard/phases': typeof DashboardPhasesRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/properties': typeof DashboardPropertiesRoute
+  '/dashboard/queries': typeof DashboardQueriesRoute
+  '/dashboard/societies': typeof DashboardSocietiesRoute
+  '/dashboard/users': typeof DashboardUsersRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/files': typeof FilesIndexRoute
   '/maps': typeof MapsIndexRoute
   '/properties': typeof PropertiesIndexRoute
@@ -66,6 +171,20 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/login': typeof authLoginRoute
+  '/signup': typeof authSignupRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/cities': typeof DashboardCitiesRoute
+  '/dashboard/files': typeof DashboardFilesRoute
+  '/dashboard/landing-page': typeof DashboardLandingPageRoute
+  '/dashboard/maps': typeof DashboardMapsRoute
+  '/dashboard/phases': typeof DashboardPhasesRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/properties': typeof DashboardPropertiesRoute
+  '/dashboard/queries': typeof DashboardQueriesRoute
+  '/dashboard/societies': typeof DashboardSocietiesRoute
+  '/dashboard/users': typeof DashboardUsersRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/files': typeof FilesIndexRoute
   '/maps': typeof MapsIndexRoute
   '/properties': typeof PropertiesIndexRoute
@@ -76,6 +195,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/(auth)/login': typeof authLoginRoute
+  '/(auth)/signup': typeof authSignupRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
+  '/dashboard/cities': typeof DashboardCitiesRoute
+  '/dashboard/files': typeof DashboardFilesRoute
+  '/dashboard/landing-page': typeof DashboardLandingPageRoute
+  '/dashboard/maps': typeof DashboardMapsRoute
+  '/dashboard/phases': typeof DashboardPhasesRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/properties': typeof DashboardPropertiesRoute
+  '/dashboard/queries': typeof DashboardQueriesRoute
+  '/dashboard/societies': typeof DashboardSocietiesRoute
+  '/dashboard/users': typeof DashboardUsersRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/files/': typeof FilesIndexRoute
   '/maps/': typeof MapsIndexRoute
   '/properties/': typeof PropertiesIndexRoute
@@ -87,6 +221,21 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/dashboard'
+    | '/login'
+    | '/signup'
+    | '/dashboard/categories'
+    | '/dashboard/cities'
+    | '/dashboard/files'
+    | '/dashboard/landing-page'
+    | '/dashboard/maps'
+    | '/dashboard/phases'
+    | '/dashboard/profile'
+    | '/dashboard/properties'
+    | '/dashboard/queries'
+    | '/dashboard/societies'
+    | '/dashboard/users'
+    | '/dashboard/'
     | '/files'
     | '/maps'
     | '/properties'
@@ -96,6 +245,20 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/login'
+    | '/signup'
+    | '/dashboard/categories'
+    | '/dashboard/cities'
+    | '/dashboard/files'
+    | '/dashboard/landing-page'
+    | '/dashboard/maps'
+    | '/dashboard/phases'
+    | '/dashboard/profile'
+    | '/dashboard/properties'
+    | '/dashboard/queries'
+    | '/dashboard/societies'
+    | '/dashboard/users'
+    | '/dashboard'
     | '/files'
     | '/maps'
     | '/properties'
@@ -105,6 +268,21 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/dashboard'
+    | '/(auth)/login'
+    | '/(auth)/signup'
+    | '/dashboard/categories'
+    | '/dashboard/cities'
+    | '/dashboard/files'
+    | '/dashboard/landing-page'
+    | '/dashboard/maps'
+    | '/dashboard/phases'
+    | '/dashboard/profile'
+    | '/dashboard/properties'
+    | '/dashboard/queries'
+    | '/dashboard/societies'
+    | '/dashboard/users'
+    | '/dashboard/'
     | '/files/'
     | '/maps/'
     | '/properties/'
@@ -115,6 +293,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ContactRoute: typeof ContactRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
+  authLoginRoute: typeof authLoginRoute
+  authSignupRoute: typeof authSignupRoute
   FilesIndexRoute: typeof FilesIndexRoute
   MapsIndexRoute: typeof MapsIndexRoute
   PropertiesIndexRoute: typeof PropertiesIndexRoute
@@ -123,6 +304,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -165,6 +353,104 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/users': {
+      id: '/dashboard/users'
+      path: '/users'
+      fullPath: '/dashboard/users'
+      preLoaderRoute: typeof DashboardUsersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/societies': {
+      id: '/dashboard/societies'
+      path: '/societies'
+      fullPath: '/dashboard/societies'
+      preLoaderRoute: typeof DashboardSocietiesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/queries': {
+      id: '/dashboard/queries'
+      path: '/queries'
+      fullPath: '/dashboard/queries'
+      preLoaderRoute: typeof DashboardQueriesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/properties': {
+      id: '/dashboard/properties'
+      path: '/properties'
+      fullPath: '/dashboard/properties'
+      preLoaderRoute: typeof DashboardPropertiesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/phases': {
+      id: '/dashboard/phases'
+      path: '/phases'
+      fullPath: '/dashboard/phases'
+      preLoaderRoute: typeof DashboardPhasesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/maps': {
+      id: '/dashboard/maps'
+      path: '/maps'
+      fullPath: '/dashboard/maps'
+      preLoaderRoute: typeof DashboardMapsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/landing-page': {
+      id: '/dashboard/landing-page'
+      path: '/landing-page'
+      fullPath: '/dashboard/landing-page'
+      preLoaderRoute: typeof DashboardLandingPageRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/files': {
+      id: '/dashboard/files'
+      path: '/files'
+      fullPath: '/dashboard/files'
+      preLoaderRoute: typeof DashboardFilesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cities': {
+      id: '/dashboard/cities'
+      path: '/cities'
+      fullPath: '/dashboard/cities'
+      preLoaderRoute: typeof DashboardCitiesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/categories': {
+      id: '/dashboard/categories'
+      path: '/categories'
+      fullPath: '/dashboard/categories'
+      preLoaderRoute: typeof DashboardCategoriesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/(auth)/signup': {
+      id: '/(auth)/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof authSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/properties/$id/': {
       id: '/properties/$id/'
       path: '/properties/$id'
@@ -175,10 +461,47 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardCategoriesRoute: typeof DashboardCategoriesRoute
+  DashboardCitiesRoute: typeof DashboardCitiesRoute
+  DashboardFilesRoute: typeof DashboardFilesRoute
+  DashboardLandingPageRoute: typeof DashboardLandingPageRoute
+  DashboardMapsRoute: typeof DashboardMapsRoute
+  DashboardPhasesRoute: typeof DashboardPhasesRoute
+  DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardPropertiesRoute: typeof DashboardPropertiesRoute
+  DashboardQueriesRoute: typeof DashboardQueriesRoute
+  DashboardSocietiesRoute: typeof DashboardSocietiesRoute
+  DashboardUsersRoute: typeof DashboardUsersRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCategoriesRoute: DashboardCategoriesRoute,
+  DashboardCitiesRoute: DashboardCitiesRoute,
+  DashboardFilesRoute: DashboardFilesRoute,
+  DashboardLandingPageRoute: DashboardLandingPageRoute,
+  DashboardMapsRoute: DashboardMapsRoute,
+  DashboardPhasesRoute: DashboardPhasesRoute,
+  DashboardProfileRoute: DashboardProfileRoute,
+  DashboardPropertiesRoute: DashboardPropertiesRoute,
+  DashboardQueriesRoute: DashboardQueriesRoute,
+  DashboardSocietiesRoute: DashboardSocietiesRoute,
+  DashboardUsersRoute: DashboardUsersRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ContactRoute: ContactRoute,
+  DashboardRoute: DashboardRouteWithChildren,
+  authLoginRoute: authLoginRoute,
+  authSignupRoute: authSignupRoute,
   FilesIndexRoute: FilesIndexRoute,
   MapsIndexRoute: MapsIndexRoute,
   PropertiesIndexRoute: PropertiesIndexRoute,

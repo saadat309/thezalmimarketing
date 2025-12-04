@@ -11,6 +11,7 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const location = useLocation();
+  const isAuthRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/login') || location.pathname.startsWith('/signup');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -19,9 +20,9 @@ function RootComponent() {
   return (
     <React.Fragment>
       <div className="flex flex-col justify-between min-h-screen bg-background text-foreground">
-      <Navbar/>
+      {!isAuthRoute && <Navbar/>}
       <Outlet />
-      <Footer/>
+      {!isAuthRoute && <Footer/>}
     </div>
       
     </React.Fragment>

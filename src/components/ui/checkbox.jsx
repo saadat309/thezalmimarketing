@@ -10,6 +10,7 @@ const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
       "grid place-content-center peer h-5 w-5 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground transition-colors duration-400 ease-in-out active:scale-[0.95] cursor-pointer",
       className
     )}
+    onClick={(e) => e.stopPropagation()} // Re-add stop propagation
     {...props}>
     <CheckboxPrimitive.Indicator
       forceMount
@@ -29,7 +30,7 @@ const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
         strokeLinejoin="round"
         className="w-5 h-5"
       >
-        <path d="M4 12l5 5L20 6" className="checkbox-check-path" />
+        <path d="M4 12l5 5L20 6" className="checkbox-check-path"  />
       </svg>
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>

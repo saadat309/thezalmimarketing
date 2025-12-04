@@ -275,10 +275,10 @@
         .nav-link {
           position: relative;
           display: inline-block;
-          
+
           -webkit-font-smoothing:antialiased;
           -moz-osx-font-smoothing:grayscale;
-          
+
         }
 
         /* animated underline */

@@ -202,7 +202,7 @@ function RouteComponent() {
       </div>
 
       {/* Real Estate in Pakistan Overview - Placed early */}
-      <TextSection {...pakistanRealEstateContent} className={"my-8"} />
+      <TextSection {...pakistanRealEstateContent} borderPosition="left" className={"my-8"} />
 
       <Card className="w-full max-w-md mt-12">
         <CardHeader>
@@ -254,7 +254,7 @@ function RouteComponent() {
       <PersonalizedExperience cards={personalizedCards} className={"px-4 md:px-6 mx-auto"}/> {/* Use fetched personalizedCards */}
       
       {/* Comprehensive Services Overview - Placed after PersonalizedExperience */}
-      <TextSection {...servicesOverviewContent} className={"my-8"} />
+      <TextSection {...servicesOverviewContent} borderPosition="top" className={"my-8"} />
 
       {/* How It Works Section */}
       <HowItWorksSection {...howItWorksSectionData} className={"my-8"} />
@@ -262,7 +262,7 @@ function RouteComponent() {
       <ReviewsSection reviews={reviews} />
 
       {/* DHA Services Section - Placed after ReviewsSection */}
-      <TextSection {...dhaServicesContent} className={"my-8"} />
+      <TextSection {...dhaServicesContent} borderPosition="top" className={"my-8"} />
 
       <CardGrid items={fileProperties} // Use fetched file properties
         CardComponent={PropertyCard} // Non-clickable
@@ -284,7 +284,7 @@ function RouteComponent() {
         />
 
       {/* Investment Opportunities Section - New Variant 1 */}
-      <TextSection {...investmentOpportunitiesContent} className={"my-8"} />
+      <TextSection {...investmentOpportunitiesContent} borderPosition="left" className={"my-8"} />
 
       <CardSlider items={properties} // Use fetched properties
         CardComponent={LinkedPropertyCard}
@@ -293,13 +293,13 @@ function RouteComponent() {
         className={"md:px-6 py-4 px-4"}/>
 
       {/* Why Choose Us Section - New Variant 2 */}
-      <TextSection {...whyChooseUsContent} className={"my-8"} />
+      <TextSection {...whyChooseUsContent} borderPosition="left" className={"my-8"} />
 
       {/* Global Reach Section - New Dark Variant 1 */}
-      <TextSection {...globalReachContent} className={"my-8"} />
+      <TextSection {...globalReachContent} borderPosition="left" className={"my-8"} />
 
       {/* Client Testimonials Section - New Dark Variant 2 */}
-      <TextSection {...clientTestimonialsContent} className={"my-8"} />
+      <TextSection {...clientTestimonialsContent} borderPosition="top" className={"my-8"} />
 
       <div className="flex flex-wrap justify-center gap-4 mt-12">
         <Button variant="default">Default Button</Button>

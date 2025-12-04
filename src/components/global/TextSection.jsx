@@ -20,6 +20,7 @@ export default function TextSection({
   maxWidth = "max-w-5xl",
   columns = 1,
   variant = "light", // New variant prop
+  borderPosition = "left", // New borderPosition prop
 }) {
   const alignClass =
     align === "center" ? "items-center text-center" : align === "right" ? "items-end text-right" : "items-start text-left";
@@ -31,7 +32,20 @@ export default function TextSection({
   const sectionBgClass = variant === "dark" ? "bg-primary" : "";
   const titleTextColorClass = variant === "dark" ? "text-primary-foreground" : "text-primary";
   const subtitleTextColorClass = variant === "dark" ? "text-muted" : "text-muted-foreground";
-  const cardBorderColorClass = variant === "dark" ? "border-l-[color:var(--vanilla-cream-dark)]" : "border-l-primary";
+  const borderPositionClasses = {
+    left: 'border-l-4',
+    top: 'border-t-4',
+    bottom: 'border-b-4',
+    right: 'border-r-4',
+    none: '', // Will not be used if borderPosition is 'none'
+  };
+
+  let borderClasses = 'border-t-0 border-b-0 border-l-0 border-r-0'; // Reset all borders to 0
+  if (borderPosition !== 'none') {
+    const specificBorderClass = borderPositionClasses[borderPosition];
+    const borderColorClass = variant === "dark" ? `border-[color:var(--vanilla-cream-dark)]` : `border-primary`;
+    borderClasses += ` ${specificBorderClass} ${borderColorClass}`; // Add the specific border
+  }
 
 
   return (
@@ -45,7 +59,7 @@ export default function TextSection({
         {isArray ? (
           <div className={gridClass}>
             {content.map((c, i) => (
-              <Card key={i} className={`w-full py-3 border-t-0 border-b-0 border-l-4 border-r-0 rounded-sm shadow-sm bg-card ${cardBorderColorClass}`}>
+              <Card key={i} className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
                 <CardContent className="px-3 text-sm leading-relaxed text-left text-card-foreground">
                   {typeof c === "string" ? <p>{c}</p> : c}
                 </CardContent>
@@ -53,7 +67,7 @@ export default function TextSection({
             ))}
           </div>
         ) : (
-          <Card className={`w-full py-3 border-t-0 border-b-0 border-l-4 border-r-0 rounded-sm shadow-sm bg-card ${cardBorderColorClass}`}>
+          <Card className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
             <CardContent className="p-6 text-sm leading-relaxed text-left text-card-foreground">
               {typeof content === "string" ? <p>{content}</p> : content}
             </CardContent>
