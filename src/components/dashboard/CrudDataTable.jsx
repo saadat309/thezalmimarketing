@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/dashboard/data-table';
 import {
@@ -32,13 +33,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, FilePenIcon, TrashIcon, MoreVerticalIcon, ColumnsIcon, ArrowUpDown } from 'lucide-react';
+import { PlusCircle, FilePenIcon, TrashIcon, MoreVerticalIcon, ColumnsIcon, ArrowUpDown, PlusIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { CopyIcon } from "lucide-react";
 import QuillRichText from './QuillRichText'; // Import the new rich text editor
 
 export function CrudDataTable({
   title,
+  description,
+  searchPlaceholder,
   data,
   setData,
   columns,
@@ -56,6 +59,10 @@ export function CrudDataTable({
   customFormContent,
   onEditingItemChange, // Add onEditingItemChange prop
   getRowClassName, // New prop
+  sheetClassName,
+  handleDeleteSelected,
+  handleExportCsv,
+  handleExportPdf,
 }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -202,7 +209,7 @@ export function CrudDataTable({
     <div className="container px-4 py-8 mx-auto lg:px-6">
       {!disableAdd && (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetContent className="sm:max-w-[600px]" onPointerDownOutside={(event) => event.preventDefault()}>
+          <SheetContent className={cn("sm:max-w-[600px]", sheetClassName)} onPointerDownOutside={(event) => event.preventDefault()}>
             <SheetHeader>
               <SheetTitle>{editingItem && !isDuplicating ? `Edit ${entityName}` : `Add New ${entityName}`}</SheetTitle>
               <SheetDescription>
@@ -264,14 +271,58 @@ export function CrudDataTable({
         getRowClassName={getRowClassName} // Pass the new prop here
       >
         {(table, { resetPreferences }) => (
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">{title}</h1>
-            <div className="flex items-center gap-2">
+          <>
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {description && <p className="text-muted-foreground">{description}</p>}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                {table.getFilteredSelectedRowModel().rows.length >= 2 ? (
+                  <>
+                    <Button variant="destructive" size="sm" className="h-8" onClick={handleDeleteSelected}>
+                      Delete Selected ({table.getFilteredSelectedRowModel().rows.length})
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">Export Selected</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={handleExportCsv}>As CSV</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleExportPdf}>As PDF</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      placeholder={searchPlaceholder || `Filter ${entityName.toLowerCase()}s...`}
+                      value={(table.getState().globalFilter) || ''}
+                      onChange={(event) =>
+                        table.setGlobalFilter(event.target.value)
+                      }
+                      className="h-8 w-[150px] lg:w-[250px]"
+                    />
+                    <Button variant="outline" size="sm" className="h-8">
+                      <PlusIcon className="w-4 h-4 mr-2" />
+                      Status
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8">
+                      <PlusIcon className="w-4 h-4 mr-2" />
+                      Priority
+                    </Button>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-8 h-8 p-0 sm:w-auto sm:px-3 sm:py-2">
-                    <ColumnsIcon className="w-4 h-4" />
-                    <span className="hidden ml-2 sm:inline">Customize Columns</span>
+                  <Button variant="outline" size="sm" className="h-8">
+                    <ColumnsIcon className="w-4 h-4 mr-2" />
+                    View
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -296,22 +347,24 @@ export function CrudDataTable({
                         </DropdownMenuCheckboxItem>
                       );
                     })}
+                    <DropdownMenuSeparator />
+                    {resetPreferences && (
+                        <DropdownMenuItem onClick={resetPreferences}>
+                            <ArrowUpDown className="w-4 h-4 mr-2" />
+                            Reset View
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
               </DropdownMenu>
               {!disableAdd && (
-                <Button onClick={openAddSheet} size="sm" className="w-8 h-8 p-0 sm:w-auto sm:px-3 sm:py-2">
-                  <PlusCircle className="w-4 h-4" />
-                  <span className="hidden ml-2 sm:inline">Add New {entityName}</span>
-                </Button>
-              )}
-              {resetPreferences && (
-                <Button onClick={resetPreferences} variant="outline" size="sm" className="w-8 h-8 p-0 sm:w-auto sm:px-3 sm:py-2">
-                  <ArrowUpDown className="w-4 h-4" /> {/* Using ArrowUpDown for reset icon, can be changed */}
-                  <span className="hidden ml-2 sm:inline">Reset View</span>
-                </Button>
-              )}
+                  <Button onClick={openAddSheet} size="sm" className="h-8">
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Add New
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </DataTable>
     </div>

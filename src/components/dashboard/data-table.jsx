@@ -51,6 +51,7 @@ export function DataTable({
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnFilters, setColumnFilters] = React.useState([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   // Zustand store integration for table preferences
   const { preferences, setPreference, getAllPreferences, initializePreferences, resetPreferences: storeResetPreferences, _hasHydrated } = useTablePreferencesStore();
@@ -98,6 +99,7 @@ export function DataTable({
       rowSelection,
       columnFilters,
       pagination: paginationState,
+      globalFilter,
     },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
@@ -110,6 +112,7 @@ export function DataTable({
       setPreference(preferenceKey, 'sorting', newState);
     },
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: (updater) => {
       // TanStack Table's updater can be a function or a value.
       // We need the resolved value to save to preferences.

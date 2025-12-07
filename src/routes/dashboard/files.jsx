@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
-import { TableActions } from '@/components/dashboard/TableActions';
 import { toast } from "sonner";
 import { useFilesStore } from '@/store/filesStore'; // Import the store
 
@@ -159,6 +158,8 @@ function DashboardFiles() {
     <div>
       <CrudDataTable
         title="Manage Files"
+        description="Here you can manage your property files."
+        searchPlaceholder="Filter files..."
         data={files}
         onAddItem={handleAddFile}
         onEditItem={handleEditFile}
@@ -166,17 +167,14 @@ function DashboardFiles() {
         formFields={formFields}
         entityName="File"
         handleDeleteItem={handleDeleteFile}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/files"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

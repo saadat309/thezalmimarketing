@@ -3,7 +3,6 @@ import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
-import { TableActions } from '@/components/dashboard/TableActions';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
 import { toast } from "sonner";
@@ -152,6 +151,8 @@ function DashboardSocieties() {
     <div>
       <CrudDataTable
         title="Manage Societies"
+        description="Here you can manage the housing societies."
+        searchPlaceholder="Filter societies..."
         data={societies}
         onAddItem={handleAddSociety}
         onEditItem={handleEditSociety}
@@ -159,17 +160,14 @@ function DashboardSocieties() {
         formFields={formFields}
         entityName="Society"
         handleDeleteItem={handleDeleteSociety}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/societies"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

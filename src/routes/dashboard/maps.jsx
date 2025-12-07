@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
-import { TableActions } from '@/components/dashboard/TableActions';
 import { toast } from "sonner";
 import { MediaUpload } from '@/components/dashboard/MediaUpload'; // Import MediaUpload
 
@@ -177,6 +176,8 @@ function DashboardMaps() {
     <div>
       <CrudDataTable
         title="Manage Maps"
+        description="Here you can manage your society maps."
+        searchPlaceholder="Filter maps..."
         data={maps}
         onAddItem={handleAddMap}
         onEditItem={handleEditMap}
@@ -184,6 +185,9 @@ function DashboardMaps() {
         formFields={formFields}
         entityName="Map"
         handleDeleteItem={handleDeleteMap}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/maps"
         customFormContent={(currentItem) => (
           <div className="grid gap-4 py-4">
@@ -216,12 +220,6 @@ function DashboardMaps() {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

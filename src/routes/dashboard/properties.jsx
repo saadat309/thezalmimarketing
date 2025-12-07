@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';                                                                   
 import { v4 as uuidv4 } from 'uuid';                                                                         
 import { Checkbox } from "@/components/ui/checkbox";
-import { TableActions } from '@/components/dashboard/TableActions';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; 
 import { toast } from "sonner";
@@ -178,6 +177,8 @@ function DashboardProperties() {
     <div>
       <CrudDataTable
         title="Manage Properties"
+        description="Manage all the properties in the system."
+        searchPlaceholder="Filter properties..."
         data={properties}
         onAddItem={handleAddProperty}
         onEditItem={handleEditProperty}
@@ -185,7 +186,11 @@ function DashboardProperties() {
         formFields={formFields}
         entityName="Property"
         handleDeleteItem={handleDeleteProperty}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/properties"
+        sheetClassName="sm:max-w-full"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
@@ -220,12 +225,6 @@ function DashboardProperties() {
             />
           </>
         )}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

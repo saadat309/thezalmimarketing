@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
-import { TableActions } from '@/components/dashboard/TableActions';
 import { toast } from "sonner";
 
 export const Route = createFileRoute('/dashboard/categories')({
@@ -153,6 +152,8 @@ function DashboardCategories() {
     <div>
       <CrudDataTable
         title="Manage Categories"
+        description="Here you can manage your property categories."
+        searchPlaceholder="Filter categories..."
         data={categories}
         onAddItem={handleAddCategory}
         onEditItem={handleEditCategory}
@@ -160,17 +161,14 @@ function DashboardCategories() {
         formFields={formFields}
         entityName="Category"
         handleDeleteItem={handleDeleteCategory}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/categories"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

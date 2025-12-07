@@ -5,7 +5,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { createFileRoute } from '@tanstack/react-router';
 import { ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TableActions } from '@/components/dashboard/TableActions';
 import { toast } from "sonner";
 import { useQueriesStore } from '@/store/queriesStore'; // Import the store
 
@@ -169,6 +168,8 @@ function DashboardQueries() {
     <div>
       <CrudDataTable
         title="Property Queries"
+        description="Here you can manage user queries."
+        searchPlaceholder="Filter queries..."
         data={queries}
         onAddItem={handleAddQuery}
         onEditItem={handleEditQuery}
@@ -176,6 +177,9 @@ function DashboardQueries() {
         formFields={formFields}
         entityName="Query"
         handleDeleteItem={handleDeleteQuery}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/queries"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
@@ -183,12 +187,6 @@ function DashboardQueries() {
         }}
         onRowClick={(row) => useQueriesStore.getState().markAsRead(row.id)} // Use markAsRead from store
         getRowClassName={getRowClassName}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

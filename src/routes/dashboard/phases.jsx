@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
-import { TableActions } from '@/components/dashboard/TableActions';
 import { toast } from "sonner";
 
 export const Route = createFileRoute('/dashboard/phases')({
@@ -154,6 +153,8 @@ function DashboardPhases() {
     <div>
       <CrudDataTable
         title="Manage Phases"
+        description="Here you can manage the development phases."
+        searchPlaceholder="Filter phases..."
         data={phases}
         onAddItem={handleAddPhase}
         onEditItem={handleEditPhase}
@@ -161,17 +162,14 @@ function DashboardPhases() {
         formFields={formFields}
         entityName="Phase"
         handleDeleteItem={handleDeletePhase}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/phases"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { Link, useLocation } from '@tanstack/react-router'
+import { Link, useLocation } from "@tanstack/react-router";
 import {
   ArrowUpCircleIcon,
   BarChartIcon,
@@ -14,9 +14,9 @@ import {
   SettingsIcon,
   User,
   UsersIcon,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavUser } from "@/components/dashboard/nav-user"
+import { NavUser } from "@/components/dashboard/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -25,9 +25,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import { MdOutlineRealEstateAgent } from "react-icons/md";
-import { useQueriesStore } from '@/store/queriesStore'; // Import the store
+import { useQueriesStore } from "@/store/queriesStore"; // Import the store
 import { Badge } from "@/components/ui/badge"; // Assuming a Badge component exists
 
 const navItems = [
@@ -40,6 +40,11 @@ const navItems = [
     title: "Properties",
     url: "/dashboard/properties",
     icon: Home,
+  },
+  {
+    title: "File Property Form",
+    url: "/dashboard/property-file-form",
+    icon: FileText,
   },
   {
     title: "Maps",
@@ -71,7 +76,7 @@ const navItems = [
     url: "/dashboard/societies",
     icon: UsersIcon,
   },
-]
+];
 
 const secondaryNavItems = [
   {
@@ -94,7 +99,7 @@ const secondaryNavItems = [
     url: "/dashboard/users",
     icon: UsersIcon,
   },
-]
+];
 
 const data = {
   user: {
@@ -102,30 +107,35 @@ const data = {
     email: "john.doe@example.com",
     avatar: "https://github.com/shadcn.png",
   },
-}
-
+};
 
 import { useSidebar } from "@/components/ui/sidebar"; // Import useSidebar
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
   const location = useLocation();
   const { isMobile, setOpenMobile } = useSidebar(); // Use useSidebar hook
-  const unreadQueriesCount = useQueriesStore((state) => state.getUnreadQueriesCount());
+  const unreadQueriesCount = useQueriesStore((state) =>
+    state.getUnreadQueriesCount()
+  );
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <Link t0="/" className="flex items-center gap-2 font-medium">
-                          <div className="flex items-center justify-center bg-transparent rounded-md text-primary-foreground size-6">
-                            <MdOutlineRealEstateAgent className="text-primary" style={{ width: 24, height: 24 }} />
-                          </div>
-                          The Zalmi Marketing
-                        </Link>
+                <div className="flex items-center justify-center bg-transparent rounded-md text-primary-foreground size-6">
+                  <MdOutlineRealEstateAgent
+                    className="text-primary"
+                    style={{ width: 24, height: 24 }}
+                  />
+                </div>
+                The Zalmi Marketing
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -134,7 +144,10 @@ export function AppSidebar({
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <Link to={item.url} onClick={() => isMobile && setOpenMobile(false)}>
+              <Link
+                to={item.url}
+                onClick={() => isMobile && setOpenMobile(false)}
+              >
                 <SidebarMenuButton
                   tooltip={item.title}
                   isActive={location.pathname === item.url}
@@ -149,7 +162,11 @@ export function AppSidebar({
         <SidebarMenu className="mt-auto">
           {secondaryNavItems.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <Link to={item.url} onClick={() => isMobile && setOpenMobile(false)} className="relative">
+              <Link
+                to={item.url}
+                onClick={() => isMobile && setOpenMobile(false)}
+                className="relative"
+              >
                 <SidebarMenuButton
                   tooltip={item.title}
                   isActive={location.pathname === item.url}
@@ -168,7 +185,11 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} isMobile={isMobile} setOpenMobile={setOpenMobile} />
+        <NavUser
+          user={data.user}
+          isMobile={isMobile}
+          setOpenMobile={setOpenMobile}
+        />
       </SidebarFooter>
     </Sidebar>
   );

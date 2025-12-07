@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { createFileRoute } from '@tanstack/react-router';
 import { ArrowUpDown, CopyIcon, ArrowDown, ArrowUp } from 'lucide-react';
-import { TableActions } from '@/components/dashboard/TableActions';
 import {
     DropdownMenuItem,
     DropdownMenuSeparator,
@@ -212,6 +211,8 @@ function DashboardUsers() {
     <div>
       <CrudDataTable
         title="Manage Users"
+        description="Here you can manage all system users."
+        searchPlaceholder="Filter users..."
         data={users}
         setData={setUsers}
         columns={userColumns}
@@ -221,17 +222,14 @@ function DashboardUsers() {
         onAddItem={handleAddUser}
         onEditItem={handleEditUser}
         renderCustomActions={renderUserCustomActions}
+        handleDeleteSelected={handleDeleteSelected}
+        handleExportCsv={handleExportCsv}
+        handleExportPdf={handleExportPdf}
         routePath="/dashboard/users"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-      />
-      <TableActions
-        selectedRows={selectedRows}
-        handleDeleteSelected={handleDeleteSelected}
-        handleExportCsv={handleExportCsv}
-        handleExportPdf={handleExportPdf}
       />
     </div>
   );

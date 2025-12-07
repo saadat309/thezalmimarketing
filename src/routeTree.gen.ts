@@ -20,6 +20,8 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardUsersRouteImport } from './routes/dashboard/users'
 import { Route as DashboardSocietiesRouteImport } from './routes/dashboard/societies'
 import { Route as DashboardQueriesRouteImport } from './routes/dashboard/queries'
+import { Route as DashboardPropertyFormPreviewRouteImport } from './routes/dashboard/property-form-preview'
+import { Route as DashboardPropertyFileFormRouteImport } from './routes/dashboard/property-file-form'
 import { Route as DashboardPropertiesRouteImport } from './routes/dashboard/properties'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
 import { Route as DashboardPhasesRouteImport } from './routes/dashboard/phases'
@@ -87,6 +89,18 @@ const DashboardQueriesRoute = DashboardQueriesRouteImport.update({
   path: '/queries',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardPropertyFormPreviewRoute =
+  DashboardPropertyFormPreviewRouteImport.update({
+    id: '/property-form-preview',
+    path: '/property-form-preview',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardPropertyFileFormRoute =
+  DashboardPropertyFileFormRouteImport.update({
+    id: '/property-file-form',
+    path: '/property-file-form',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardPropertiesRoute = DashboardPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
@@ -158,6 +172,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/phases': typeof DashboardPhasesRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/properties': typeof DashboardPropertiesRoute
+  '/dashboard/property-file-form': typeof DashboardPropertyFileFormRoute
+  '/dashboard/property-form-preview': typeof DashboardPropertyFormPreviewRoute
   '/dashboard/queries': typeof DashboardQueriesRoute
   '/dashboard/societies': typeof DashboardSocietiesRoute
   '/dashboard/users': typeof DashboardUsersRoute
@@ -181,6 +197,8 @@ export interface FileRoutesByTo {
   '/dashboard/phases': typeof DashboardPhasesRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/properties': typeof DashboardPropertiesRoute
+  '/dashboard/property-file-form': typeof DashboardPropertyFileFormRoute
+  '/dashboard/property-form-preview': typeof DashboardPropertyFormPreviewRoute
   '/dashboard/queries': typeof DashboardQueriesRoute
   '/dashboard/societies': typeof DashboardSocietiesRoute
   '/dashboard/users': typeof DashboardUsersRoute
@@ -206,6 +224,8 @@ export interface FileRoutesById {
   '/dashboard/phases': typeof DashboardPhasesRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/properties': typeof DashboardPropertiesRoute
+  '/dashboard/property-file-form': typeof DashboardPropertyFileFormRoute
+  '/dashboard/property-form-preview': typeof DashboardPropertyFormPreviewRoute
   '/dashboard/queries': typeof DashboardQueriesRoute
   '/dashboard/societies': typeof DashboardSocietiesRoute
   '/dashboard/users': typeof DashboardUsersRoute
@@ -232,6 +252,8 @@ export interface FileRouteTypes {
     | '/dashboard/phases'
     | '/dashboard/profile'
     | '/dashboard/properties'
+    | '/dashboard/property-file-form'
+    | '/dashboard/property-form-preview'
     | '/dashboard/queries'
     | '/dashboard/societies'
     | '/dashboard/users'
@@ -255,6 +277,8 @@ export interface FileRouteTypes {
     | '/dashboard/phases'
     | '/dashboard/profile'
     | '/dashboard/properties'
+    | '/dashboard/property-file-form'
+    | '/dashboard/property-form-preview'
     | '/dashboard/queries'
     | '/dashboard/societies'
     | '/dashboard/users'
@@ -279,6 +303,8 @@ export interface FileRouteTypes {
     | '/dashboard/phases'
     | '/dashboard/profile'
     | '/dashboard/properties'
+    | '/dashboard/property-file-form'
+    | '/dashboard/property-form-preview'
     | '/dashboard/queries'
     | '/dashboard/societies'
     | '/dashboard/users'
@@ -381,6 +407,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardQueriesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/property-form-preview': {
+      id: '/dashboard/property-form-preview'
+      path: '/property-form-preview'
+      fullPath: '/dashboard/property-form-preview'
+      preLoaderRoute: typeof DashboardPropertyFormPreviewRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/property-file-form': {
+      id: '/dashboard/property-file-form'
+      path: '/property-file-form'
+      fullPath: '/dashboard/property-file-form'
+      preLoaderRoute: typeof DashboardPropertyFileFormRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/properties': {
       id: '/dashboard/properties'
       path: '/properties'
@@ -470,6 +510,8 @@ interface DashboardRouteChildren {
   DashboardPhasesRoute: typeof DashboardPhasesRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardPropertiesRoute: typeof DashboardPropertiesRoute
+  DashboardPropertyFileFormRoute: typeof DashboardPropertyFileFormRoute
+  DashboardPropertyFormPreviewRoute: typeof DashboardPropertyFormPreviewRoute
   DashboardQueriesRoute: typeof DashboardQueriesRoute
   DashboardSocietiesRoute: typeof DashboardSocietiesRoute
   DashboardUsersRoute: typeof DashboardUsersRoute
@@ -485,6 +527,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPhasesRoute: DashboardPhasesRoute,
   DashboardProfileRoute: DashboardProfileRoute,
   DashboardPropertiesRoute: DashboardPropertiesRoute,
+  DashboardPropertyFileFormRoute: DashboardPropertyFileFormRoute,
+  DashboardPropertyFormPreviewRoute: DashboardPropertyFormPreviewRoute,
   DashboardQueriesRoute: DashboardQueriesRoute,
   DashboardSocietiesRoute: DashboardSocietiesRoute,
   DashboardUsersRoute: DashboardUsersRoute,
