@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/dashboard/data-table';
 import {
@@ -35,6 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, FilePenIcon, TrashIcon, MoreVerticalIcon, ColumnsIcon, ArrowUpDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { CopyIcon } from "lucide-react";
+import QuillRichText from './QuillRichText'; // Import the new rich text editor
 
 export function CrudDataTable({
   title,
@@ -58,15 +59,28 @@ export function CrudDataTable({
 }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [isDuplicating, setIsDuplicating] = useState(false); // New state variable
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    if (isSheetOpen) {
+      const initialData = formFields.reduce((acc, field) => {
+        acc[field.name] = editingItem?.[field.name] || '';
+        return acc;
+      }, {});
+      setFormData(initialData);
+    } else {
+      setFormData({});
+    }
+  }, [isSheetOpen, editingItem, formFields]);
+
+  const handleFormChange = (fieldName, value) => {
+    setFormData(prev => ({ ...prev, [fieldName]: value }));
+  };
 
   const handleAddEditItem = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    let newItem = {};
-    formFields.forEach(field => {
-        newItem[field.name] = formData.get(field.name);
-    });
+    const newItem = { ...formData };
     newItem.changed_at = new Date().toLocaleString(); // Update changed_at on add/edit
 
     if (isDuplicating) {
@@ -77,9 +91,9 @@ export function CrudDataTable({
       }
     } else if (editingItem) { // It's an edit of an existing item
       if (onEditItem) {
-        onEditItem({ ...newItem, id: editingItem.id });
+        onEditItem({ ...editingItem, ...newItem });
       } else {
-        setData(data.map((item) => (item.id === editingItem.id ? { ...newItem, id: editingItem.id } : item)));
+        setData(data.map((item) => (item.id === editingItem.id ? { ...editingItem, ...newItem } : item)));
       }
     } else { // Truly new item (editingItem is null)
       if (onAddItem) {
@@ -188,7 +202,7 @@ export function CrudDataTable({
     <div className="container px-4 py-8 mx-auto lg:px-6">
       {!disableAdd && (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetContent onPointerDownOutside={(event) => event.preventDefault()}>
+          <SheetContent className="sm:max-w-[600px]" onPointerDownOutside={(event) => event.preventDefault()}>
             <SheetHeader>
               <SheetTitle>{editingItem && !isDuplicating ? `Edit ${entityName}` : `Add New ${entityName}`}</SheetTitle>
               <SheetDescription>
@@ -200,22 +214,29 @@ export function CrudDataTable({
                 <div key={field.name} className="grid grid-cols-1 gap-4">
                   <Label htmlFor={field.name} className="text-left">{field.label}</Label>
                   {field.type === 'textarea' ? (
-                      <Textarea
-                          id={field.name}
-                          name={field.name}
-                          defaultValue={editingItem?.[field.name] || ''}
-                          className="col-span-full"
-                          required={field.required}
-                      />
+                    <Textarea
+                      id={field.name}
+                      name={field.name}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => handleFormChange(field.name, e.target.value)}
+                      className="col-span-full"
+                      required={field.required}
+                    />
+                  ) : field.type === 'richtext' ? (
+                    <QuillRichText
+                      value={formData[field.name] || ''}
+                      onChange={(value) => handleFormChange(field.name, value)}
+                    />
                   ) : (
-                      <Input
-                          id={field.name}
-                          name={field.name}
-                          type={field.type || 'text'}
-                          defaultValue={editingItem?.[field.name] || ''}
-                          className="col-span-full"
-                          required={field.required}
-                      />
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type={field.type || 'text'}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => handleFormChange(field.name, e.target.value)}
+                      className="col-span-full"
+                      required={field.required}
+                    />
                   )}
                 </div>
               ))}

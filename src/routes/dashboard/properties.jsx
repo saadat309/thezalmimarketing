@@ -19,6 +19,8 @@ export const Route = createFileRoute('/dashboard/properties')({
 
 const formFields = [
     { name: 'title', label: 'Title', required: true },
+    { name: 'short_description', label: 'Short Description', type: 'textarea' },
+    { name: 'detail_description', label: 'Detail Description', type: 'richtext' },
     { name: 'type', label: 'Type' },
     { name: 'price', label: 'Price' },
     { name: 'status', label: 'Status' },
