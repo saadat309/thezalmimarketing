@@ -57,7 +57,7 @@ const labelVariants = [
   "discounted",
 ];
 
-export default function PropertyForm() {
+export default function PropertyForm({ initialData, onSuccess, onCancel, isDuplicating }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -68,7 +68,7 @@ export default function PropertyForm() {
   const [categories, setCategories] = useState([]);
   const [labels, setLabels] = useState([]);
   const [propertiesOptions, setPropertiesOptions] = useState([]);
-  const [dragIndex, setDragIndex] = useState(null);
+
 
   // State for dynamic lists
   const [detailDescriptions, setDetailDescriptions] = useState([]);
@@ -85,6 +85,7 @@ export default function PropertyForm() {
     control,
     setValue,
     getValues,
+    reset, // Add reset from useForm
     formState: { errors },
   } = useForm({
     resolver: zodResolver(propertyFormSchema),
@@ -123,6 +124,14 @@ export default function PropertyForm() {
       hide: false,
       template: "default",
       _new_label_variant: "secondary", // Initialize new label variant
+      // Merge initialData with defaults, ensuring specific fields have fallbacks
+      ...(initialData || {}),
+      is_file: initialData?.is_file ?? false,
+      is_furnished: initialData?.is_furnished ?? true,
+      template: initialData?.template ?? 'default',
+      vat_amount: initialData?.vat_amount ?? '0',
+      purchase_type: initialData?.purchase_type ?? 'sale',
+      property_type: initialData?.property_type ?? 'Residential',
     },
   });
 
@@ -131,7 +140,7 @@ export default function PropertyForm() {
   const is_discounted = watch("is_discounted");
   const purchase_type = watch("purchase_type");
 
-  // Fetch data on mount
+  // Fetch data on mount and initialize form with initialData
   useEffect(() => {
     // Mock data (replace with API calls)
     setCities([
@@ -174,7 +183,73 @@ export default function PropertyForm() {
       { id: "p2", name: "Property B" },
       { id: "p3", name: "Property C" },
     ]);
-  }, []);
+
+    if (initialData) {
+      // Use reset to populate form with initialData, and handle ID for duplication
+      const formDataToSet = isDuplicating ? { ...initialData, id: undefined } : initialData;
+      reset(formDataToSet);
+
+      // Initialize media states
+      if (initialData.media) {
+        setGalleryMedia(initialData.media.filter(item => item.type === 'image'));
+        setThumbnailMedia(initialData.media.filter(item => item.type === 'image' && item.isPrimary));
+        setVideoMedia(initialData.media.filter(item => item.type === 'video'));
+      } else {
+        setGalleryMedia([]);
+        setThumbnailMedia([]);
+        setVideoMedia([]);
+      }
+
+      // Initialize dynamic lists
+      setDetailDescriptions(initialData.detail_descriptions || []);
+      setFeatures(initialData.features || []);
+      // Labels are handled by react-hook-form directly now via `setValue("labels", ...)` but mock for existing labels
+      // setLabels should ideally fetch full label objects from an API based on initialData.labels (ids)
+    } else {
+      // Reset form to default empty values when adding new item
+      reset({
+        title: "",
+        short_desc: "",
+        address: "",
+        property_type: "Residential",
+        is_file: false,
+        file_type: "Affidavit",
+        purchase_type: "sale",
+        is_furnished: true,
+        beds: 0,
+        baths: 0,
+        area: 0,
+        unit: "sqft",
+        price_amount: "",
+        is_discounted: false,
+        price_original_amount: "",
+        price_period_unit: "month",
+        price_period_value: 1,
+        discount_type: "percentage",
+        discount_value: "",
+        installment_advance_amount: "",
+        installment_total_period_text: "",
+        installment_amount: "",
+        installment_display_mode: "installment",
+        vat_amount: "0",
+        category_id: "",
+        city_id: "",
+        society_id: "",
+        phase_id: "",
+        related_products: [],
+        labels: [],
+        embed_link: "",
+        hide: false,
+        template: "default",
+        _new_label_variant: "secondary",
+      });
+      setGalleryMedia([]);
+      setThumbnailMedia([]);
+      setVideoMedia([]);
+      setDetailDescriptions([]);
+      setFeatures([]);
+    }
+  }, [initialData, reset, isDuplicating]); // Add reset and isDuplicating to dependency array
 
   // Reactive watches for related properties, selected property, and labels
   const related = watch("related_products");
@@ -200,28 +275,7 @@ export default function PropertyForm() {
     setValue("related_products", updated);
   };
 
-  const onDragStart = (e, index) => {
-    setDragIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
 
-  const onDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const onDrop = (e, dropIndex) => {
-    e.preventDefault();
-    const from = dragIndex;
-    const to = dropIndex;
-    if (from === null || from === to) return;
-    const cur = getRelated();
-    const updated = [...cur];
-    const [moved] = updated.splice(from, 1);
-    updated.splice(to, 0, moved);
-    setValue("related_products", updated);
-    setDragIndex(null);
-  };
 
   const handleDragEndLabels = (event) => {
     const { active, over } = event;
@@ -251,11 +305,14 @@ export default function PropertyForm() {
   };
 
   const onSubmit = (data) => {
-    console.log("Form submitted:", data);
-    console.log("Gallery Media:", galleryMedia);
-    console.log("Thumbnail Media:", thumbnailMedia);
-    console.log("Video Media:", videoMedia);
-    // Handle form submission here - send to API
+    const combinedMedia = [...galleryMedia, ...thumbnailMedia, ...videoMedia];
+    // Ensure that if initialData exists and has an ID, it's preserved unless duplicating
+    const finalData = {
+      ...data,
+      media: combinedMedia,
+      id: (isDuplicating || !initialData) ? undefined : initialData.id, // Only keep ID if not duplicating and initialData exists
+    };
+    onSuccess(finalData);
   };
 
   // ===== DETAIL DESCRIPTIONS MANAGEMENT =====
@@ -421,72 +478,6 @@ export default function PropertyForm() {
                       {errors.property_type.message}
                     </p>
                   )}
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Related Products</Label>
-                  <div className="flex gap-2">
-                    <Select
-                      onValueChange={(value) =>
-                        setValue("_selected_property", value)
-                      }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select a product to relate" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {propertiesOptions.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      onClick={() => addRelatedProperty()}
-                    >
-                      <PlusIcon className="w-4 h-4 mr-2" /> Add Related
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    {(Array.isArray(related) ? related : [])
-                      .map((id, idx) => ({ id, idx }))
-                      .map(({ id, idx }) => {
-                        const p = propertiesOptions.find((pp) => pp.id === id);
-                        if (!p) return null;
-                        return (
-                          <div
-                            key={p.id}
-                            draggable
-                            onDragStart={(e) => onDragStart(e, idx)}
-                            onDragOver={onDragOver}
-                            onDrop={(e) => onDrop(e, idx)}
-                            className="flex items-center justify-between p-2 bg-white border rounded"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm cursor-move text-muted-foreground">
-                                ☰
-                              </span>
-                              <span className="text-sm">{p.name}</span>
-                            </div>
-                            <div>
-                              <button
-                                type="button"
-                                className="text-sm text-red-600 hover:text-red-800"
-                                onClick={() => removeRelatedProperty(p.id)}
-                                title="Remove"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
                 </div>
 
                 <Separator />
@@ -802,36 +793,6 @@ export default function PropertyForm() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Taxation Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Taxation</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vat_amount">
-                    VAT Amount (%) <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="vat_amount"
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0"
-                    {...register("vat_amount")}
-                  />
-                  {errors.vat_amount && (
-                    <p className="text-sm text-red-500">
-                      {errors.vat_amount.message}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Enter VAT percentage (0-100)
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </section>
 
           {/* ===== SECTION: RELATION & CATEGORIES ===== */}
@@ -839,7 +800,7 @@ export default function PropertyForm() {
             {/* Relation Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Relations & Categories</CardTitle>
+                <CardTitle>Relations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Relations & Categories grid */}
@@ -1436,7 +1397,7 @@ export default function PropertyForm() {
           <Button type="submit" size="lg">
             Save Property
           </Button>
-          <Button type="button" variant="outline" size="lg">
+          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
             Cancel
           </Button>
         </div>
@@ -1467,23 +1428,26 @@ function RelatedPropertyItem({ id, name, onRemove }) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className="flex items-center justify-between p-2 bg-white border rounded"
+      className="flex items-center gap-2 p-2 border rounded-lg bg-gray-50"
     >
-      <div className="flex items-center gap-3">
-        <span className="text-sm cursor-grab text-muted-foreground">☰</span>
-        <span className="text-sm">{name}</span>
-      </div>
-      <div>
-        <button
-          type="button"
-          className="text-sm text-red-600 hover:text-red-800"
-          onClick={() => onRemove(id)}
-          title="Remove"
-        >
-          ×
-        </button>
-      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="flex-shrink-0 cursor-grab"
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
+      </Button>
+      <span className="flex-1 text-sm">{name}</span>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={() => onRemove(id)}
+      >
+        <XIcon className="w-4 h-4" />
+      </Button>
     </div>
   );
 }

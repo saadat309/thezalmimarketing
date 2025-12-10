@@ -37,9 +37,24 @@ const initialRawPropertyCardVariants = [
       { label: "Rent", variant: "rent" },
       { label: "New", variant: "new" },
     ],
+    shortDescription:
+      "Affordable and comfortable student hostel room located conveniently near the university campus.",
+    detailedDescription:
+      "This cozy hostel room is perfect for students seeking a secure and conducive living environment close to their educational institution. It comes fully furnished with a bed, study desk, and wardrobe. Residents have access to shared common areas including a study lounge, cafeteria, and laundry facilities. The hostel provides 24/7 security and high-speed internet, ensuring a hassle-free student life.",
+    features: [
+      "Fully Furnished Room",
+      "Near University Campus",
+      "Shared Study Lounge",
+      "Cafeteria Access",
+      "Laundry Facilities",
+      "24/7 Security",
+      "High-Speed Internet",
+    ],
+    youtubeEmbedLink:
+      "https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1", // Example link
   },
   {
-    image: "https://images.unsplash.com/photo-1600585154340-9635eaea2667",
+    image: "/images/house-1867187_1280.jpg",
     title: "Luxury Apartment with Amenities",
     price: 180000,
     priceType: "rent",
@@ -62,6 +77,21 @@ const initialRawPropertyCardVariants = [
       { label: "Swimming Pool", variant: "featured" },
       { label: "Gym", variant: "default" },
     ],
+    shortDescription:
+      "A stunning 3-bedroom apartment offering breathtaking views and world-class amenities in the heart of Islamabad.",
+    detailedDescription:
+      "This luxurious apartment in the prestigious E-11 sector is designed for comfort and style. It features a spacious living area, modern kitchen with high-end appliances, and large balconies. Residents have exclusive access to a swimming pool, a fully-equipped gym, and dedicated parking. The building is secured with 24/7 surveillance and is conveniently located near top schools, shopping centers, and restaurants, making it an ideal home for families and professionals.",
+    features: [
+      "3 Spacious Bedrooms",
+      "Modern Kitchen",
+      "Swimming Pool Access",
+      "Fully-Equipped Gym",
+      "24/7 Security",
+      "Dedicated Parking",
+      "Close to Amenities",
+    ],
+    youtubeEmbedLink:
+      "https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1", // Example link
   },
   {
     image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d",
@@ -86,6 +116,21 @@ const initialRawPropertyCardVariants = [
       { label: "Sale", variant: "sale" },
       { label: "New", variant: "new" },
     ],
+    shortDescription:
+      "A prime commercial shop in the bustling Dolmen Mall, ideal for retail businesses seeking high foot traffic.",
+    detailedDescription:
+      "This 800 sqft commercial shop is strategically located on the ground floor of Dolmen Mall, one of Karachi's most popular shopping destinations. It offers excellent visibility and accessibility, perfect for attracting a large customer base. The mall provides ample parking, 24/7 security, and a vibrant shopping environment. This is a rare opportunity to establish your brand in a premium commercial space.",
+    features: [
+      "Prime Mall Location",
+      "High Foot Traffic",
+      "800 sqft Area",
+      "24/7 Security",
+      "Ample Parking",
+      "Modern Infrastructure",
+      "Ideal for Retail",
+    ],
+    youtubeEmbedLink:
+      "https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1", // Example link
   },
   {
     image: "https://images.unsplash.com/photo-1600566753151-384129cf4e3e",
@@ -113,9 +158,24 @@ const initialRawPropertyCardVariants = [
       { label: "Hot", variant: "hot" },
       { label: "Featured", variant: "featured" },
     ],
+    shortDescription:
+      "An exquisite beachfront villa with unobstructed ocean views, offering a serene and luxurious lifestyle.",
+    detailedDescription:
+      "Wake up to the sound of waves in this magnificent 5-bedroom villa located on the prime Sea View beach. This property boasts a private garden, a large terrace perfect for entertaining, and direct access to the beach. The interior is designed with a modern aesthetic, featuring high ceilings, large windows for natural light, and premium fittings. It's a perfect sanctuary for those seeking a tranquil escape from the city, while still being close to Karachi's finest dining and entertainment spots.",
+    features: [
+      "5 Bedrooms with Ocean View",
+      "Private Garden & Terrace",
+      "Direct Beach Access",
+      "Modern Interior Design",
+      "High-End Kitchen",
+      "Gated Community",
+      "Prime Location",
+    ],
+    youtubeEmbedLink:
+      "https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1", // Example link
   },
   {
-    image: "https://images.unsplash.com/photo-1600585154340-9635eaea2667",
+    image: "/images/architecture-5999913_1280.jpg",
     title: "6-Month Installment Plan",
     price: 75000,
     priceType: "installment",
@@ -136,6 +196,21 @@ const initialRawPropertyCardVariants = [
     is_furnished: true,
     property_type: "Residential",
     badges: [{ label: "New", variant: "new" }],
+    shortDescription:
+      "A comfortable house available on an easy 6-month installment plan in Model Town, Lahore.",
+    detailedDescription:
+      "Secure your dream home with a flexible 6-month installment plan! This beautiful 3-bedroom, 2-bath house in Model Town, Lahore, offers 1500 sqft of living space. It features a modern design, a spacious kitchen, and a private garden. Model Town is a highly sought-after area known for its peaceful environment, lush parks, and proximity to schools, hospitals, and commercial centers. This is an excellent opportunity for families looking for an affordable and convenient way to own a home.",
+    features: [
+      "3 Bedrooms",
+      "2 Bathrooms",
+      "1500 sqft Area",
+      "6-Month Installment Plan",
+      "Modern Design",
+      "Private Garden",
+      "Prime Location in Model Town",
+    ],
+    youtubeEmbedLink:
+      "https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1", // Example link
   },
   {
     title: "Affidavit File DHA Phase 7",
@@ -201,7 +276,6 @@ const initialRawPropertyCardVariants = [
     phase: "Multan",
     is_furnished: false,
   },
-
 ];
 
 const enrichedRawPropertyCardVariants = initialRawPropertyCardVariants.map((p, index) => {
@@ -287,37 +361,32 @@ const rawCategoryCardData = [
   {
     title: "Houses",
     count: 120,
-    src: "https://images.unsplash.com/photo-1570129477492-45c003edd2be",
-    filePath: "/mapsMedia/PHASE_8_Map.pdf",
+    src: "/images/house-1867187_1280.jpg",
+    filePath: null,
   },
   {
     title: "Apartments",
     count: 80,
-    src: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267",
+    src: "/images/apartments-1845884_1280.jpg",
     filePath: null,
+    titleClassName: "text-white",
   },
   {
     title: "Villas",
     count: 45,
-    src: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914",
+    src: "/images/newport-1184695_1280.jpg",
     filePath: null,
   },
   {
     title: "Commercial",
     count: 60,
-    src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3",
+    src: "/images/condominium-6377942_1280.jpg",
     filePath: null,
   },
   {
     title: "Plots",
     count: 70,
-    src: "https://images.unsplash.com/photo-1509315811345-67de0a30c7b4",
-    filePath: null,
-  },
-  {
-    title: "Land Files",
-    count: 30,
-    src: "https://images.unsplash.com/photo-1583522265352-c8402e82f8fd",
+    src: "/images/field-7808525_1280.jpg",
     filePath: null,
   },
 ];
@@ -326,7 +395,7 @@ const rawPersonalizedCardsData = [
   {
     title: "Looking for the new home?",
     description:
-      "10 new offers every day. 350 offers on site, trusted by a community of thousands of users.",
+      "Discover your ideal property from a wide selection of homes available for sale or rent. New listings added daily!",
     buttonText: "Get Started",
     buttonLink: "/properties", // Example link
     imagePath: "/house1.svg",
@@ -335,7 +404,7 @@ const rawPersonalizedCardsData = [
   {
     title: "Want to sell your home?",
     description:
-      "10 new offers every day. 350 offers on site, trusted by a community of thousands of users.",
+      "List your property with us and connect with thousands of potential buyers. Get the best value for your home with our expert guidance.",
     buttonText: "Get Started",
     buttonLink: "/contact", // Example link
     imagePath: "/house2.svg",
@@ -348,28 +417,28 @@ const rawReviewsData = [
     id: 1,
     name: "Aisha Khan",
     role: "First-time Homebuyer",
-    avatar: "https://randomuser.me/api/portraits/women/1.jpg",
+    avatar: null,
     text: "The team was incredibly supportive, guiding me through every step of the process. I found my dream home faster than I ever thought possible. Their local knowledge is unmatched.",
   },
   {
     id: 2,
     name: "Bilal Ahmed",
     role: "Property Investor",
-    avatar: "https://randomuser.me/api/portraits/men/2.jpg",
+    avatar: null,
     text: "As an investor, I need reliable data and quick turnarounds. This platform provided both. The discounted property alerts are a game-changer for my portfolio.",
   },
   {
     id: 3,
     name: "Fatima Ali",
     role: "Renting a New Apartment",
-    avatar: "https://randomuser.me/api/portraits/women/3.jpg",
+    avatar: null,
     text: "Finding a furnished apartment for rent was a breeze. The listings were detailed and accurate, which saved me a lot of time. Highly recommended for anyone new to the city.",
   },
   {
     id: 4,
     name: "Hassan Mirza",
     role: "Selling a Commercial Plot",
-    avatar: "https://randomuser.me/api/portraits/men/4.jpg",
+    avatar: null,
     text: "Their marketing strategy for my commercial plot was brilliant. We had multiple offers within a week. Professional, efficient, and results-driven.",
   },
 ];

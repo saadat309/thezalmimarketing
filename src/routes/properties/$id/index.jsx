@@ -116,7 +116,57 @@ function RouteComponent() {
               )}
             </div>
 
-            <p className="mb-6 text-lg">{property.description || "No description available."}</p>
+            {/* Short Description */}
+            {property.shortDescription && (
+              <div className="p-6 mb-6 border-l-4 rounded-r-lg bg-muted border-primary">
+                <p className="text-lg italic text-foreground/80">{property.shortDescription}</p>
+              </div>
+            )}
+
+            {/* Features Section */}
+            {property.features && property.features.length > 0 && (
+              <div className="mb-8">
+                <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Features</h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {property.features.map((feature, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-5 h-5 text-white rounded-full bg-primary">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                      </div>
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Description */}
+            {property.detailedDescription && (
+              <div className="mb-8">
+                <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Property Details</h2>
+                <div className="prose max-w-none text-foreground/90">
+                  <p>{property.detailedDescription}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* YouTube Video Section */}
+            {property.youtubeEmbedLink && (
+              <div className="mb-8">
+                <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Video Tour</h2>
+                <div className="overflow-hidden rounded-lg aspect-video">
+                  <iframe 
+                    src={property.youtubeEmbedLink}
+                    title="Property Video Tour" 
+                    frameBorder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowFullScreen
+                    className="w-full h-full"
+                  ></iframe>
+                </div>
+              </div>
+            )}
+            
           </main>
 
           {/* Right Sidebar */}

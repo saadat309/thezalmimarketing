@@ -12,7 +12,8 @@ export default function CategoryCard({
   ratio = 3 / 4,
   className = "",
   onClick = undefined,
-  filePath = null, 
+  filePath = null,
+  titleClassName = "",
 }) {
   // basic runtime validation
   if (!src) {
@@ -42,11 +43,19 @@ export default function CategoryCard({
           priority={false}
         />
 
+        {/* optional top gradient to ensure legibility on very bright images */}
+        <div
+          className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
+          style={{
+            background: "linear-gradient(180deg, rgba(0,0,0,0.6), transparent)",
+          }}
+        />
+
         {/* subtle top-left content: title + count (matches provided design) */}
         <div className="absolute left-8 top-6 ">
           <div className={"flex flex-col items-start"}>
             <div
-              className="text-3xl min-[425px]:text-2xl font-semibold leading-tight text-primary"
+              className={`text-3xl min-[425px]:text-2xl font-semibold leading-tight text-white ${titleClassName}`}
               style={{ textShadow: "0 1px 0 rgba(255,255,255,0.6)" }}
             >
               {title}
@@ -60,31 +69,27 @@ export default function CategoryCard({
           </div>
         </div>
 
-        {/* optional top gradient to ensure legibility on very bright images */}
-        <div
-          className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
-          style={{
-            background: "linear-gradient(180deg, rgba(0,0,0,0.2), transparent)",
-          }}
-        />
-
         {/* View Map Button - bottom right */}
-        {filePath && <div className="absolute z-10 bottom-4 right-4" onClick={(e) => e.stopPropagation()}>
-          <a
-            href={`${filePath}#navpanes=0&view=FitV`}
-            target="_blank"
-            rel="noopener noreferrer"
+        {filePath && (
+          <div
+            className="absolute z-10 bottom-4 right-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Button
-              variant="default"
-              size="sm"
-              className="flex items-center gap-2"
+            <a
+              href={`${filePath}#navpanes=0&view=FitV`}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <Map size={16} /> View Map
-            </Button>
-          </a>
-          </div> }
-        
+              <Button
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Map size={16} /> View Map
+              </Button>
+            </a>
+          </div>
+        )}
       </div>
     </Card>
   );

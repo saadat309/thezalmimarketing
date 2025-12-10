@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; 
 import { toast } from "sonner";
-import { MediaUpload } from '@/components/dashboard/MediaUpload'; // Import MediaUpload
+import PropertyForm from '@/components/dashboard/property-form/property-form'; // Import PropertyForm
 import { usePropertiesStore } from '@/store/propertiesStore'; // Import the store
 
 export const Route = createFileRoute('/dashboard/properties')({
@@ -16,14 +16,15 @@ export const Route = createFileRoute('/dashboard/properties')({
   },
 });
 
-const formFields = [
-    { name: 'title', label: 'Title', required: true },
-    { name: 'short_description', label: 'Short Description', type: 'textarea' },
-    { name: 'detail_description', label: 'Detail Description', type: 'richtext' },
-    { name: 'type', label: 'Type' },
-    { name: 'price', label: 'Price' },
-    { name: 'status', label: 'Status' },
-];
+// const formFields = [ // Removed as PropertyForm will handle this
+//     { name: 'title', label: 'Title', required: true },
+//     { name: 'short_description', label: 'Short Description', type: 'textarea' },
+//     { name: 'detail_description', label: 'Detail Description', type: 'richtext' },
+//     { name: 'type', label: 'Type' },
+//     { name: 'price', label: 'Price' },
+//     { name: 'status', label: 'Status' },
+// ];
+
 
 const columns = [
     {
@@ -87,35 +88,17 @@ function DashboardProperties() {
   
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
-  // Separate states for different media types
-  const [propertyImages, setPropertyImages] = useState([]);
-  const [propertyVideos, setPropertyVideos] = useState([]);
-  const [propertyDocuments, setPropertyDocuments] = useState([]);
   const [crudTableEditingItem, setCrudTableEditingItem] = React.useState(null); // State to hold editingItem from CrudDataTable
+
   const handleAddProperty = (newItem) => {
-    const combinedMedia = [...propertyImages, ...propertyVideos, ...propertyDocuments];
-    addProperty({ ...newItem, media: combinedMedia });
+    addProperty({ ...newItem });
     toast.success("Property added successfully!");
   };
 
   const handleEditProperty = (editedItem) => {
-    const combinedMedia = [...propertyImages, ...propertyVideos, ...propertyDocuments];
-    editProperty({ ...editedItem, media: combinedMedia });
+    editProperty({ ...editedItem });
     toast.success("Property updated successfully!");
   };
-
-  // Effect to initialize separate media states when editingItem changes from CrudDataTable
-  React.useEffect(() => {
-    if (crudTableEditingItem?.media) {
-      setPropertyImages(crudTableEditingItem.media.filter(item => item.type === 'image'));
-      setPropertyVideos(crudTableEditingItem.media.filter(item => item.type === 'video'));
-      setPropertyDocuments(crudTableEditingItem.media.filter(item => item.type === 'pdf' || item.type === 'file'));
-    } else {
-      setPropertyImages([]);
-      setPropertyVideos([]);
-      setPropertyDocuments([]);
-    }
-  }, [crudTableEditingItem]);
 
   const handleDeleteProperty = (id) => {
     deleteProperty(id);
@@ -183,7 +166,7 @@ function DashboardProperties() {
         onAddItem={handleAddProperty}
         onEditItem={handleEditProperty}
         columns={columns}
-        formFields={formFields}
+        FormComp={PropertyForm} // Pass the custom form component
         entityName="Property"
         handleDeleteItem={handleDeleteProperty}
         handleDeleteSelected={handleDeleteSelected}
@@ -196,35 +179,6 @@ function DashboardProperties() {
             setTableInstance(table);
         }}
         onEditingItemChange={setCrudTableEditingItem} // Pass the setter to CrudDataTable
-        customFormContent={(editingItem) => ( // editingItem is still passed to customFormContent, but useEffect now uses crudTableEditingItem
-          <>
-            <h4 className="mb-2 text-lg font-semibold col-span-full">Images</h4>
-            <MediaUpload
-                initialMedia={propertyImages}
-                onMediaChange={setPropertyImages}
-                allowedTypes={['image/*']}
-                allowMultiple={true}
-                showPrimaryOption={true}
-            />
-            <h4 className="mb-2 mt-4 text-lg font-semibold col-span-full">Video Tour</h4>
-            <MediaUpload
-                initialMedia={propertyVideos}
-                onMediaChange={setPropertyVideos}
-                allowedTypes={['video/*']}
-                allowMultiple={false} // Only one video allowed
-                maxFiles={1}
-                showPrimaryOption={true}
-            />
-            <h4 className="mb-2 mt-4 text-lg font-semibold col-span-full">Documents (PDFs)</h4>
-            <MediaUpload
-                initialMedia={propertyDocuments}
-                onMediaChange={setPropertyDocuments}
-                allowedTypes={['application/pdf']}
-                allowMultiple={true}
-                showPrimaryOption={false} // No primary option for documents
-            />
-          </>
-        )}
       />
     </div>
   );

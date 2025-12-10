@@ -5,7 +5,7 @@ import { FileDown, Expand } from "lucide-react";
 
 export default function MapCard({ title, thumb, pdfPath, description }) {
   return (
-    <Card className="group px-0 py-0 border-0 min-w-[200px] max-w-[280px] bg-muted p-1">
+    <Card className="group px-0 py-0 border-0 min-w-[200px] bg-background p-1">
       <CardContent className="flex flex-col items-start w-full gap-2 px-0">
         <div className="w-full">
           <div className="relative overflow-hidden rounded-t-lg">

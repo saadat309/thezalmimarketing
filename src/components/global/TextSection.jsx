@@ -20,7 +20,7 @@ export default function TextSection({
   maxWidth = "max-w-5xl",
   columns = 1,
   variant = "light", // New variant prop
-  borderPosition = "left", // New borderPosition prop
+  borderPosition = "none", // New borderPosition prop
 }) {
   const alignClass =
     align === "center" ? "items-center text-center" : align === "right" ? "items-end text-right" : "items-start text-left";
@@ -51,16 +51,16 @@ export default function TextSection({
   return (
     <section className={`w-full py-12 ${sectionBgClass}`}>
       <div className={`mx-auto px-4 ${maxWidth} flex flex-col gap-4 ${alignClass}`}>
-        {title && <h2 className={`text-2xl font-semibold md:text-3xl ${titleTextColorClass}`}>{title}</h2>}
+        {title && <h2 className={`text-3xl font-bold md:text-4xl ${titleTextColorClass}`}>{title}</h2>}
         {/* Updated subtitle text color */}
-        {subtitle && <p className={`text-md max-w-prose ${subtitleTextColorClass}`}>{subtitle}</p>}
+        {subtitle && <p className={`text-lg max-w-prose ${subtitleTextColorClass}`}>{subtitle}</p>}
 
         {/* If content is an array, render cards in a responsive grid (1 or 2 columns). If single, render one card */}
         {isArray ? (
           <div className={gridClass}>
             {content.map((c, i) => (
               <Card key={i} className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
-                <CardContent className="px-3 text-sm leading-relaxed text-left text-card-foreground">
+                <CardContent className="px-3 leading-relaxed text-left text-md text-card-foreground">
                   {typeof c === "string" ? <p>{c}</p> : c}
                 </CardContent>
               </Card>

@@ -13,6 +13,9 @@ export default function CardGrid({
   onViewAll = null,
   CardComponent = PropertyCard,
   maxItems = 6,
+  headingClassName = "",
+  subheadingClassName = "",
+  viewAllButtonClassName = "",
 }) {
   const visibleItems = items.slice(0, maxItems);
 
@@ -23,16 +26,18 @@ export default function CardGrid({
       <div className="max-w-[1440px] mx-auto px-4 md:px-10">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
           {heading && (
-            <h3 className="text-2xl font-semibold sm:font-bold">{heading}</h3>
+            <h3 className={`text-2xl font-semibold sm:font-bold ${headingClassName}`}>
+              {heading}
+            </h3>
           )}
           {subheading && (
-            <div className="mt-1 text-sm text-muted-foreground">
+            <div className={`mt-1 text-sm text-muted-foreground ${subheadingClassName}`}>
               {subheading}
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="grid max-w-5xl grid-cols-1 gap-4 px-4 mx-auto sm:grid-cols-2 lg:grid-cols-3 sm:px-6 lg:px-8">
           {visibleItems.map((item, idx) => (
             <div key={item.id ?? idx} className="p-1">
               <CardComponent {...item} />
@@ -43,8 +48,8 @@ export default function CardGrid({
         <div className="flex items-center justify-center mt-6">
           {showViewAll && (
             <Button
-              variant="ghost"
-              className={"shadow-md"}
+              variant="default"
+              className={`shadow-md ${viewAllButtonClassName}`}
               onClick={(e) =>
                 onViewAll ? onViewAll(e) : (window.location.href = viewAllHref)
               }

@@ -45,7 +45,8 @@ export function CrudDataTable({
   data,
   setData,
   columns,
-  formFields,
+  formFields, // Retain for backward compatibility
+  FormComp,   // New prop for custom form component
   entityName,
   disableAdd = false,
   handleDeleteItem,
@@ -67,52 +68,69 @@ export function CrudDataTable({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({}); // Retain for default form behavior
 
+  // Effect for initializing formData when using the default form
   useEffect(() => {
-    if (isSheetOpen) {
+    if (isSheetOpen && !FormComp) { // Only run if sheet is open AND no custom form is provided
       const initialData = formFields.reduce((acc, field) => {
         acc[field.name] = editingItem?.[field.name] || '';
         return acc;
       }, {});
       setFormData(initialData);
-    } else {
+    } else if (!FormComp) {
       setFormData({});
     }
-  }, [isSheetOpen, editingItem, formFields]);
+  }, [isSheetOpen, editingItem, formFields, FormComp]);
 
+  const resetSheetState = useCallback(() => {
+    setIsSheetOpen(false);
+    setEditingItem(null);
+    setIsDuplicating(false);
+    onEditingItemChange?.(null);
+    setFormData({}); // Reset formData as well
+  }, [onEditingItemChange]);
+
+  const onFormSubmit = useCallback((submittedData) => {
+    const itemToProcess = { ...submittedData, changed_at: new Date().toLocaleString() };
+
+    if (isDuplicating) {
+      if (onDuplicateItem) {
+        onDuplicateItem({ ...itemToProcess, id: uuidv4() });
+      } else {
+        setData((current) => [...current, { ...itemToProcess, id: uuidv4() }]);
+      }
+    } else if (editingItem) {
+      if (onEditItem) {
+        onEditItem({ ...editingItem, ...itemToProcess });
+      } else {
+        setData((current) =>
+          current.map((item) => (item.id === editingItem.id ? { ...editingItem, ...itemToProcess } : item))
+        );
+      }
+    } else {
+      if (onAddItem) {
+        onAddItem({ ...itemToProcess, id: uuidv4() });
+      } else {
+        setData((current) => [...current, { ...itemToProcess, id: uuidv4() }]);
+      }
+    }
+    resetSheetState();
+  }, [isDuplicating, onDuplicateItem, setData, editingItem, onEditItem, onAddItem, resetSheetState]);
+
+
+  const onFormCancel = useCallback(() => {
+    resetSheetState();
+  }, [resetSheetState]);
+
+  // Handle form change for default form
   const handleFormChange = (fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleAddEditItem = (e) => {
+  const handleDefaultFormSubmit = (e) => {
     e.preventDefault();
-    const newItem = { ...formData };
-    newItem.changed_at = new Date().toLocaleString(); // Update changed_at on add/edit
-
-    if (isDuplicating) {
-      if (onDuplicateItem) {
-        onDuplicateItem({ ...newItem, id: uuidv4() });
-      } else {
-        setData([...data, { ...newItem, id: uuidv4() }]);
-      }
-    } else if (editingItem) { // It's an edit of an existing item
-      if (onEditItem) {
-        onEditItem({ ...editingItem, ...newItem });
-      } else {
-        setData(data.map((item) => (item.id === editingItem.id ? { ...editingItem, ...newItem } : item)));
-      }
-    } else { // Truly new item (editingItem is null)
-      if (onAddItem) {
-        onAddItem({ ...newItem, id: uuidv4() });
-      } else {
-        setData([...data, { ...newItem, id: uuidv4() }]);
-      }
-    }
-    setIsSheetOpen(false);
-    setEditingItem(null);
-    setIsDuplicating(false);
-    onEditingItemChange?.(null); // Notify parent that editing is complete/reset
+    onFormSubmit(formData);
   };
 
   const actualHandleDeleteItem = handleDeleteItem || ((id) => {
@@ -216,48 +234,58 @@ export function CrudDataTable({
                 {editingItem && !isDuplicating ? `Make changes to your ${entityName.toLowerCase()} here.` : `Add a new ${entityName.toLowerCase()} to your list.`}
               </SheetDescription>
             </SheetHeader>
-            <form onSubmit={handleAddEditItem} className="grid grid-cols-1 gap-4 py-4">
-              {formFields.map((field) => (
-                <div key={field.name} className="grid grid-cols-1 gap-4">
-                  <Label htmlFor={field.name} className="text-left">{field.label}</Label>
-                  {field.type === 'textarea' ? (
-                    <Textarea
-                      id={field.name}
-                      name={field.name}
-                      value={formData[field.name] || ''}
-                      onChange={(e) => handleFormChange(field.name, e.target.value)}
-                      className="col-span-full"
-                      required={field.required}
-                    />
-                  ) : field.type === 'richtext' ? (
-                    <QuillRichText
-                      value={formData[field.name] || ''}
-                      onChange={(value) => handleFormChange(field.name, value)}
-                    />
-                  ) : (
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type={field.type || 'text'}
-                      value={formData[field.name] || ''}
-                      onChange={(e) => handleFormChange(field.name, e.target.value)}
-                      className="col-span-full"
-                      required={field.required}
-                    />
-                  )}
-                </div>
-              ))}
-              {customFormContent && (
-                <div className="col-span-full">
-                  {customFormContent(editingItem)}
-                </div>
-              )}
-              <SheetFooter>
-                <SheetClose asChild>
-                  <Button type="submit">{editingItem ? 'Save changes' : `Add ${entityName}`}</Button>
-                </SheetClose>
-              </SheetFooter>
-            </form>
+
+            {FormComp ? (
+              <FormComp
+                initialData={editingItem}
+                onSuccess={onFormSubmit}
+                onCancel={onFormCancel}
+                isDuplicating={isDuplicating}
+              />
+            ) : (
+              <form onSubmit={handleDefaultFormSubmit} className="grid grid-cols-1 gap-4 py-4">
+                {formFields.map((field) => (
+                  <div key={field.name} className="grid grid-cols-1 gap-4">
+                    <Label htmlFor={field.name} className="text-left">{field.label}</Label>
+                    {field.type === 'textarea' ? (
+                      <Textarea
+                        id={field.name}
+                        name={field.name}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => handleFormChange(field.name, e.target.value)}
+                        className="col-span-full"
+                        required={field.required}
+                      />
+                    ) : field.type === 'richtext' ? (
+                      <QuillRichText
+                        value={formData[field.name] || ''}
+                        onChange={(value) => handleFormChange(field.name, value)}
+                      />
+                    ) : (
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        type={field.type || 'text'}
+                        value={formData[field.name] || ''}
+                        onChange={(e) => handleFormChange(field.name, e.target.value)}
+                        className="col-span-full"
+                        required={field.required}
+                      />
+                    )}
+                  </div>
+                ))}
+                {customFormContent && (
+                  <div className="col-span-full">
+                    {customFormContent(editingItem)}
+                  </div>
+                )}
+                <SheetFooter>
+                  <SheetClose asChild>
+                    <Button type="submit">{editingItem ? 'Save changes' : `Add ${entityName}`}</Button>
+                  </SheetClose>
+                </SheetFooter>
+              </form>
+            )}
           </SheetContent>
         </Sheet>
       )}

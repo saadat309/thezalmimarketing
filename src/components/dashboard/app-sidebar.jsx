@@ -15,7 +15,7 @@ import {
   User,
   UsersIcon,
 } from "lucide-react";
-
+import { useSidebar } from "@/components/ui/sidebar"; 
 import { NavUser } from "@/components/dashboard/nav-user";
 import {
   Sidebar,
@@ -27,8 +27,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { MdOutlineRealEstateAgent } from "react-icons/md";
-import { useQueriesStore } from "@/store/queriesStore"; // Import the store
-import { Badge } from "@/components/ui/badge"; // Assuming a Badge component exists
+import { useQueriesStore } from "@/store/queriesStore"; 
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   {
@@ -108,8 +108,6 @@ const data = {
     avatar: "https://github.com/shadcn.png",
   },
 };
-
-import { useSidebar } from "@/components/ui/sidebar"; // Import useSidebar
 
 export function AppSidebar({ ...props }) {
   const location = useLocation();

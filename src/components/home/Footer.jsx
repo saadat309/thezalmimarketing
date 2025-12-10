@@ -1,59 +1,42 @@
 import { Link } from '@tanstack/react-router';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
-import { Building, Mail, Phone } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
-
-const formSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
-});
+import { FaFacebook, FaTiktok, FaYoutube, FaWhatsapp } from 'react-icons/fa';
+import { Building, Mail, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Footer = () => {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
-  function onSubmit(values) {
-    console.log(values);
-    // Handle form submission
-  }
-
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Branding Section */}
           <div className="space-y-4 lg:col-span-4">
-            <h2 className="text-3xl font-bold tracking-tight">The Zalmi Marketing</h2>
+            <img
+              src="/Zalmi Marketing Logo White.webp"
+              alt="The Zalmi Marketing Logo"
+              className="h-10 sm:h-12 md:h-14 w-auto object-contain"
+            />
             <p className="max-w-sm text-primary-foreground/80">
               Your trusted partner in finding the perfect property. We are dedicated to providing the best real estate services and opportunities.
             </p>
             <div className="flex mt-4 space-x-4">
               <Button variant="ghost" size="icon" className={"hover:hover:bg-transparent"} asChild>
-                <a href="#" aria-label="Facebook" className="transition-colors hover:text-secondary">
+                <a href="https://www.facebook.com/share/182ygLHmct/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="transition-colors hover:text-secondary">
                   <FaFacebook />
                 </a>
               </Button>
               <Button variant="ghost" className={"hover:hover:bg-transparent"} size="icon" asChild>
-                <a href="#" aria-label="Twitter" className="transition-colors hover:text-secondary">
-                  <FaTwitter />
+                <a href="https://www.tiktok.com/@thezalmimarketingdha?_r=1&_t=ZS-922kJzik3lf" target="_blank" rel="noopener noreferrer" aria-label="Tiktok" className="transition-colors hover:text-secondary">
+                  <FaTiktok />
                 </a>
               </Button>
               <Button variant="ghost" size="icon" className={"hover:bg-transparent"} asChild>
-                <a href="#" aria-label="Instagram" className="transition-colors hover:text-secondary">
-                  <FaInstagram />
+                <a href="https://youtube.com/@thezalmimarketing?si=vDrnNAQ9pl9y1DU_" target="_blank" rel="noopener noreferrer" aria-label="Youtube" className="transition-colors hover:text-secondary">
+                  <FaYoutube />
                 </a>
               </Button>
               <Button variant="ghost" size="icon" className={"hover:bg-transparent"} asChild>
-                <a href="#" aria-label="LinkedIn" className="transition-colors hover:text-secondary">
-                  <FaLinkedin />
+                <a href="https://wa.me/923218446496" target="_blank" rel="noopener noreferrer" aria-label="Whatsapp" className="transition-colors hover:text-secondary">
+                  <FaWhatsapp />
                 </a>
               </Button>
             </div>
@@ -76,43 +59,19 @@ const Footer = () => {
               <ul className="mt-4 space-y-3">
                  <li className="flex items-start">
                     <Building className="w-5 h-5 mt-1 mr-3 shrink-0" />
-                    <span className="text-primary-foreground/80">123 Real Estate Avenue, DHA Phase 6, Lahore, Pakistan</span>
+                    <a href="https://maps.app.goo.gl/XdCCsuZ3zNnswVko6?g_st=aw" target="_blank" rel="noopener noreferrer" className="transition-colors text-primary-foreground/80 hover:text-secondary">67MB Commercial, 2nd Floor, Phase 6, DHA Lahore, Pakistan</a>
                 </li>
                 <li className="flex items-center">
                     <Phone className="w-5 h-5 mr-3 shrink-0" />
-                    <a href="tel:+1234567890" className="transition-colors text-primary-foreground/80 hover:text-secondary">(123) 456-7890</a>
+                    <a href="tel:+923218446496" className="transition-colors text-primary-foreground/80 hover:text-secondary">+92 321 8446496</a>
                 </li>
                 <li className="flex items-center">
                     <Mail className="w-5 h-5 mr-3 shrink-0" />
-                     <a href="mailto:info@zalmimarketing.com" className="transition-colors text-primary-foreground/80 hover:text-secondary">info@zalmimarketing.com</a>
+                     <a href="mailto:thezalmimarkettingsajidmahmood@gmail.com" className="transition-colors text-primary-foreground/80 hover:text-secondary break-all">thezalmimarkettingsajidmahmood@gmail.com</a>
                 </li>
               </ul>
             </div>
 
-            {/* In the image, there's no fourth column for links, but a "Subscribe" section. I will add it. */}
-             <div>
-                <h3 className="text-lg font-semibold tracking-wider uppercase">Newsletter</h3>
-                <p className="mt-4 text-primary-foreground/80">Stay updated with our latest properties and news.</p>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-2 mt-4 sm:flex-row">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem className="w-full">
-                                    <FormControl>
-                                        <Input type="email" placeholder="Enter your email" {...field} className="border-transparent bg-primary-foreground/10 focus-visible:ring-secondary text-primary-foreground placeholder:text-primary-foreground/50" />
-                                    </FormControl>
-                                    <FormMessage className="text-destructive" />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit" variant="secondary">
-                            Subscribe
-                        </Button>
-                    </form>
-                </Form>
-            </div>
           </div>
         </div>
 
