@@ -19,19 +19,18 @@ export const Route = createFileRoute("/files/")({
 
 function RouteComponent() {
   const fileProperties = Route.useLoaderData();
-  const { image, categoryName } = Route.useSearch();
 
   return (
     <div>
       <GlobalHero
-        image={image || "/public/lahore-city-pic.webp"}
+        image={"/images/real-estate-6688945_1280.jpg"}
         overlay
+        height="60vh"
       >
         <div className="flex flex-col items-center justify-center">
-          <h1 className="px-4 py-4 mx-auto text-4xl text-center text-white">
+          <h1 className="px-4 py-4 mx-auto text-4xl font-extrabold text-center text-white pt-18">
             Explore Files
           </h1>
-          {categoryName && <Badge variant="secondary" className="text-lg">{categoryName}</Badge>}
         </div>
       </GlobalHero>
       <div className="container py-8 mx-auto">

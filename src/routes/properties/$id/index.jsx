@@ -1,6 +1,19 @@
 import { createFileRoute, notFound, Link } from '@tanstack/react-router'
 import { GlobalHero } from '@/components/global/GlobalHero'
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { toast } from "sonner";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
 import SmartImage from '@/components/global/SmartImage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,7 +70,7 @@ function RouteComponent() {
     .slice(0, 4);
 
   return (
-    <div>
+    <div className="max-w-[1440px] mx-auto">
       <GlobalHero
         image={property.image}
         overlay={true}
@@ -74,7 +87,7 @@ function RouteComponent() {
         </div>
         
       </GlobalHero>
-      <div className="container py-8 mx-auto">
+      <div className="px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Main Content */}
           <main className="lg:col-span-3">
@@ -249,29 +262,101 @@ function RouteComponent() {
   )
 }
 
+
+
+
 function ContactForm({ propertyTitle, className }) {
+  const formSchema = z.object({
+    name: z.string().min(2, {
+      message: "Name must be at least 2 characters.",
+    }),
+    email: z.string().email({
+      message: "Please enter a valid email address.",
+    }),
+    phone: z.string().min(10, {
+      message: "Phone number must be at least 10 digits.",
+    }),
+    message: z.string().min(10, {
+      message: "Message must be at least 10 characters.",
+    }),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      message: `I'm interested in "${propertyTitle}"...`,
+    },
+  });
+
+  function onSubmit(values) {
+    console.log(values);
+    toast.success("Your message has been sent successfully!");
+    form.reset();
+  }
+
   return (
-    <form className={`space-y-4 ${className}`}>
-        <div>
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" placeholder="Your Name" />
-        </div>
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="Your Email" />
-        </div>
-        <div>
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" type="tel" placeholder="Your Phone" />
-        </div>
-        <div>
-          <Label htmlFor="message">Message</Label>
-          <Textarea
-            id="message"
-            placeholder={`I'm interested in "${propertyTitle}"...`}
-          />
-        </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-4 ${className}`}>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Your Name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="Your Email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input type="tel" placeholder="Your Phone" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder={`I'm interested in "${propertyTitle}"...`}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit" className="w-full">Send Message</Button>
-    </form>
+      </form>
+    </Form>
   );
 }

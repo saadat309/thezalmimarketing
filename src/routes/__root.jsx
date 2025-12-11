@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Outlet, createRootRoute, useLocation } from '@tanstack/react-router'
 import Navbar from '@/components/home/Navbar'
 import Footer from '@/components/home/Footer'
+import { Toaster } from "@/components/ui/sonner"
 
 
 export const Route = createRootRoute({
@@ -23,6 +24,7 @@ function RootComponent() {
       {!isAuthRoute && <Navbar/>}
       <Outlet />
       {!isAuthRoute && <Footer/>}
+      <Toaster />
     </div>
       
     </React.Fragment>

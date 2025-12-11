@@ -23,19 +23,22 @@ function RouteComponent() {
 
   return (
     <div>
-      <GlobalHero
-        image="/images/architecture-5999913_1280.jpg"
-        overlay
-      >
-        <h1 className="px-4 py-4 mx-auto text-4xl text-center text-white">
+      <GlobalHero image="/images/architecture-5999913_1280.jpg" overlay height="60vh">
+        <h1 className="px-4 py-4 pt-24 mx-auto text-4xl font-extrabold text-center text-white break-all sm:text-5xl lg:text-6xl">
           All Maps
         </h1>
       </GlobalHero>
-      <div className="flex flex-row flex-wrap justify-center gap-4 px-6 py-4">
-        {maps.map((item) => ( // Use fetched maps
-          <MapCard key={item.id} {...item} /> // Use item.id for key
-        ))}
-      </div>
+      <div className="container py-8 mx-auto">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+        {maps.map(
+          (
+            item // Use fetched maps
+          ) => (
+            <MapCard key={item.id} {...item} /> // Use item.id for key
+          )
+        )}
+        </div>
+      </div>  
     </div>
   );
 }

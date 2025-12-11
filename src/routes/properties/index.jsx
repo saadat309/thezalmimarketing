@@ -29,19 +29,24 @@ function RouteComponent() {
   return (
     <div>
       <GlobalHero
-        image={image || "/images/real-estate-6688945_1280.jpg"}
+        image={image || "/images/apartments-1845884_1280.jpg"}
         overlay
+        height="60vh"
       >
         <div className="flex flex-col items-center justify-center">
-          <h1 className="px-4 py-4 mx-auto text-4xl text-center text-white">
+          <h1 className="px-4 py-4 pt-24 mx-auto text-4xl font-extrabold text-center text-white break-all sm:text-5xl lg:text-6xl">
             Explore Properties
           </h1>
-          {categoryName && <Badge variant="secondary" className="text-lg">{categoryName}</Badge>}
+          {categoryName && (
+            <Badge variant="secondary" className="text-lg">
+              {categoryName}
+            </Badge>
+          )}
         </div>
       </GlobalHero>
       <div className="container py-8 mx-auto">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {properties.map((property) => (
+          {properties.map((property) =>
             property.is_file ? (
               <div key={property.id}>
                 <PropertyCard {...property} />
@@ -51,7 +56,7 @@ function RouteComponent() {
                 <PropertyCard {...property} />
               </Link>
             )
-          ))}
+          )}
         </div>
       </div>
     </div>

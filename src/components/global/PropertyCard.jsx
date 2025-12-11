@@ -22,8 +22,8 @@ import {
 import { FaPhone, FaWhatsapp } from "react-icons/fa";
 import SmartImage from "@/components/global/SmartImage";
 
-const DEFAULT_PHONE_NUMBER = "+923145982936"; // Fallback phone number
-const DEFAULT_WHATSAPP_NUMBER = "923145982936"; // Fallback WhatsApp number (without +)
+const DEFAULT_PHONE_NUMBER = "+923218446496"; // Fallback phone number
+const DEFAULT_WHATSAPP_NUMBER = "923218446496"; // Fallback WhatsApp number (without +)
 
 function PropertyCard(props) {
   const {

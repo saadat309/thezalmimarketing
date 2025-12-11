@@ -7,10 +7,9 @@ import React, { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, ChevronDown } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetFooter, SheetTrigger } from "@/components/ui/sheet";
 import { FaWhatsapp } from "react-icons/fa";
-import { MdOutlineRealEstateAgent } from "react-icons/md";
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   // State to control the mobile sheet's open/close state
@@ -35,28 +34,31 @@ export default function Navbar() {
 
   return (
     <>
-
-
-      <header className="fixed top-0 z-50 w-full bg-transparent" style={{ top: scrolled ? 0 : `${gap}px`, transition: "top 100ms ease" }}>
+      <header
+        className="fixed top-0 z-50 w-full bg-transparent"
+        style={{ top: scrolled ? 0 : `${gap}px`, transition: "top 100ms ease" }}
+      >
         <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-          <div className={`rounded-full bg-card shadow-md transition-transform duration-100 ${scrolled ? "translate-y-0" : "translate-y-0"}`}>
+          <div
+            className={`rounded-full bg-primary shadow-md transition-transform duration-100 ${scrolled ? "translate-y-0" : "translate-y-0"}`}
+          >
             <nav className="flex items-center justify-between w-full px-4 py-2">
               <Link to="/" className="flex items-center gap-1">
                 <img
-                  src="/Zalmi Marketing Logo Black.webp"
+                  src="/Zalmi Marketing Logo White.webp"
                   alt="The Zalmi Marketing Logo"
-                  className="h-8 sm:h-10 md:h-12 w-auto object-contain"
+                  className="object-contain w-auto h-10 sm:h-12 md:h-14"
                 />
               </Link>
 
-             
               <ul className="items-center hidden gap-4 text-sm md:flex md:gap-4 lg:gap-6 md:text-base nav-list">
                 <li>
-
                   <Link
                     to="/"
-                    className="nav-link font-base text-muted-foreground"
-                    activeProps={{ className: "nav-link active text-primary font-bold" }}
+                    className="nav-link text-primary-foreground"
+                    activeProps={{
+                      className: "nav-link active text-white font-bold",
+                    }}
                   >
                     Home
                   </Link>
@@ -64,8 +66,10 @@ export default function Navbar() {
                 <li>
                   <Link
                     to="/properties"
-                    className="nav-link font-base text-muted-foreground"
-                    activeProps={{ className: "nav-link active text-primary font-bold" }}
+                    className="nav-link text-primary-foreground"
+                    activeProps={{
+                      className: "nav-link active text-white font-bold",
+                    }}
                   >
                     Properties
                   </Link>
@@ -73,8 +77,10 @@ export default function Navbar() {
                 <li>
                   <Link
                     to="/maps"
-                    className="nav-link font-base text-muted-foreground"
-                    activeProps={{ className: "nav-link active text-primary font-bold" }}
+                    className="nav-link text-primary-foreground"
+                    activeProps={{
+                      className: "nav-link active text-white font-bold",
+                    }}
                   >
                     Maps
                   </Link>
@@ -82,28 +88,40 @@ export default function Navbar() {
                 <li>
                   <Link
                     to="/files"
-                    className="nav-link font-base text-muted-foreground"
-                    activeProps={{ className: "nav-link active text-primary font-bold" }}
+                    className="nav-link text-primary-foreground"
+                    activeProps={{
+                      className: "nav-link active text-white font-bold",
+                    }}
                   >
                     Files
                   </Link>
                 </li>
                 <li
+                  className="lg:hidden"
                   onMouseEnter={() => setIsDropdownOpen(true)}
                   onMouseLeave={() => setIsDropdownOpen(false)}
                 >
-                  <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
+                  <DropdownMenu
+                    open={isDropdownOpen}
+                    onOpenChange={setIsDropdownOpen}
+                    modal={false}
+                  >
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="flex flex-row items-center gap-1 px-0 py-0 nav-link text-muted-foreground hover:bg-transparent">
+                      <Button
+                        variant="ghost"
+                        className="flex flex-row items-center gap-1 px-0 py-0 nav-link text-primary-foreground hover:bg-transparent active:text-white text-white data-[state=open]:text-white"
+                      >
                         More
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-card">
+                    <DropdownMenuContent className="bg-primary">
                       <DropdownMenuItem>
                         <Link
                           to="/about"
-                          className="w-full nav-link font-base text-muted-foreground"
-                          activeProps={{ className: "nav-link active text-primary font-bold" }}
+                          className="w-full nav-link text-primary-foreground custom-dropdown-item"
+                          activeProps={{
+                            className: "nav-link active text-white font-bold",
+                          }}
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           About
@@ -112,8 +130,10 @@ export default function Navbar() {
                       <DropdownMenuItem>
                         <Link
                           to="/contact"
-                          className="w-full nav-link font-base text-muted-foreground"
-                          activeProps={{ className: "nav-link active text-primary font-bold" }}
+                          className="w-full nav-link text-primary-foreground custom-dropdown-item"
+                          activeProps={{
+                            className: "nav-link active text-white font-bold",
+                          }}
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           Contact
@@ -122,24 +142,55 @@ export default function Navbar() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </li>
+                <li className="hidden lg:block">
+                    <Link
+                        to="/about"
+                        className="nav-link text-primary-foreground"
+                        activeProps={{
+                        className: "nav-link active text-white font-bold",
+                        }}
+                    >
+                        About
+                    </Link>
+                </li>
+                <li className="hidden lg:block">
+                    <Link
+                        to="/contact"
+                        className="nav-link text-primary-foreground"
+                        activeProps={{
+                        className: "nav-link active text-white font-bold",
+                        }}
+                    >
+                        Contact
+                    </Link>
+                </li>
               </ul>
 
               <div className="flex items-center gap-2">
                 {/* Add open and onOpenChange props to Sheet */}
                 <Sheet open={isOpen} onOpenChange={setIsOpen}>
                   <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="p-2 rounded-xl md:hidden" aria-label="Open menu">
-                      <Menu style={{ width: 30, height: 30 }} />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="p-2 rounded-xl md:hidden"
+                      aria-label="Open menu"
+                    >
+                      <Menu style={{ width: 30, height: 30, color: "white" }} />
                     </Button>
                   </SheetTrigger>
 
-                  <SheetContent position="right" className="w-[280px] p-6">
+                  <SheetContent
+                    position="right"
+                    className="w-[280px] p-6 bg-primary"
+                  >
                     <nav className="flex flex-col gap-4 mt-2">
-
                       <Link
                         to="/"
-                        className="py-2 nav-link font-base text-muted-foreground w-fit"
-                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        className="py-2 nav-link text-primary-foreground w-fit"
+                        activeProps={{
+                          className: "nav-link active text-white font-bold",
+                        }}
                         // Close sheet on link click
                         onClick={() => setIsOpen(false)}
                       >
@@ -147,8 +198,10 @@ export default function Navbar() {
                       </Link>
                       <Link
                         to="/properties"
-                        className="py-2 nav-link font-base text-muted-foreground w-fit"
-                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        className="py-2 nav-link text-primary-foreground w-fit"
+                        activeProps={{
+                          className: "nav-link active text-white font-bold",
+                        }}
                         // Close sheet on link click
                         onClick={() => setIsOpen(false)}
                       >
@@ -156,8 +209,10 @@ export default function Navbar() {
                       </Link>
                       <Link
                         to="/maps"
-                        className="py-2 nav-link font-base text-muted-foreground w-fit"
-                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        className="py-2 nav-link text-primary-foreground w-fit"
+                        activeProps={{
+                          className: "nav-link active text-white font-bold",
+                        }}
                         // Close sheet on link click
                         onClick={() => setIsOpen(false)}
                       >
@@ -165,8 +220,10 @@ export default function Navbar() {
                       </Link>
                       <Link
                         to="/files"
-                        className="py-2 nav-link font-base text-muted-foreground w-fit"
-                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        className="py-2 nav-link text-primary-foreground w-fit"
+                        activeProps={{
+                          className: "nav-link active text-white font-bold",
+                        }}
                         // Close sheet on link click
                         onClick={() => setIsOpen(false)}
                       >
@@ -174,8 +231,10 @@ export default function Navbar() {
                       </Link>
                       <Link
                         to="/about"
-                        className="py-2 nav-link font-base text-muted-foreground w-fit" 
-                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        className="py-2 nav-link text-primary-foreground w-fit"
+                        activeProps={{
+                          className: "nav-link active text-white font-bold",
+                        }}
                         // Close sheet on link click
                         onClick={() => setIsOpen(false)}
                       >
@@ -184,24 +243,33 @@ export default function Navbar() {
 
                       <Link
                         to="/contact"
-                        className="py-2 nav-link font-base text-muted-foreground w-fit"
-                        activeProps={{ className: "nav-link active text-primary font-bold" }}
+                        className="py-2 nav-link text-primary-foreground w-fit"
+                        activeProps={{
+                          className: "nav-link active text-white font-bold",
+                        }}
                         // Close sheet on link click
                         onClick={() => setIsOpen(false)}
                       >
                         Contact
                       </Link>
-
                     </nav>
 
                     <SheetFooter>
                       <Button asChild className="w-full mt-6">
-                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                          
-                            <FaWhatsapp className="text-green-500" style={{ width: 30, height: 30 }} />
-                          
-                          
-                          <span>{phoneNumber}</span>
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 group"
+                        >
+                          <FaWhatsapp
+                            className="text-green-500"
+                            style={{ width: 30, height: 30 }}
+                          />
+
+                          <span className="text-primary-foreground group-hover:text-green-500">
+                            {phoneNumber}
+                          </span>
                         </a>
                       </Button>
                     </SheetFooter>
@@ -210,11 +278,20 @@ export default function Navbar() {
 
                 <div className="hidden md:block">
                   <Button asChild variant="ghost">
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                      
-                            <FaWhatsapp className="text-green-500" style={{ width: 30, height: 30 }} />
-                          
-                      <span>{phoneNumber}</span>
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 group"
+                    >
+                      <FaWhatsapp
+                        className="text-green-500"
+                        style={{ width: 30, height: 30 }}
+                      />
+
+                      <span className="text-primary-foreground group-hover:text-green-500">
+                        {phoneNumber}
+                      </span>
                     </a>
                   </Button>
                 </div>
@@ -223,7 +300,6 @@ export default function Navbar() {
           </div>
         </div>
       </header>
-
     </>
   );
 }

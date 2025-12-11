@@ -49,7 +49,7 @@ export default function CardGrid({
           {showViewAll && (
             <Button
               variant="default"
-              className={`shadow-md ${viewAllButtonClassName}`}
+              className={`shadow-md hover:bg-muted hover:text-primary ${viewAllButtonClassName}`}
               onClick={(e) =>
                 onViewAll ? onViewAll(e) : (window.location.href = viewAllHref)
               }

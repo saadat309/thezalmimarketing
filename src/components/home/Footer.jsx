@@ -13,7 +13,7 @@ const Footer = () => {
             <img
               src="/Zalmi Marketing Logo White.webp"
               alt="The Zalmi Marketing Logo"
-              className="h-10 sm:h-12 md:h-14 w-auto object-contain"
+              className="object-contain w-auto h-10 sm:h-12 md:h-14"
             />
             <p className="max-w-sm text-primary-foreground/80">
               Your trusted partner in finding the perfect property. We are dedicated to providing the best real estate services and opportunities.
@@ -43,7 +43,7 @@ const Footer = () => {
           </div>
 
           {/* Links Section */}
-          <div className="grid grid-cols-1 gap-8 lg:col-span-8 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 lg:col-span-8 md:grid-cols-2">
             <div>
               <h3 className="text-lg font-semibold tracking-wider uppercase">Quick Links</h3>
               <ul className="mt-4 space-y-2">
@@ -51,6 +51,7 @@ const Footer = () => {
                 <li><Link to="/about" className="transition-colors text-primary-foreground/80 hover:text-secondary">About Us</Link></li>
                 <li><Link to="/properties" className="transition-colors text-primary-foreground/80 hover:text-secondary">Properties</Link></li>
                 <li><Link to="/contact" className="transition-colors text-primary-foreground/80 hover:text-secondary">Contact</Link></li>
+                <li><Link to="/privacy-policy" className="transition-colors text-primary-foreground/80 hover:text-secondary">Privacy Policy</Link></li>
               </ul>
             </div>
             
@@ -67,7 +68,7 @@ const Footer = () => {
                 </li>
                 <li className="flex items-center">
                     <Mail className="w-5 h-5 mr-3 shrink-0" />
-                     <a href="mailto:thezalmimarkettingsajidmahmood@gmail.com" className="transition-colors text-primary-foreground/80 hover:text-secondary break-all">thezalmimarkettingsajidmahmood@gmail.com</a>
+                     <a href="mailto:thezalmimarkettingsajidmahmood@gmail.com" className="break-all transition-colors text-primary-foreground/80 hover:text-secondary">thezalmimarkettingsajidmahmood@gmail.com</a>
                 </li>
               </ul>
             </div>

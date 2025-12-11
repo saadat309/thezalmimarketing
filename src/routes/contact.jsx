@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlobalHero } from "@/components/global/GlobalHero";
-import { useState } from "react";
 import { User, Phone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,14 +8,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { FaFacebook, FaTiktok, FaYoutube, FaWhatsapp } from "react-icons/fa";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { toast } from "sonner";
 
-export const Route = createFileRoute("/contact")({
-  component: RouteComponent,
-});
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+export const Route = createFileRoute("/contact")({ component: RouteComponent, });
 
 function RouteComponent() {
-
-
   return (
     <div>
       <GlobalHero
@@ -24,7 +32,7 @@ function RouteComponent() {
         overlay
         height="60vh"
       >
-        <h1 className="px-4 py-4 pt-24 mx-auto text-4xl font-extrabold text-center text-white sm:text-5xl lg:text-6xl break-all">
+        <h1 className="px-4 py-4 pt-24 mx-auto text-4xl font-extrabold text-center text-white break-all sm:text-5xl lg:text-6xl">
           Contact Us
         </h1>
       </GlobalHero>
@@ -33,35 +41,46 @@ function RouteComponent() {
   );
 }
 
+const formSchema = z.object({
+  firstName: z.string().min(2, {
+    message: "First name must be at least 2 characters.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Last name must be at least 2 characters.",
+  }),
+  phone: z.string().min(10, {
+    message: "Phone number must be at least 10 digits.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  message: z.string().min(10, {
+    message: "Message must be at least 10 characters.",
+  }),
+  agreedToPrivacy: z.boolean().refine((val) => val === true, {
+    message: "You must agree to the privacy policy.",
+  }),
+});
+
+
 function Contact() {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-    message: "",
-    agreedToPrivacy: false,
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // Reset form
-    setFormData({
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
       firstName: "",
       lastName: "",
       phone: "",
       email: "",
       message: "",
       agreedToPrivacy: false,
-    });
-  };
+    },
+  });
 
-  const handleChange = function (field, value) {
-    setFormData(function (prev) {
-      return { ...prev, [field]: value };
-    });
-  };
+  function onSubmit(values) {
+    console.log(values);
+    toast.success("Your inquiry has been sent successfully!");
+    form.reset();
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,7 +98,7 @@ function Contact() {
           </div>
 
           {/* Left Column - Form (now second in source order for mobile-first) */}
-          <div className="space-y-8 order-2 lg:order-1">
+          <div className="order-2 space-y-8 lg:order-1">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold leading-tight text-foreground lg:text-4xl">
                 Get In Touch About
@@ -91,82 +110,138 @@ function Contact() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="relative">
-                  <User className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
-                  <Input
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    className="h-12 pl-10 border-border bg-card"
-                    required
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
+                            <Input
+                              placeholder="First Name"
+                              {...field}
+                              className="h-12 pl-10 border-border bg-card"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
+                            <Input
+                              placeholder="Last Name"
+                              {...field}
+                              className="h-12 pl-10 border-border bg-card"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="relative">
-                  <User className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
-                  <Input
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    className="h-12 pl-10 border-border bg-card"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="relative">
-                <Phone className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
-                <Input
-                  placeholder="Phone No"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleChange("phone", e.target.value)}
-                  className="h-12 pl-10 border-border bg-card"
-                  required
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <Phone className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
+                          <Input
+                            placeholder="Phone No"
+                            type="tel"
+                            {...field}
+                            className="h-12 pl-10 border-border bg-card"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="relative">
-                <Mail className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
-                <Input
-                  placeholder="Email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className="h-12 pl-10 border-border bg-card"
-                  required
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="absolute w-5 h-5 text-muted-foreground top-3 left-3" />
+                          <Input
+                            placeholder="Email"
+                            type="email"
+                            {...field}
+                            className="h-12 pl-10 border-border bg-card"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div>
-                <Textarea
-                  placeholder="Your message (e.g. property type, location, budget, or any questions)"
-                  value={formData.message}
-                  onChange={(e) => handleChange("message", e.target.value)}
-                  className="resize-none border-border bg-card min-h-32"
-                  required
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Your message (e.g. property type, location, budget, or any questions)"
+                          {...field}
+                          className="resize-none border-border bg-card min-h-32"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="privacy"
-                  checked={formData.agreedToPrivacy}
-                  onCheckedChange={(checked) => handleChange("agreedToPrivacy", checked)}
+                <FormField
+                  control={form.control}
+                  name="agreedToPrivacy"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          I have read and agree to the{" "}
+                          <Link to="/privacy-policy" className="underline">
+                            privacy policy
+                          </Link>
+                        </FormLabel>
+                      </div>
+                       <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <label htmlFor="privacy" className="text-sm leading-relaxed text-muted-foreground">
-                  I have read and agree to the{" "}
-                  <Link href="#" className="underline">
-                    privacy policy
-                  </Link>
-                </label>
-              </div>
+                
 
-              <Button type="submit" size="lg">
-                Send Your Inquiry
-              </Button>
-            </form>
+                <Button type="submit" size="lg">
+                  Send Your Inquiry
+                </Button>
+              </form>
+            </Form>
           </div>
         </div>
         <div className="mt-16">

@@ -315,7 +315,7 @@
           transition: color 160ms ease;
         }
 
-        .nav-link.active {
-          font-weight: 600; 
-          color: hsl(var(--primary));
-        }
+.custom-dropdown-item:hover {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--primary));
+}
