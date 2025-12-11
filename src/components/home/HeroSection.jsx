@@ -1,19 +1,34 @@
 import { Button } from '@/components/ui/button';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Building, Home, Warehouse } from 'lucide-react';
+import { useState } from 'react';
 
 export default function HeroSection() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery) {
+      navigate({
+        to: '/search',
+        search: { q: searchQuery },
+      });
+    }
+  };
+
   return (
     <section className="relative w-full h-screen">
       {/* background image (fills the section) */}
       <div
         className="absolute inset-0 bg-center bg-cover"
-        style={{ backgroundImage: `radial-gradient(at center, rgba(0, 0, 0, 0.3) 90%, rgba(0, 0, 0, 0.5) 100%), url('/lahore-city-pic.webp')` }}
+        style={{
+          backgroundImage: `radial-gradient(at center, rgba(0, 0, 0, 0.3) 90%, rgba(0, 0, 0, 0.5) 100%), url('/lahore-city-pic.webp')`,
+        }}
         aria-hidden
       />
-
 
       {/* content container — fills section height */}
       <div className="relative z-10 flex items-center justify-center h-full px-4 pt-18 sm:px-6">
@@ -32,33 +47,41 @@ export default function HeroSection() {
           </h1>
 
           <p className="max-w-2xl mx-auto mt-2 text-base text-white md:text-lg">
-            Search properties for sale and to rent in the UK Search properties for sale and to rent in the UK Search properties for sale and to rent in the UK
+            Search properties for sale and to rent in the Lahore and All over Pakistan.
           </p>
 
           {/* Search block */}
           <div className="w-full max-w-lg mx-auto mt-6">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Enter Name, Keywords..."
-                className="w-full p-5 pr-12 border-0 rounded-full bg-card"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute p-3 -translate-y-1/2 rounded-full right-2 top-1/2 bg-muted"
-                aria-label="search"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-            </div>
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Enter Name, Keywords..."
+                  className="w-full p-5 pr-12 border-0 rounded-full bg-card"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute p-3 -translate-y-1/2 rounded-full right-2 top-1/2 bg-muted"
+                  aria-label="search"
+                >
+                  <Search className="w-5 h-5" />
+                </Button>
+              </div>
+            </form>
           </div>
 
           {/* quick category buttons */}
           <div className="flex flex-col items-center justify-center gap-4 mt-6 md:flex-row">
             <div className="flex flex-wrap justify-center gap-2">
-              <Link to="/properties">
-                <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
+              <Link to="/properties" search={{ category: 'Villa' }}>
+                <Button
+                  variant="outline"
+                  className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm"
+                >
                   <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
                     <Home className="w-4 h-4" />
                   </div>
@@ -66,8 +89,11 @@ export default function HeroSection() {
                 </Button>
               </Link>
 
-              <Link to="/properties">
-                <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
+              <Link to="/properties" search={{ category: 'Apartment' }}>
+                <Button
+                  variant="outline"
+                  className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm"
+                >
                   <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
                     <Building className="w-4 h-4" />
                   </div>
@@ -75,8 +101,11 @@ export default function HeroSection() {
                 </Button>
               </Link>
 
-              <Link to="/properties">
-                <Button variant="outline" className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm">
+              <Link to="/properties" search={{ category: 'House' }}>
+                <Button
+                  variant="outline"
+                  className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm"
+                >
                   <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
                     <Warehouse className="w-4 h-4" />
                   </div>

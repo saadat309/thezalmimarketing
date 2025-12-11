@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { FaPhone, FaWhatsapp } from "react-icons/fa";
 import SmartImage from "@/components/global/SmartImage";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DEFAULT_PHONE_NUMBER = "+923218446496"; // Fallback phone number
 const DEFAULT_WHATSAPP_NUMBER = "923218446496"; // Fallback WhatsApp number (without +)
@@ -59,8 +60,24 @@ function PropertyCard(props) {
     phase, // Destructure phase
     societyName, // Destructure societyName
     is_furnished, // Destructure is_furnished
+    isLoading, // Add isLoading prop
   } = props;
 
+  if (isLoading) {
+    return (
+      <Card className="py-0 gap-0 overflow-hidden group shadow-sm shadow-card-foreground/30 border-0">
+        <div className="p-3">
+          <Skeleton className="relative overflow-hidden rounded-lg aspect-video" />
+        </div>
+        <CardContent className="px-3 pt-2 pb-3 space-y-2 text-left">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Normalize values between existing props and DB-schema fields
   const finalPriceType =

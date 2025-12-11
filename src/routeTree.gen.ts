@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -35,6 +36,11 @@ import { Route as authSignupRouteImport } from './routes/(auth)/signup'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as PropertiesIdIndexRouteImport } from './routes/properties/$id/index'
 
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/search': typeof SearchRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/search': typeof SearchRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
+  '/search': typeof SearchRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/privacy-policy'
+    | '/search'
     | '/login'
     | '/signup'
     | '/dashboard/categories'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/contact'
     | '/privacy-policy'
+    | '/search'
     | '/login'
     | '/signup'
     | '/dashboard/categories'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/privacy-policy'
+    | '/search'
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/dashboard/categories'
@@ -333,6 +345,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  SearchRoute: typeof SearchRoute
   authLoginRoute: typeof authLoginRoute
   authSignupRoute: typeof authSignupRoute
   FilesIndexRoute: typeof FilesIndexRoute
@@ -343,6 +356,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy-policy': {
       id: '/privacy-policy'
       path: '/privacy-policy'
@@ -565,6 +585,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRouteWithChildren,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  SearchRoute: SearchRoute,
   authLoginRoute: authLoginRoute,
   authSignupRoute: authSignupRoute,
   FilesIndexRoute: FilesIndexRoute,

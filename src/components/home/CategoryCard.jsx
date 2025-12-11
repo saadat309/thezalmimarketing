@@ -3,6 +3,7 @@ import SmartImage from "../global/SmartImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button"; // Added Button import
 import { Map } from "lucide-react"; // Import Map icon
+import { Link } from "@tanstack/react-router";
 
 export default function CategoryCard({
   title = "Category",
@@ -22,7 +23,7 @@ export default function CategoryCard({
     );
   }
 
-  return (
+  const cardContent = (
     <Card
       onClick={onClick}
       className={`overflow-hidden rounded-2xl shadow-md p-0 cursor-pointer group ${className}`}
@@ -93,4 +94,14 @@ export default function CategoryCard({
       </div>
     </Card>
   );
+
+  if (!filePath) {
+    return (
+      <Link to="/properties" search={{ category: title }}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }

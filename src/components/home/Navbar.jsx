@@ -6,9 +6,19 @@ hi, do you have access to Navbar.jsx file from the files i uploaded in this proj
 import React, { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetFooter, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { FaWhatsapp } from "react-icons/fa";
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -143,26 +153,26 @@ export default function Navbar() {
                   </DropdownMenu>
                 </li>
                 <li className="hidden lg:block">
-                    <Link
-                        to="/about"
-                        className="nav-link text-primary-foreground"
-                        activeProps={{
-                        className: "nav-link active text-white font-bold",
-                        }}
-                    >
-                        About
-                    </Link>
+                  <Link
+                    to="/about"
+                    className="nav-link text-primary-foreground"
+                    activeProps={{
+                      className: "nav-link active text-white font-bold",
+                    }}
+                  >
+                    About
+                  </Link>
                 </li>
                 <li className="hidden lg:block">
-                    <Link
-                        to="/contact"
-                        className="nav-link text-primary-foreground"
-                        activeProps={{
-                        className: "nav-link active text-white font-bold",
-                        }}
-                    >
-                        Contact
-                    </Link>
+                  <Link
+                    to="/contact"
+                    className="nav-link text-primary-foreground"
+                    activeProps={{
+                      className: "nav-link active text-white font-bold",
+                    }}
+                  >
+                    Contact
+                  </Link>
                 </li>
               </ul>
 
@@ -182,7 +192,7 @@ export default function Navbar() {
 
                   <SheetContent
                     position="right"
-                    className="w-[280px] p-6 bg-primary"
+                    className="w-[280px] p-6 bg-primary text-white"
                   >
                     <nav className="flex flex-col gap-4 mt-2">
                       <Link

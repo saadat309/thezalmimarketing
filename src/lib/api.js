@@ -324,18 +324,27 @@ const rawMapsData = [
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/PHASE_8_Map.pdf",
     description: "Detailed layout of DHA Phase 8, highlighting residential and commercial areas.",
+    city: "Lahore",
+    societyName: "DHA",
+    phase: "Phase 8",
   },
   {
     title: "Phase 9 Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "mapsMedia/PHASE 9.pdf",
     description: "Comprehensive map of DHA Phase 9, including new developments and key facilities.",
+    city: "Lahore",
+    societyName: "DHA",
+    phase: "Phase 9",
   },
   {
     title: "Phase 1 TO 5 Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "mapsMedia/PHASE 1 TO 5.pdf",
     description: "Overview map covering DHA Phases 1 to 5, showing established communities and infrastructure.",
+    city: "Lahore",
+    societyName: "DHA",
+    phase: "Phase 1-5",
   },
 
   {
@@ -343,12 +352,18 @@ const rawMapsData = [
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/PHASE 6+7.pdf",
     description: "Combined map for DHA Phases 6 and 7, indicating property divisions and amenities.",
+    city: "Lahore",
+    societyName: "DHA",
+    phase: "Phase 6-7",
   },
   {
     title: "9 Town Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/9 TOWN.pdf",
     description: "Detailed map of 9 Town, showcasing its urban planning and property distribution.",
+    city: "Lahore",
+    societyName: "9 Town",
+    phase: "N/A",
   },
 
   {
@@ -356,18 +371,27 @@ const rawMapsData = [
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "mapsMedia/IVY GREEN.pdf",
     description: "Exclusive map of IVY GREEN, highlighting its green spaces and residential plots.",
+    city: "Lahore",
+    societyName: "IVY GREEN",
+    phase: "N/A",
   },
   {
     title: "DHA COMMERCIAL Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/DHA COMMERCIAL.pdf",
     description: "Map focused on DHA's commercial zones, ideal for business and investment.",
+    city: "Lahore",
+    societyName: "DHA",
+    phase: "Commercial",
   },
   {
     title: "DHA BHAWALPUR",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/DHA BHAWALPUR.pdf",
     description: "Layout of DHA Bahawalpur, detailing residential blocks and public facilities.",
+    city: "Bahawalpur",
+    societyName: "DHA",
+    phase: "N/A",
   },
 
   {
@@ -375,43 +399,55 @@ const rawMapsData = [
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/DHA GUJRANWALA.pdf",
     description: "Master plan of DHA Gujranwala, including sector divisions and development projects.",
+    city: "Gujranwala",
+    societyName: "DHA",
+    phase: "N/A",
   },
   {
     title: "DHA MULTAN Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/DHA MULTAN.pdf",
     description: "Detailed map of DHA Multan, showcasing its modern infrastructure and diverse property options.",
+    city: "Multan",
+    societyName: "DHA",
+    phase: "Multan",
   },
   {
     title: "DHA PESHAWER Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/DHA PESHAWER.pdf",
     description: "Layout of DHA Peshawar, highlighting key residential and commercial zones.",
+    city: "Peshawar",
+    societyName: "DHA",
+    phase: "N/A",
   },
   {
     title: "DHA QUETTA Map",
     thumb: "/mapsMedia/thumbs/PHASE_8_Map.webp",
     pdfPath: "/mapsMedia/DHA QUETTA.pdf",
     description: "Comprehensive map of DHA Quetta, showing its planned development and strategic locations.",
+    city: "Quetta",
+    societyName: "DHA",
+    phase: "N/A",
   },
 ];
 
 const rawCategoryCardData = [
   {
-    title: "Houses",
+    title: "House",
     count: 120,
     src: "/images/house-1867187_1280.jpg",
     filePath: null,
   },
   {
-    title: "Apartments",
+    title: "Apartment",
     count: 80,
     src: "/images/apartments-1845884_1280.jpg",
     filePath: null,
     titleClassName: "text-white",
   },
   {
-    title: "Villas",
+    title: "Villa",
     count: 45,
     src: "/images/newport-1184695_1280.jpg",
     filePath: null,
@@ -423,7 +459,7 @@ const rawCategoryCardData = [
     filePath: null,
   },
   {
-    title: "Plots",
+    title: "Plot",
     count: 70,
     src: "/images/field-7808525_1280.jpg",
     filePath: null,
@@ -507,9 +543,104 @@ export const personalizedCardsData = rawPersonalizedCardsData;
 
 // --- API Functions ---
 
-export const fetchProperties = async () => {
+export const fetchProperties = async (filters = {}) => {
   await sleep(200); // Simulate network delay
-  return propertyCardVariants.filter(p => p.category !== "File" && !p.is_file);
+  let filteredProperties = propertyCardVariants.filter(p => p.category !== "File" && !p.is_file);
+
+  const { category, city, beds, baths, area, areaUnit, query, priceType, property_type, societyName, phase } = filters;
+
+  if (query) {
+    const lowerCaseQuery = query.toLowerCase();
+    filteredProperties = filteredProperties.filter(
+      (p) =>
+        p.title.toLowerCase().includes(lowerCaseQuery) ||
+        p.shortDescription.toLowerCase().includes(lowerCaseQuery) ||
+        p.city.toLowerCase().includes(lowerCaseQuery) ||
+        p.location.toLowerCase().includes(lowerCaseQuery) ||
+        (p.societyName && p.societyName.toLowerCase().includes(lowerCaseQuery)) ||
+        (p.phase && p.phase.toLowerCase().includes(lowerCaseQuery)) ||
+        p.badges.some(badge => badge.label.toLowerCase().includes(lowerCaseQuery))
+    );
+  }
+
+  if (category) {
+    filteredProperties = filteredProperties.filter(p => p.category === category);
+  }
+  if (city) {
+    filteredProperties = filteredProperties.filter(p => p.city === city);
+  }
+  if (beds) {
+    filteredProperties = filteredProperties.filter(p => p.beds >= parseInt(beds, 10));
+  }
+  if (baths) {
+    filteredProperties = filteredProperties.filter(p => p.baths >= parseInt(baths, 10));
+  }
+  if (area) {
+    const targetArea = parseInt(area, 10);
+    filteredProperties = filteredProperties.filter(p => {
+      // Assuming all property areas are in sqft for comparison or need conversion
+      // For simplicity, directly compare if units match or perform a basic conversion if needed.
+      // Here, we'll assume a direct numerical comparison.
+      if (p.areaUnit === areaUnit || !areaUnit) { // If units match or no unit specified, compare directly
+        return p.area === targetArea;
+      } else if (areaUnit === "sq yards" && p.areaUnit === "sqft") {
+        // Convert p.area (sqft) to sq yards for comparison
+        return Math.round(p.area / 9) === targetArea;
+      } else if (areaUnit === "sqft" && p.areaUnit === "sq yards") {
+        // Convert p.area (sq yards) to sqft for comparison
+        return Math.round(p.area * 9) === targetArea;
+      }
+      return false; // Mismatched units without conversion logic
+    });
+  }
+  if (priceType) {
+    filteredProperties = filteredProperties.filter(p => p.priceType === priceType);
+  }
+  if (property_type) {
+    filteredProperties = filteredProperties.filter(p => p.property_type === property_type);
+  }
+  if (societyName) {
+    filteredProperties = filteredProperties.filter(p => p.societyName === societyName);
+  }
+  if (phase) {
+    filteredProperties = filteredProperties.filter(p => p.phase === phase);
+  }
+
+  return filteredProperties;
+};
+
+export const fetchFilterOptions = async () => {
+  await sleep(100); // Simulate network delay for filter options
+
+  const allProperties = propertyCardVariants.filter(p => p.category !== "File" && !p.is_file);
+
+  const categories = [...new Set(allProperties.map(p => p.category))];
+  const cities = [...new Set(allProperties.map(p => p.city))];
+  // Assuming badges can act as 'labels' for filtering
+  const labels = [...new Set(allProperties.flatMap(p => p.badges ? p.badges.map(b => b.label) : []))];
+  // Assuming 'phase' can be a filter
+  const phases = [...new Set(allProperties.map(p => p.phase).filter(Boolean))]; // Filter out undefined/null
+  const propertyTypes = [...new Set(allProperties.map(p => p.property_type).filter(Boolean))];
+  const priceTypes = [...new Set(allProperties.map(p => p.priceType).filter(Boolean))];
+  const societyNames = [...new Set(allProperties.map(p => p.societyName).filter(Boolean))];
+
+
+  // For beds, baths, area, we might want ranges or min/max, but for now, just unique values or max values
+  const maxBeds = Math.max(...allProperties.map(p => p.beds || 0));
+  const maxBaths = Math.max(...allProperties.map(p => p.baths || 0));
+
+
+  return {
+    categories,
+    cities,
+    labels,
+    phases,
+    propertyTypes,
+    priceTypes,
+    maxBeds,
+    maxBaths,
+    societyNames,
+  };
 };
 
 export const fetchProperty = async (id) => {
@@ -519,11 +650,51 @@ export const fetchProperty = async (id) => {
     throw new Error("Property not found");
   }
   return property;
+}
+
+export const fetchMaps = async (filters = {}) => {
+  await sleep(200);
+  let filteredMaps = mapsData;
+
+  const { query, city, societyName, phase } = filters;
+
+  if (query) {
+    const lowerCaseQuery = query.toLowerCase();
+    filteredMaps = filteredMaps.filter(
+      (m) =>
+        m.title.toLowerCase().includes(lowerCaseQuery) ||
+        m.description.toLowerCase().includes(lowerCaseQuery) ||
+        (m.city && m.city.toLowerCase().includes(lowerCaseQuery)) ||
+        (m.societyName && m.societyName.toLowerCase().includes(lowerCaseQuery)) ||
+        (m.phase && m.phase.toLowerCase().includes(lowerCaseQuery))
+    );
+  }
+
+  if (city) {
+    filteredMaps = filteredMaps.filter(m => m.city === city);
+  }
+  if (societyName) {
+    filteredMaps = filteredMaps.filter(m => m.societyName === societyName);
+  }
+  if (phase) {
+    filteredMaps = filteredMaps.filter(m => m.phase === phase);
+  }
+
+  return filteredMaps;
 };
 
-export const fetchMaps = async () => {
-  await sleep(200);
-  return mapsData;
+export const fetchMapFilterOptions = async () => {
+  await sleep(100);
+
+  const cities = [...new Set(mapsData.map(m => m.city).filter(Boolean))];
+  const societyNames = [...new Set(mapsData.map(m => m.societyName).filter(Boolean))];
+  const phases = [...new Set(mapsData.map(m => m.phase).filter(Boolean))];
+
+  return {
+    cities,
+    societyNames,
+    phases,
+  };
 };
 
 export const fetchCategories = async () => {
@@ -541,9 +712,74 @@ export const fetchReviews = async () => {
   return reviewsData;
 }
 
-export const fetchFileProperties = async () => {
+export const fetchFileProperties = async (filters = {}) => {
   await sleep(200);
-  return propertyCardVariants.filter(p => p.category === "File");
+  let filteredFiles = propertyCardVariants.filter(p => p.category === "File");
+
+  const { city, societyName, phase, file_type, area, areaUnit, query } = filters;
+
+  if (query) {
+    const lowerCaseQuery = query.toLowerCase();
+    filteredFiles = filteredFiles.filter(
+      (p) =>
+        p.title.toLowerCase().includes(lowerCaseQuery) ||
+        (p.societyName && p.societyName.toLowerCase().includes(lowerCaseQuery)) ||
+        (p.phase && p.phase.toLowerCase().includes(lowerCaseQuery)) ||
+        (p.file_type && p.file_type.toLowerCase().includes(lowerCaseQuery)) ||
+        (p.city && p.city.toLowerCase().includes(lowerCaseQuery)) ||
+        (p.location && p.location.toLowerCase().includes(lowerCaseQuery)) ||
+        (p.badges && p.badges.some(badge => badge.label.toLowerCase().includes(lowerCaseQuery)))
+    );
+  }
+
+  if (city) {
+    filteredFiles = filteredFiles.filter(p => p.city === city);
+  }
+  if (societyName) {
+    filteredFiles = filteredFiles.filter(p => p.societyName === societyName);
+  }
+  if (phase) {
+    filteredFiles = filteredFiles.filter(p => p.phase === phase);
+  }
+  if (file_type) {
+    filteredFiles = filteredFiles.filter(p => p.file_type === file_type);
+  }
+  if (area) {
+    const targetArea = parseInt(area, 10);
+    filteredFiles = filteredFiles.filter(p => {
+      if (p.areaUnit === areaUnit || !areaUnit) {
+        return p.area === targetArea;
+      } else if (areaUnit === "sq yards" && p.areaUnit === "sqft") {
+        return Math.round(p.area / 9) === targetArea;
+      } else if (areaUnit === "sqft" && p.areaUnit === "sq yards") {
+        return Math.round(p.area * 9) === targetArea;
+      }
+      return false;
+    });
+  }
+
+  return filteredFiles;
+}
+
+export const fetchFileFilterOptions = async () => {
+  await sleep(100);
+
+  const allFiles = propertyCardVariants.filter(p => p.category === "File");
+
+  const cities = [...new Set(allFiles.map(p => p.city).filter(Boolean))];
+  const societyNames = [...new Set(allFiles.map(p => p.societyName).filter(Boolean))];
+  const phases = [...new Set(allFiles.map(p => p.phase).filter(Boolean))];
+  const fileTypes = [...new Set(allFiles.map(p => p.file_type).filter(Boolean))];
+
+  const maxArea = Math.max(...allFiles.map(p => p.area || 0));
+
+  return {
+    cities,
+    societyNames,
+    phases,
+    fileTypes,
+    maxArea,
+  };
 }
 
 export const fetchHomeData = async () => {
@@ -562,6 +798,57 @@ export const fetchHomeData = async () => {
         categories,
         personalizedCards,
         reviews,
-        fileProperties: fileProperties.slice(0, 3), // Return only 3 file properties for the homepage grid
-    }
-}
+                fileProperties: fileProperties.slice(0, 3), // Return only 3 file properties for the homepage grid
+            }
+        }
+        
+        export const fetchGlobalSearch = async (query) => {
+          await sleep(200); // Simulate network delay
+          if (!query) {
+            return { properties: [], files: [], maps: [], categories: [], cities: [], societies: [], phases: [], labels: [], propertyTypes: [], priceTypes: [], fileTypes: [] };
+          }
+        
+          const lowerCaseQuery = query.toLowerCase();
+        
+          const [properties, files, maps, filterOptions, mapFilterOptions, fileFilterOptions, allCategories] = await Promise.all([
+            fetchProperties({ query }),
+            fetchFileProperties({ query }),
+            fetchMaps({ query }),
+            fetchFilterOptions(),
+            fetchMapFilterOptions(),
+            fetchFileFilterOptions(),
+            fetchCategories()
+          ]);
+          
+          const categories = allCategories.filter(c => c.title.toLowerCase().includes(lowerCaseQuery));
+        
+          // Combine and deduplicate filter options
+          const allCities = [...new Set([...filterOptions.cities, ...mapFilterOptions.cities, ...fileFilterOptions.cities])];
+          const cities = allCities.filter(c => c.toLowerCase().includes(lowerCaseQuery));
+          
+          const allSocieties = [...new Set([...filterOptions.societyNames, ...mapFilterOptions.societyNames, ...fileFilterOptions.societyNames])];
+          const societies = allSocieties.filter(s => s.toLowerCase().includes(lowerCaseQuery));
+        
+          const allPhases = [...new Set([...filterOptions.phases, ...mapFilterOptions.phases, ...fileFilterOptions.phases])];
+          const phases = allPhases.filter(p => p.toLowerCase().includes(lowerCaseQuery));
+          
+          const labels = filterOptions.labels.filter(l => l.toLowerCase().includes(lowerCaseQuery));
+          const propertyTypes = filterOptions.propertyTypes.filter(pt => pt.toLowerCase().includes(lowerCaseQuery));
+          const priceTypes = filterOptions.priceTypes.filter(pt => pt.toLowerCase().includes(lowerCaseQuery));
+          const fileTypes = fileFilterOptions.fileTypes.filter(ft => ft.toLowerCase().includes(lowerCaseQuery));
+        
+          return {
+            properties,
+            files,
+            maps,
+            categories,
+            cities,
+            societies,
+            phases,
+            labels,
+            propertyTypes,
+            priceTypes,
+            fileTypes
+          };
+        };
+        

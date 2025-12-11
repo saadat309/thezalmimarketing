@@ -52,7 +52,7 @@ function PrivacyPolicyPage() {
 
   return (
     <div>
-      <GlobalHero image="/images/real-estate-3337038_1280.jpg" overlay height="50vh">
+      <GlobalHero image="/images/privacy-policy.jpg" overlay height="50vh">
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-center text-white">
           <ShieldCheck className="w-16 h-16 mb-4" />
           <h1 className="text-4xl font-bold md:text-5xl">Privacy Policy</h1>
