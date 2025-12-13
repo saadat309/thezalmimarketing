@@ -7,6 +7,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Link } from "@tanstack/react-router"
+
 export function SignupForm({
   className,
   ...props
@@ -49,7 +51,7 @@ export function SignupForm({
         </Field>
         <Field>
           <FieldDescription className="px-6 text-center">
-            Already have an account? <a href="#">Sign in</a>
+            Already have an account? <Link to="/login">Sign in</Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

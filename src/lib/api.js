@@ -1,3 +1,5 @@
+import { getYoutubeEmbedUrl } from "./utils";
+
 // To simulate a real API, we'll use a short delay.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -50,8 +52,7 @@ const initialRawPropertyCardVariants = [
       "24/7 Security",
       "High-Speed Internet",
     ],
-    youtubeEmbedLink:
-      "https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1", // Example link
+    videoFilePath: "/videos/property.mp4",
   },
   {
     image: "/images/house-1867187_1280.jpg",
@@ -279,21 +280,27 @@ const initialRawPropertyCardVariants = [
 ];
 
 const enrichedRawPropertyCardVariants = initialRawPropertyCardVariants.map((p, index) => {
+  const media = [];
+
   if (p.is_file) {
-    return p;
+    if (p.image) {
+      media.push({ type: 'image', path: p.image, isPrimary: true });
+    }
+    return {
+        ...p,
+        media,
+        image: p.image, // Keep for compatibility
+    };
   }
 
+  // Handle images
   const imagesForProperty = [];
-  // Add the main image first
   if (p.image) {
     imagesForProperty.push(p.image);
   } else {
-    // Fallback if no main image, use a public image
     imagesForProperty.push(ALL_PUBLIC_IMAGES[index % ALL_PUBLIC_IMAGES.length]);
   }
 
-  // Add a few more unique images from ALL_PUBLIC_IMAGES
-  // Use a simple selection logic based on index to make it varied but deterministic
   const startIndex = index % ALL_PUBLIC_IMAGES.length;
   for (let i = 0; imagesForProperty.length < 5 && i < ALL_PUBLIC_IMAGES.length; i++) {
     const imgIndex = (startIndex + i) % ALL_PUBLIC_IMAGES.length;
@@ -303,17 +310,38 @@ const enrichedRawPropertyCardVariants = initialRawPropertyCardVariants.map((p, i
     }
   }
 
-  // If still less than 5, fill with any available images (should not happen if ALL_PUBLIC_IMAGES is large enough)
-  while (imagesForProperty.length < 5 && ALL_PUBLIC_IMAGES.length > 0) {
-    const randomImg = ALL_PUBLIC_IMAGES[Math.floor(Math.random() * ALL_PUBLIC_IMAGES.length)];
-    if (!imagesForProperty.includes(randomImg)) {
-      imagesForProperty.push(randomImg);
-    }
+  imagesForProperty.forEach((imgPath, idx) => {
+      media.push({
+          type: 'image',
+          path: imgPath,
+          isPrimary: idx === 0
+      })
+  })
+
+  // Handle video
+  if (p.youtubeEmbedLink) {
+      media.push({
+          type: 'video',
+          video_embed_link: getYoutubeEmbedUrl(p.youtubeEmbedLink)
+      })
+  } else if (p.videoFilePath) {
+      media.push({
+          type: 'video',
+          path: p.videoFilePath
+      })
   }
 
+  const newP = { ...p };
+  delete newP.image;
+  delete newP.images;
+  delete newP.youtubeEmbedLink;
+  delete newP.videoFilePath;
+
   return {
-    ...p,
-    images: imagesForProperty,
+    ...newP,
+    media: media,
+    // For backward compatibility for components that just need one primary image
+    image: media.find(m => m.type === 'image' && m.isPrimary)?.path
   };
 });
 
@@ -798,9 +826,17 @@ export const fetchHomeData = async () => {
         categories,
         personalizedCards,
         reviews,
-                fileProperties: fileProperties.slice(0, 3), // Return only 3 file properties for the homepage grid
-            }
+        fileProperties: fileProperties.slice(0, 3), // Return only 3 file properties for the homepage grid
+        videoSection: {
+            isVisible: true,
+            heading: 'Featured Video',
+            subheading: 'Watch our latest property showcase.',
+            videoInputMethod: 'upload',
+            videoMedia: [{ type: 'video', path: '/videos/property.mp4' }],
+            videoEmbedLink: '',
         }
+    }
+}
         
         export const fetchGlobalSearch = async (query) => {
           await sleep(200); // Simulate network delay

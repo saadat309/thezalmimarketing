@@ -173,7 +173,7 @@ const labelVariants = [
   "discounted",
 ];
 
-export default function PropertyFileForm() {
+export default function PropertyFileForm({ initialData, onSuccess, onCancel, isDuplicating }) {
   // State for dropdowns
   const [cities, setCities] = useState([]);
   const [societies, setSocieties] = useState([]);
@@ -188,6 +188,7 @@ export default function PropertyFileForm() {
     control,
     setValue,
     getValues,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(propertyFormSchema),
@@ -222,6 +223,8 @@ export default function PropertyFileForm() {
       embed_link: "",
       hide: false,
       _new_label_variant: "secondary", // Initialize new label variant
+      ...(initialData || {}),
+      is_file: initialData?.is_file ?? true,
     },
   });
 
@@ -232,7 +235,7 @@ export default function PropertyFileForm() {
   const selectedLabelValue = watch("_selected_label");
   const newLabelNameValue = watch("_new_label_name");
 
-  // Fetch data on mount
+  // Fetch data on mount and initialize form with initialData
   useEffect(() => {
     // Mock data (replace with API calls)
     setCities([
@@ -260,12 +263,61 @@ export default function PropertyFileForm() {
       },
       { id: "l3", name: "Hot", badge_variant: "warning", is_badge: false },
     ]);
-  }, []);
+
+    if (initialData) {
+      const formDataToSet = isDuplicating ? { ...initialData, id: undefined } : initialData;
+      reset(formDataToSet);
+
+      if (initialData.media) {
+        setThumbnailMedia(initialData.media.filter(item => item.type === 'image' && item.isPrimary));
+      } else {
+        setThumbnailMedia([]);
+      }
+    } else {
+      reset({
+        title: "",
+        short_desc: "",
+        address: "",
+        property_type: "Residential",
+        is_file: true,
+        file_type: "Affidavit",
+        purchase_type: "sale",
+        beds: 0,
+        baths: 0,
+        area: 0,
+        unit: "sqft",
+        price_amount: "",
+        is_discounted: false,
+        price_original_amount: "",
+        price_period_unit: "month",
+        price_period_value: 1,
+        discount_type: "percentage",
+        discount_value: "",
+        installment_advance_amount: "",
+        installment_total_period_text: "",
+        installment_amount: "",
+        installment_display_mode: "installment",
+        category_id: "",
+        city_id: "",
+        society_id: "",
+        phase_id: "",
+        labels: [],
+        embed_link: "",
+        hide: false,
+        _new_label_variant: "secondary",
+      });
+      setThumbnailMedia([]);
+    }
+  }, [initialData, reset, isDuplicating]);
 
   const onSubmit = (data) => {
-    console.log("Form submitted:", data);
-    console.log("Thumbnail Media:", thumbnailMedia);
-    // Handle form submission here - send to API
+    const combinedMedia = [...thumbnailMedia];
+    const finalData = {
+      ...data,
+      media: combinedMedia,
+      id: (isDuplicating || !initialData) ? undefined : initialData.id,
+    };
+    onSuccess(finalData);
   };
 
 
@@ -929,11 +981,32 @@ export default function PropertyFileForm() {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Publishing Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="hide">Hide from public</Label>
+              <Controller
+                name="hide"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="hide"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
         <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
           <Button type="submit" size="lg">
             Save Property File
           </Button>
-          <Button type="button" variant="outline" size="lg">
+          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
             Cancel
           </Button>
         </div>

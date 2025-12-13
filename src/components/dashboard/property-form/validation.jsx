@@ -77,7 +77,7 @@ export const propertyFormSchema = z
       .optional(),
 
     // ===== MEDIA & LINKS =====
-    embed_link: z.string().url().optional().or(z.string().length(0)),
+    embed_link: z.string().optional(),
     media_id: z.coerce.number().optional(),
 
     // ===== PUBLISHING =====

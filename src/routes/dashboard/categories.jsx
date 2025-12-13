@@ -16,7 +16,6 @@ export const Route = createFileRoute('/dashboard/categories')({
 
 const formFields = [
     { name: 'name', label: 'Name', required: true },
-    { name: 'status', label: 'Status' },
 ];
 
 const columns = [
@@ -51,7 +50,6 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'status', header: 'Status' },
     { 
       accessorKey: 'changed_at', 
       header: ({ column }) => {
@@ -72,8 +70,8 @@ const columns = [
 
 function DashboardCategories() {
   const [categories, setCategories] = useState([
-    { id: uuidv4(), name: 'Residential', status: 'Active', changed_at: '2024-11-29 10:00' },
-    { id: uuidv4(), name: 'Commercial', status: 'Active', changed_at: '2024-11-29 14:00' },
+    { id: uuidv4(), name: 'Residential', changed_at: '2024-11-29 10:00' },
+    { id: uuidv4(), name: 'Commercial', changed_at: '2024-11-29 14:00' },
   ]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);

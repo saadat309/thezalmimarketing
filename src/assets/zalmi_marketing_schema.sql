@@ -12,7 +12,7 @@ CREATE TABLE medias (
   version INT UNSIGNED NOT NULL DEFAULT 1,            -- optimistic lock
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 2. images table (depends on medias)
@@ -38,7 +38,7 @@ CREATE TABLE detail_descriptions (
   text LONGTEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 4. map_docs (no dependencies)
@@ -53,7 +53,7 @@ CREATE TABLE map_docs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FULLTEXT idx_map_docs_fulltext (title, description),
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 5. categories (no dependencies)
@@ -65,7 +65,7 @@ CREATE TABLE categories (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FULLTEXT idx_categories_fulltext (name),
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 6. labels (no dependencies)
@@ -78,7 +78,7 @@ CREATE TABLE labels (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FULLTEXT idx_labels_fulltext (name),
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 7. cities (depends on map_docs)
@@ -92,7 +92,7 @@ CREATE TABLE cities (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (map_id) REFERENCES map_docs(id) ON DELETE SET NULL,
   FULLTEXT idx_cities_fulltext (name),
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 8. societies (depends on map_docs)
@@ -108,7 +108,7 @@ CREATE TABLE societies (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (map_id) REFERENCES map_docs(id) ON DELETE SET NULL,
   FULLTEXT idx_societies_fulltext (name, description),
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 9. phases (depends on map_docs)
@@ -123,7 +123,7 @@ CREATE TABLE phases (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (map_id) REFERENCES map_docs(id) ON DELETE SET NULL,
   FULLTEXT idx_phases_fulltext (name, description),
-  hide BOOLEAN NOT NULL DEFAULT FALSE,
+  hide BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 10. properties (depends on medias, categories, cities, societies, phases)
@@ -329,7 +329,7 @@ CREATE INDEX idx_properties_area ON properties(area);
 CREATE INDEX idx_properties_unit ON properties(unit);
 
 -- Composite indexes for common query patterns
-CREATE INDEX idx_properties_active ON properties(deleted, hide);
+CREATE INDEX idx_properties_active ON properties(hide);
 CREATE INDEX idx_properties_type_city ON properties(property_type, city_id);
 CREATE INDEX idx_properties_purchase_price ON properties(purchase_type, price_amount);
 CREATE INDEX idx_properties_type_purchase ON properties(property_type, purchase_type);
@@ -386,7 +386,7 @@ CREATE INDEX idx_search_indices_updated_at ON search_indices(updated_at);
 -- 1) roles
 CREATE TABLE roles (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(50) NOT NULL UNIQUE,
+  name VARCHAR(50) NOT NULL UNIQUE
 );
 
 INSERT INTO roles (name) VALUES
@@ -403,9 +403,7 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT,
-  INDEX idx_users_role (role_id),
-  INDEX idx_users_is_active (is_active),
-  INDEX idx_users_is_blocked (is_blocked)
+  INDEX idx_users_role (role_id)
 );
 
 -- 3) invites
@@ -485,6 +483,7 @@ CREATE TABLE queries (
   ip_address VARCHAR(45) DEFAULT NULL,
   user_agent VARCHAR(512) DEFAULT NULL,
   is_read TINYINT(1) DEFAULT 0,
+  processed_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL,
@@ -503,9 +502,11 @@ CREATE TABLE landing_sections (
   slug VARCHAR(100) NOT NULL UNIQUE,
   title VARCHAR(255),
   subtitle TEXT,
-  collection_type ENUM('properties','categories','maps','phases') NOT NULL,
+  collection_type ENUM('properties','categories','maps','phases','video') NOT NULL,
   visibility TINYINT(1) NOT NULL DEFAULT 1,
-  layout_style ENUM('grid','slider') DEFAULT 'grid',
+  video_input_method ENUM('upload', 'embed') DEFAULT NULL,
+  video_path VARCHAR(1024) DEFAULT NULL,
+  video_embed_link TEXT DEFAULT NULL,
   version INT UNSIGNED NOT NULL DEFAULT 1,            -- optimistic lock
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

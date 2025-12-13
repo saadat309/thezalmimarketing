@@ -12,6 +12,7 @@ import ReviewsSection from "@/components/home/ReviewSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection"; // Import HowItWorksSection
 import TextSection from "@/components/global/TextSection"; // Import TextSection
 import WhyUs from "@/components/global/WhyUs";
+import { VideoPlayer } from "@/components/global/VideoPlayer";
 
 // Define query options for homepage data
 const homeQueryOptions = () =>
@@ -137,7 +138,11 @@ const whyChooseUsContent = {
 
 
 function RouteComponent() {
-  const { properties, maps, categories, personalizedCards, reviews, fileProperties } = Route.useLoaderData(); // Get data from loader
+  const { properties, maps, categories, personalizedCards, reviews, fileProperties, videoSection } = Route.useLoaderData(); // Get data from loader
+
+  const videoToDisplay = videoSection?.videoInputMethod === 'upload' 
+    ? { path: videoSection.videoMedia[0]?.path } 
+    : { video_embed_link: videoSection.videoEmbedLink };
 
   return (
     <main className="flex flex-col items-center justify-center w-full text-center max-w-[1440px] mx-auto min-h-screen">
@@ -213,18 +218,13 @@ function RouteComponent() {
 
       <ReviewsSection reviews={reviews} />
 
-      <div className="w-full px-4 mx-auto my-8">
-        <div className="overflow-hidden rounded-lg aspect-video">
-          <iframe
-            src="https://www.youtube.com/embed/IiZdOrUKr9k?si=GFOdumGqMiQllvO1"
-            title="Property Video Tour"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          ></iframe>
+      {videoSection?.isVisible && (
+        <div className="w-full px-4 mx-auto my-8">
+            <h2 className="mb-4 text-3xl font-bold">{videoSection.heading}</h2>
+            <p className="mb-8 text-lg text-muted-foreground">{videoSection.subheading}</p>
+            <VideoPlayer video={videoToDisplay} />
         </div>
-      </div>
+      )}
 
       {/* DHA Services Section - */}
       <TextSection {...dhaServicesContent} className={"my-8"} />

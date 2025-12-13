@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { LandingPageSectionConfigurator } from '@/components/dashboard/landing-page-section-configurator';
 import { Button } from '@/components/ui/button'; // Assuming Button is used for Save/Reset
 import { toast } from "sonner"; // For notifications
 import { ItemSelector } from "@/components/dashboard/item-selector";
+
+import { LandingPageVideoSectionConfigurator } from '@/components/dashboard/LandingPageVideoSectionConfigurator';
 
 export const Route = createFileRoute('/dashboard/landing-page')({
   component: DashboardLandingPage,
@@ -13,7 +15,24 @@ export const Route = createFileRoute('/dashboard/landing-page')({
 });
 
 function DashboardLandingPage() {
+
   const [sectionsConfig, setSectionsConfig] = useState({
+
+    videoSection: {
+
+      isVisible: true,
+
+      heading: 'Featured Video',
+
+      subheading: 'Watch our latest property showcase.',
+
+      videoInputMethod: 'upload', // 'upload' or 'embed'
+
+      videoMedia: [], // for uploaded video (MediaUpload returns array of media objects)
+
+      videoEmbedLink: '', // for embed link
+
+    },
     featuredProperties: {
       isVisible: true,
       heading: 'Featured Properties',
@@ -90,12 +109,32 @@ function DashboardLandingPage() {
     },
   });
 
-  const handleSectionConfigChange = (sectionName, newConfig) => {
+  const handleSectionConfigChange = useCallback((sectionName, newConfig) => {
     setSectionsConfig((prev) => ({
       ...prev,
       [sectionName]: newConfig,
     }));
-  };
+  }, []);
+
+  const handleVideoSectionChange = useCallback((newConfig) => {
+    handleSectionConfigChange('videoSection', newConfig);
+  }, [handleSectionConfigChange]);
+
+  const handleFeaturedPropertiesChange = useCallback((newConfig) => {
+    handleSectionConfigChange('featuredProperties', newConfig);
+  }, [handleSectionConfigChange]);
+
+  const handleCategoriesChange = useCallback((newConfig) => {
+    handleSectionConfigChange('categories', newConfig);
+  }, [handleSectionConfigChange]);
+
+  const handleMapsChange = useCallback((newConfig) => {
+    handleSectionConfigChange('maps', newConfig);
+  }, [handleSectionConfigChange]);
+
+  const handleFilesChange = useCallback((newConfig) => {
+    handleSectionConfigChange('files', newConfig);
+  }, [handleSectionConfigChange]);
 
   const handleSave = () => {
     // In a real application, you would send this 'sectionsConfig' to your backend
@@ -149,6 +188,14 @@ function DashboardLandingPage() {
         selectedItems: [],
         availableItems: [],
       },
+      videoSection: {
+        isVisible: true,
+        heading: 'Featured Video',
+        subheading: 'Watch our latest property showcase.',
+        videoInputMethod: 'upload',
+        videoMedia: [],
+        videoEmbedLink: '',
+      }
     });
     toast.info("Landing Page configuration reset to defaults.");
   };
@@ -176,10 +223,14 @@ function DashboardLandingPage() {
         <Button onClick={handleSave}>Save Configuration</Button>
       </div>
       <div className="grid gap-8">
+        <LandingPageVideoSectionConfigurator
+          initialConfig={sectionsConfig.videoSection}
+          onConfigChange={handleVideoSectionChange}
+        />
         <LandingPageSectionConfigurator
           sectionTitle="Properties"
           initialConfig={sectionsConfig.featuredProperties}
-          onConfigChange={(newConfig) => handleSectionConfigChange('featuredProperties', newConfig)}
+          onConfigChange={handleFeaturedPropertiesChange}
         >
           <ItemSelector
             availableItems={sectionsConfig.featuredProperties.availableItems}
@@ -194,7 +245,7 @@ function DashboardLandingPage() {
         <LandingPageSectionConfigurator
           sectionTitle="Categories"
           initialConfig={sectionsConfig.categories}
-          onConfigChange={(newConfig) => handleSectionConfigChange('categories', newConfig)}
+          onConfigChange={handleCategoriesChange}
         >
           <ItemSelector
             availableItems={sectionsConfig.categories.availableItems}
@@ -209,7 +260,7 @@ function DashboardLandingPage() {
         <LandingPageSectionConfigurator
           sectionTitle="Maps"
           initialConfig={sectionsConfig.maps}
-          onConfigChange={(newConfig) => handleSectionConfigChange('maps', newConfig)}
+          onConfigChange={handleMapsChange}
         >
           <ItemSelector
             availableItems={sectionsConfig.maps.availableItems}
@@ -224,7 +275,7 @@ function DashboardLandingPage() {
         <LandingPageSectionConfigurator
           sectionTitle="Files"
           initialConfig={sectionsConfig.files}
-          onConfigChange={(newConfig) => handleSectionConfigChange('files', newConfig)}
+          onConfigChange={handleFilesChange}
         >
           <ItemSelector
             availableItems={sectionsConfig.files.availableItems}
@@ -236,35 +287,6 @@ function DashboardLandingPage() {
           />
         </LandingPageSectionConfigurator>
 
-        <LandingPageSectionConfigurator
-          sectionTitle="Phases"
-          initialConfig={sectionsConfig.phases}
-          onConfigChange={(newConfig) => handleSectionConfigChange('phases', newConfig)}
-        >
-          <ItemSelector
-            availableItems={sectionsConfig.phases.availableItems}
-            selectedItems={sectionsConfig.phases.selectedItems}
-            onSelectionChange={(newSelectedItems) => handleSelectionChange('phases', newSelectedItems)}
-            onOrderChange={(newOrderedItems) => handleOrderChange('phases', newOrderedItems)}
-            itemKey="id"
-            itemLabel="name"
-          />
-        </LandingPageSectionConfigurator>
-
-        <LandingPageSectionConfigurator
-          sectionTitle="Societies"
-          initialConfig={sectionsConfig.societies}
-          onConfigChange={(newConfig) => handleSectionConfigChange('societies', newConfig)}
-        >
-          <ItemSelector
-            availableItems={sectionsConfig.societies.availableItems}
-            selectedItems={sectionsConfig.societies.selectedItems}
-            onSelectionChange={(newSelectedItems) => handleSelectionChange('societies', newSelectedItems)}
-            onOrderChange={(newOrderedItems) => handleOrderChange('societies', newOrderedItems)}
-            itemKey="id"
-            itemLabel="name"
-          />
-        </LandingPageSectionConfigurator>
       </div>
     </div>
   );

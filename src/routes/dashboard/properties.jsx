@@ -4,6 +4,7 @@ import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
 import { v4 as uuidv4 } from 'uuid';                                                                         
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge"; // Import Badge component
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; 
 import { toast } from "sonner";
 import PropertyForm from '@/components/dashboard/property-form/property-form'; // Import PropertyForm
@@ -60,7 +61,18 @@ const columns = [
     { accessorKey: 'title', header: 'Title' },
     { accessorKey: 'type', header: 'Type' },
     { accessorKey: 'price', header: 'Price' },
-    { accessorKey: 'status', header: 'Status' },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const isHidden = row.original.hide;
+        return (
+          <Badge variant={isHidden ? 'destructive' : 'secondary'}>
+            {isHidden ? 'Hidden' : 'Public'}
+          </Badge>
+        );
+      },
+    },
     { 
       accessorKey: 'changed_at', 
       header: ({ column }) => {

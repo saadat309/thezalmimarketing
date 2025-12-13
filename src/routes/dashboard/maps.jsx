@@ -4,9 +4,10 @@ import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
 import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
+import { Badge } from "@/components/ui/badge";
+import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
-import { MediaUpload } from '@/components/dashboard/MediaUpload'; // Import MediaUpload
+import MapForm from '@/components/dashboard/map-form/MapForm';
 
 export const Route = createFileRoute('/dashboard/maps')({
   component: DashboardMaps,
@@ -14,12 +15,6 @@ export const Route = createFileRoute('/dashboard/maps')({
     title: 'Maps',
   },
 });
-
-const formFields = [
-    { name: 'title', label: 'Title', required: true },
-    { name: 'description', label: 'Description', type: 'textarea' },
-    { name: 'status', label: 'Status' },
-];
 
 const columns = [
 
@@ -55,7 +50,18 @@ const columns = [
     },
     { accessorKey: 'title', header: 'Title' },
     { accessorKey: 'description', header: 'Description' },
-    { accessorKey: 'status', header: 'Status' },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+            const isHidden = row.original.hide;
+            return (
+                <Badge variant={isHidden ? 'destructive' : 'secondary'}>
+                    {isHidden ? 'Hidden' : 'Public'}
+                </Badge>
+            );
+        },
+    },
         {
           accessorKey: 'changed_at', 
           header: ({ column }) => {
@@ -82,35 +88,33 @@ function DashboardMaps() {
       id: uuidv4(),
       title: 'DHA Phase 8',
       description: 'Master plan of DHA Phase 8, Lahore',
-      status: 'Active',
+      hide: false,
       changed_at: '2024-12-01 09:45',
-      mapImage: [], // Initialize with empty array
-      mapPdf: [],    // Initialize with empty array
+      mapImage: [],
+      mapPdf: [],
     },
     {
       id: uuidv4(),
       title: 'Bahria Town Karachi',
       description: 'Residential plots in Bahria Town Karachi',
-      status: 'Active',
+      hide: true,
       changed_at: '2024-12-01 14:15',
       mapImage: [],
       mapPdf: [],
     },
   ]);
-  const [mapImage, setMapImage] = useState([]); // State for map image
-  const [mapPdf, setMapPdf] = useState([]);     // State for map PDF
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
 
   const handleAddMap = (newItem) => {
-    setMaps((current) => [...current, { ...newItem, id: uuidv4(), changed_at: new Date().toLocaleString(), mapImage, mapPdf }]);
+    setMaps((current) => [...current, { ...newItem, id: uuidv4(), changed_at: new Date().toLocaleString() }]);
     toast.success("Map added successfully!");
   };
 
   const handleEditMap = (editedItem) => {
     setMaps((current) =>
       current.map((map) =>
-        map.id === editedItem.id ? { ...editedItem, changed_at: new Date().toLocaleString(), mapImage, mapPdf } : map
+        map.id === editedItem.id ? { ...editedItem, changed_at: new Date().toLocaleString() } : map
       )
     );
     toast.success("Map updated successfully!");
@@ -182,40 +186,13 @@ function DashboardMaps() {
         onAddItem={handleAddMap}
         onEditItem={handleEditMap}
         columns={columns}
-        formFields={formFields}
+        FormComp={MapForm}
         entityName="Map"
         handleDeleteItem={handleDeleteMap}
         handleDeleteSelected={handleDeleteSelected}
         handleExportCsv={handleExportCsv}
         handleExportPdf={handleExportPdf}
         routePath="/dashboard/maps"
-        customFormContent={(currentItem) => (
-          <div className="grid gap-4 py-4">
-            <h4 className="text-sm font-medium leading-none">Map Image (Max 1)</h4>
-            <MediaUpload
-              initialMedia={currentItem?.mapImage || []}
-              onMediaChange={setMapImage}
-              maxFiles={1}
-              allowedTypes={['image/*']}
-              allowMultiple={false}
-              showPrimaryOption={false}
-            />
-            <h4 className="text-sm font-medium leading-none">Map PDF (Max 1)</h4>
-            <MediaUpload
-              initialMedia={currentItem?.mapPdf || []}
-              onMediaChange={setMapPdf}
-              maxFiles={1}
-              allowedTypes={['application/pdf']}
-              allowMultiple={false}
-              showPrimaryOption={false}
-            />
-          </div>
-        )}
-        onEditingItemChange={(item) => {
-          // When editing item changes, update local media states
-          setMapImage(item?.mapImage || []);
-          setMapPdf(item?.mapPdf || []);
-        }}
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);

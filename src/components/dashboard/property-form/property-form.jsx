@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuillRichText from "../QuillRichText";
 import { MediaUpload } from "../MediaUpload";
 import { propertyFormSchema } from "./validation";
@@ -44,6 +45,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { getYoutubeEmbedUrl } from "@/lib/utils";
 const labelVariants = [
   "default",
   "secondary",
@@ -77,6 +79,8 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
   const [galleryMedia, setGalleryMedia] = useState([]);
   const [thumbnailMedia, setThumbnailMedia] = useState([]);
   const [videoMedia, setVideoMedia] = useState([]);
+  const [videoEmbedLinkForMedia, setVideoEmbedLinkForMedia] = useState('');
+  const [videoInputMethod, setVideoInputMethod] = useState('upload');
 
   const {
     register,
@@ -191,13 +195,28 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
       // Initialize media states
       if (initialData.media) {
+        const video = initialData.media.find(item => item.type === 'video');
         setGalleryMedia(initialData.media.filter(item => item.type === 'image'));
         setThumbnailMedia(initialData.media.filter(item => item.type === 'image' && item.isPrimary));
-        setVideoMedia(initialData.media.filter(item => item.type === 'video'));
+        if (video) {
+            if (video.path) {
+                setVideoInputMethod('upload');
+                setVideoMedia([video]);
+                setVideoEmbedLinkForMedia('');
+            } else if (video.video_embed_link) {
+                setVideoInputMethod('embed');
+                setVideoMedia([]);
+                setVideoEmbedLinkForMedia(video.video_embed_link);
+            }
+        } else {
+            setVideoMedia([]);
+            setVideoEmbedLinkForMedia('');
+        }
       } else {
         setGalleryMedia([]);
         setThumbnailMedia([]);
         setVideoMedia([]);
+        setVideoEmbedLinkForMedia('');
       }
 
       // Initialize dynamic lists
@@ -248,6 +267,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
       setVideoMedia([]);
       setDetailDescriptions([]);
       setFeatures([]);
+      setVideoEmbedLinkForMedia('');
     }
   }, [initialData, reset, isDuplicating]); // Add reset and isDuplicating to dependency array
 
@@ -305,7 +325,15 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
   };
 
   const onSubmit = (data) => {
-    const combinedMedia = [...galleryMedia, ...thumbnailMedia, ...videoMedia];
+    let finalVideoMedia = [];
+    if (videoInputMethod === 'upload' && videoMedia.length > 0) {
+      finalVideoMedia = videoMedia;
+    } else if (videoInputMethod === 'embed' && videoEmbedLinkForMedia) {
+      const embedUrl = getYoutubeEmbedUrl(videoEmbedLinkForMedia);
+      finalVideoMedia = [{ type: 'video', video_embed_link: embedUrl }];
+    }
+
+    const combinedMedia = [...galleryMedia, ...thumbnailMedia, ...finalVideoMedia];
     // Ensure that if initialData exists and has an ID, it's preserved unless duplicating
     const finalData = {
       ...data,
@@ -1235,20 +1263,47 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
               {/* Video Upload */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Video Upload</CardTitle>
+                  <CardTitle>Video</CardTitle>
                   <CardDescription>
-                    Upload a video tour or property walkthrough
+                    Upload a video or provide an embed link.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <MediaUpload
-                    initialMedia={videoMedia}
-                    onMediaChange={setVideoMedia}
-                    maxFiles={1}
-                    maxFileSizeMb={500}
-                    allowMultiple={false}
-                    allowedTypes={["video/*"]}
-                  />
+                  <Tabs value={videoInputMethod} onValueChange={(value) => {
+                      setVideoInputMethod(value);
+                      if (value === 'upload') {
+                          setVideoEmbedLinkForMedia('');
+                      } else {
+                          setVideoMedia([]);
+                      }
+                  }}>
+                    <TabsList>
+                      <TabsTrigger value="upload">Upload</TabsTrigger>
+                      <TabsTrigger value="embed">Embed Link</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="upload">
+                      <MediaUpload
+                        initialMedia={videoMedia}
+                        onMediaChange={setVideoMedia}
+                        maxFiles={1}
+                        maxFileSizeMb={500}
+                        allowMultiple={false}
+                        allowedTypes={["video/*"]}
+                      />
+                    </TabsContent>
+                    <TabsContent value="embed">
+                      <div className="space-y-2 mt-4">
+                        <Label htmlFor="video_embed_link_for_media">Video Embed URL</Label>
+                        <Textarea
+                          id="video_embed_link_for_media"
+                          placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                          value={videoEmbedLinkForMedia}
+                          onChange={(e) => setVideoEmbedLinkForMedia(e.target.value)}
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
 
@@ -1259,7 +1314,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="embed_link">Video or Map Embed URL</Label>
+                    <Label htmlFor="embed_link">General Embed URL</Label>
                     <Textarea
                       id="embed_link"
                       placeholder="https://..."
@@ -1272,7 +1327,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Paste a YouTube, Google Maps, or other embed URL
+                      Paste a YouTube, Google Maps, or other embed URL not tied to an uploaded video asset.
                     </p>
                   </div>
                 </CardContent>
@@ -1350,27 +1405,6 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                   <CardTitle>Publishing Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="template">Template</Label>
-                    <Select defaultValue="default">
-                      <SelectTrigger id="template">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="default">
-                          Default Template
-                        </SelectItem>
-                        <SelectItem value="minimal">
-                          Minimal Template
-                        </SelectItem>
-                        <SelectItem value="detailed">
-                          Detailed Template
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Separator />
 
                   <div className="flex items-center justify-between">
                     <Label htmlFor="hide">Hide from public</Label>

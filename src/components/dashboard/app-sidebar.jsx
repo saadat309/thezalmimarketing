@@ -42,11 +42,6 @@ const navItems = [
     icon: Home,
   },
   {
-    title: "File Property Form",
-    url: "/dashboard/property-file-form",
-    icon: FileText,
-  },
-  {
     title: "Maps",
     url: "/dashboard/maps",
     icon: Map,

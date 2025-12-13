@@ -16,7 +16,6 @@ export const Route = createFileRoute('/dashboard/phases')({
 
 const formFields = [
     { name: 'name', label: 'Name', required: true },
-    { name: 'status', label: 'Status' },
 ];
 
 const columns = [
@@ -52,7 +51,6 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'status', header: 'Status' },
     { 
       accessorKey: 'changed_at', 
       header: ({ column }) => {
@@ -73,8 +71,8 @@ const columns = [
 
 function DashboardPhases() {
   const [phases, setPhases] = useState([
-    { id: uuidv4(), name: 'Phase 8', status: 'Active', changed_at: '2024-11-30 10:00' },
-    { id: uuidv4(), name: 'Phase 9', status: 'Upcoming', changed_at: '2024-11-30 15:00' },
+    { id: uuidv4(), name: 'Phase 8', changed_at: '2024-11-30 10:00' },
+    { id: uuidv4(), name: 'Phase 9', changed_at: '2024-11-30 15:00' },
   ]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);

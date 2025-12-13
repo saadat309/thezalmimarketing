@@ -4,9 +4,11 @@ import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
 import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
+import { Badge } from "@/components/ui/badge";
+import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; 
 import { toast } from "sonner";
-import { useFilesStore } from '@/store/filesStore'; // Import the store
+import { useFilesStore } from '@/store/filesStore';
+import PropertyFileForm from '@/components/dashboard/property-form/property-file-form'; // Import PropertyFileForm
 
 export const Route = createFileRoute('/dashboard/files')({
   component: DashboardFiles,
@@ -14,13 +16,6 @@ export const Route = createFileRoute('/dashboard/files')({
     title: 'Files',
   },
 });
-
-const formFields = [
-    { name: 'title', label: 'Title', required: true },
-    { name: 'type', label: 'File Type' },
-    { name: 'price', label: 'Price' },
-    { name: 'status', label: 'Status' },
-];
 
 const columns = [
 
@@ -57,7 +52,18 @@ const columns = [
     { accessorKey: 'title', header: 'Title' },
     { accessorKey: 'type', header: 'File Type' },
     { accessorKey: 'price', header: 'Price' },
-    { accessorKey: 'status', header: 'Status' },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+            const isHidden = row.original.hide;
+            return (
+                <Badge variant={isHidden ? 'destructive' : 'secondary'}>
+                    {isHidden ? 'Hidden' : 'Public'}
+                </Badge>
+            );
+        },
+    },
     { 
       accessorKey: 'changed_at', 
       header: ({ column }) => {
@@ -85,14 +91,17 @@ function DashboardFiles() {
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
+  const [crudTableEditingItem, setCrudTableEditingItem] = React.useState(null); // State to hold editingItem from CrudDataTable
 
   const handleAddFile = (newItem) => {
-    addFile({ ...newItem });
+    // CrudDataTable will pass the form data directly from PropertyFileForm
+    addFile({ ...newItem, id: uuidv4(), changed_at: new Date().toISOString() });
     toast.success("File added successfully!");
   };
 
   const handleEditFile = (editedItem) => {
-    editFile({ ...editedItem });
+    // CrudDataTable will pass the form data directly from PropertyFileForm
+    editFile({ ...editedItem, changed_at: new Date().toISOString() });
     toast.success("File updated successfully!");
   };
 
@@ -164,17 +173,19 @@ function DashboardFiles() {
         onAddItem={handleAddFile}
         onEditItem={handleEditFile}
         columns={columns}
-        formFields={formFields}
+        FormComp={PropertyFileForm} // Pass the custom form component
         entityName="File"
         handleDeleteItem={handleDeleteFile}
         handleDeleteSelected={handleDeleteSelected}
         handleExportCsv={handleExportCsv}
         handleExportPdf={handleExportPdf}
         routePath="/dashboard/files"
+        sheetClassName="sm:max-w-3xl"
         onSelectionChange={(rows, table) => {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
+        onEditingItemChange={setCrudTableEditingItem} // Pass the setter to CrudDataTable
       />
     </div>
   );

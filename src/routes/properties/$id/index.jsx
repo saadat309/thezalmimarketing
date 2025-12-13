@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import ImageSlider from '@/components/property/ImageSlider'; // Import ImageSlider
+import { VideoPlayer } from '@/components/global/VideoPlayer';
 
 import { Bed, Bath, AreaChart, MapPin } from 'lucide-react';
 
@@ -62,7 +63,8 @@ function RouteComponent() {
   const { id } = Route.useParams();
 
   // Prepare images for ImageSlider
-  const propertyImages = Array.isArray(property.images) ? property.images : (property.image ? [property.image] : []);
+  const propertyImages = Array.isArray(property.media) ? property.media.filter(m => m.type === 'image') : [];
+  const propertyVideo = Array.isArray(property.media) ? property.media.find(m => m.type === 'video') : null;
 
   // Filter out the current property and take the first 4 for the sidebar
   const featuredProperties = properties
@@ -92,7 +94,7 @@ function RouteComponent() {
           {/* Main Content */}
           <main className="lg:col-span-3">
             
-            <ImageSlider images={propertyImages} /> 
+            <ImageSlider images={propertyImages.map(img => img.path)} /> 
             
             <div className="flex flex-wrap gap-2 mb-4">
               {property.badges?.map((badge, index) => (
@@ -163,20 +165,11 @@ function RouteComponent() {
               </div>
             )}
             
-            {/* YouTube Video Section */}
-            {property.youtubeEmbedLink && (
+            {/* Video Section */}
+            {propertyVideo && (
               <div className="mb-8">
                 <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Video Tour</h2>
-                <div className="overflow-hidden rounded-lg aspect-video">
-                  <iframe 
-                    src={property.youtubeEmbedLink}
-                    title="Property Video Tour" 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowFullScreen
-                    className="w-full h-full"
-                  ></iframe>
-                </div>
+                <VideoPlayer video={propertyVideo} />
               </div>
             )}
             
