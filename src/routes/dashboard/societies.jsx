@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
-import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
+import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
+import { Spinner } from '@/components/ui/spinner';
+import SocietyForm from '@/components/dashboard/society-form/SocietyForm'; // Import the new SocietyForm
 
 export const Route = createFileRoute('/dashboard/societies')({
   component: DashboardSocieties,
@@ -13,10 +14,6 @@ export const Route = createFileRoute('/dashboard/societies')({
     title: 'Societies',
   },
 });
-
-const formFields = [
-    { name: 'name', label: 'Name', required: true },
-];
 
 const columns = [
     {
@@ -50,53 +47,189 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'name', header: 'Name' },
-        {
-          accessorKey: 'changed_at',
-          header: ({ column }) => {
-            const sorted = column.getIsSorted();
-            return (
-              <Button variant="ghost" onClick={() => column.toggleSorting()}>
-                Changed
-                {sorted === "asc" && <ArrowUp className="w-4 h-4 ml-2" />}
-                {sorted === "desc" && <ArrowDown className="w-4 h-4 ml-2" />}
-                {!sorted && <ArrowUpDown className="w-4 h-4 ml-2" />}
-              </Button>
-            );
-          },
-          enableSorting: true,
-          enableHiding: true,
-        },];
+    {
+      accessorKey: 'map_ids',
+      header: 'Associated Maps',
+      cell: ({ row }) => {
+        const mapIds = row.original.map_ids;
+        return mapIds && mapIds.length > 0 ? `${mapIds.length} Maps` : 'None';
+      },
+      enableSorting: false,
+      enableHiding: true,
+    },
+    {
+      accessorKey: 'updated_at',
+      header: ({ column }) => {
+        const sorted = column.getIsSorted();
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting()}>
+            Last Updated
+            {sorted === "asc" && <ArrowUp className="w-4 h-4 ml-2" />}
+            {sorted === "desc" && <ArrowDown className="w-4 h-4 ml-2" />}
+            {!sorted && <ArrowUpDown className="w-4 h-4 ml-2" />}
+          </Button>
+        );
+      },
+      enableSorting: true,
+      enableHiding: true,
+    },];
 
 function DashboardSocieties() {
-  const [societies, setSocieties] = useState([
-    { id: uuidv4(), name: 'DHA', changed_at: '2024-12-01 11:00' },
-    { id: uuidv4(), name: 'Bahria Town', changed_at: '2024-12-01 15:30' },
-  ]);
+  const [societies, setSocieties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddSociety = (newItem) => {
-    setSocieties((current) => [...current, { ...newItem, id: uuidv4(), changed_at: new Date().toLocaleString() }]);
-    toast.success("Society added successfully!");
+  const fetchSocieties = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/societies');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setSocieties(data);
+    } catch (e) {
+      setError(e.message);
+      toast.error("Failed to load societies: " + e.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditSociety = (editedItem) => {
-    setSocieties((current) =>
-      current.map((society) =>
-        society.id === editedItem.id ? { ...editedItem, changed_at: new Date().toLocaleString() } : society
-      )
-    );
-    toast.success("Society updated successfully!");
+  useEffect(() => {
+    fetchSocieties();
+  }, []);
+
+  const handleAddSociety = async (newItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', newItem.name);
+      if (newItem.map_ids && newItem.map_ids.length > 0) {
+        newItem.map_ids.forEach(mapId => {
+          formData.append('map_ids[]', mapId);
+        });
+      }
+
+      const response = await fetch('/api/societies', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Society added successfully!");
+      fetchSocieties();
+      return true;
+    } catch (e) {
+      toast.error("Failed to add society: " + e.message);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteSociety = (id) => {
-    setSocieties(societies.filter((s) => s.id !== id));
+  const handleEditSociety = async (editedItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editedItem.name);
+      // Always send map_ids, even if empty, to ensure unlinking works
+      if (editedItem.map_ids && editedItem.map_ids.length > 0) {
+        editedItem.map_ids.forEach(mapId => {
+          formData.append('map_ids[]', mapId);
+        });
+      } else {
+        // Explicitly send an empty array if no maps are selected to ensure unlinking
+        formData.append('map_ids[]', ''); 
+      }
+      formData.append('_method', 'PATCH'); // Method override
+
+      const response = await fetch(`/api/societies/${editedItem.id}`, {
+        method: 'POST', // Use POST for FormData with method override
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Society updated successfully!");
+      fetchSocieties();
+      return true;
+    } catch (e) {
+      toast.error("Failed to update society: " + e.message);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    const selectedIds = new Set(selectedRows.map((row) => row.original.id));
-    setSocieties(societies.filter((s) => !selectedIds.has(s.id)));
-    setSelectedRows([]);
+  const handleDeleteSociety = async (id) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/societies/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Society deleted successfully!");
+      fetchSocieties();
+    } catch (e) {
+      toast.error("Failed to delete society: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) {
+      toast.warning("No rows selected for deletion.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const deletePromises = selectedRows.map(row => 
+        fetch(`/api/societies/${row.original.id}`, { method: 'DELETE' })
+      );
+      
+      const results = await Promise.allSettled(deletePromises);
+      
+      const failedDeletes = [];
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedDeletes.push(`ID ${selectedRows[index].original.id}: Network or server error`);
+        } else if (!result.value.ok) {
+          // Try to get error detail from response body
+          const errorPromise = result.value.json().then(err => `ID ${selectedRows[index].original.id}: ${err.detail || result.value.statusText}`).catch(() => `ID ${selectedRows[index].original.id}: ${result.value.statusText}`);
+          failedDeletes.push(errorPromise);
+        }
+      });
+
+      const finalFailedMessages = await Promise.all(failedDeletes);
+
+      if (finalFailedMessages.length === 0) {
+        toast.success("Selected societies deleted successfully!");
+      } else {
+        toast.error(`Failed to delete ${finalFailedMessages.length} society(s): ${finalFailedMessages.join(', ')}`);
+      }
+      
+      setSelectedRows([]);
+      fetchSocieties();
+
+    } catch (e) {
+      toast.error("Error during batch deletion: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportCsv = () => {
@@ -114,11 +247,9 @@ function DashboardSocieties() {
         column => column.getIsVisible() && column.columnDef.accessorKey
     );
     
-    // Create header row
     const headers = visibleColumns.map(col => typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id);
     let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
 
-    // Create data rows
     selectedData.forEach(item => {
         const row = visibleColumns.map(col => {
             let value = item[col.columnDef.accessorKey];
@@ -144,6 +275,23 @@ function DashboardSocieties() {
   const handleExportPdf = () => {
     toast.info("Exporting as PDF...");
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Spinner size="lg" />
+        <p className="ml-2">Loading societies...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 text-center p-4">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -155,7 +303,7 @@ function DashboardSocieties() {
         onAddItem={handleAddSociety}
         onEditItem={handleEditSociety}
         columns={columns}
-        formFields={formFields}
+        FormComp={SocietyForm}
         entityName="Society"
         handleDeleteItem={handleDeleteSociety}
         handleDeleteSelected={handleDeleteSelected}
@@ -166,6 +314,7 @@ function DashboardSocieties() {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

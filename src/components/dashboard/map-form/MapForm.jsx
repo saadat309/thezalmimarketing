@@ -1,29 +1,42 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { toast } from "sonner";
+import { MediaUpload } from "../MediaUpload";
+import { mapFormSchema } from "./validation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { MediaUpload } from "../MediaUpload";
-import { mapFormSchema } from "./validation";
+import { Button } from "@/components/ui/button";
 
-export default function MapForm({ initialData, onSuccess, onCancel, isDuplicating }) {
+export default function MapForm({
+  initialData,
+  onSuccess,
+  onCancel,
+  isDuplicating,
+}) {
   const [mapImage, setMapImage] = useState([]);
   const [mapPdf, setMapPdf] = useState([]);
+  const [cities, setCities] = useState([]); // State for cities
+  const [societies, setSocieties] = useState([]); // State for societies
+  const [phases, setPhases] = useState([]); // State for phases
 
   const {
     register,
     handleSubmit,
     control,
     reset,
+    watch,
+    getValues, // Re-add getValues
     formState: { errors },
   } = useForm({
     resolver: zodResolver(mapFormSchema),
@@ -33,35 +46,100 @@ export default function MapForm({ initialData, onSuccess, onCancel, isDuplicatin
       hide: false,
       mapImage: [],
       mapPdf: [],
+      city_id: null,
+      society_id: null,
+      phase_id: null,
       ...(initialData || {}),
     },
   });
 
   useEffect(() => {
-    if (initialData) {
-      const formDataToSet = isDuplicating ? { ...initialData, id: undefined } : initialData;
-      reset(formDataToSet);
-      setMapImage(initialData.mapImage || []);
-      setMapPdf(initialData.mapPdf || []);
-    } else {
-      reset({
-        title: "",
-        description: "",
-        hide: false,
-        mapImage: [],
-        mapPdf: [],
-      });
-      setMapImage([]);
-      setMapPdf([]);
-    }
+    const fetchData = async () => {
+      try {
+        const [citiesResponse, societiesResponse, phasesResponse] =
+          await Promise.all([
+            fetch("/api/cities"),
+            fetch("/api/societies"),
+            fetch("/api/phases"),
+          ]);
+
+        if (!citiesResponse.ok) throw new Error("Failed to fetch cities.");
+        if (!societiesResponse.ok)
+          throw new Error("Failed to fetch societies.");
+        if (!phasesResponse.ok) throw new Error("Failed to fetch phases.");
+
+        const citiesData = await citiesResponse.json();
+        const societiesData = await societiesResponse.json();
+        const phasesData = await phasesResponse.json();
+
+        setCities(citiesData);
+        setSocieties(societiesData);
+        setPhases(phasesData);
+
+        // Move reset(formDataToSet) here to ensure options are loaded first
+        if (initialData) {
+          const baseData = { ...initialData };
+
+          const formDataToSet = {
+            ...baseData,
+            city_id: baseData.city_id ? baseData.city_id.toString() : null,
+            society_id: baseData.society_id ? baseData.society_id.toString() : null,
+            phase_id: baseData.phase_id ? baseData.phase_id.toString() : null,
+            hide: baseData.hide === 1 || baseData.hide === true, // Convert to strict boolean
+          };
+
+          if (isDuplicating) {
+            formDataToSet.id = undefined; // Ensure ID is removed for duplication
+          }
+          reset(formDataToSet);
+          // Format existing map_pic for MediaUpload
+          if (initialData.map_pic) {
+            setMapImage([
+              {
+                url: initialData.map_pic,
+                thumb_path: initialData.map_thumb,
+                type: "image",
+              },
+            ]);
+          } else {
+            setMapImage([]);
+          }
+          // Format existing pdf for MediaUpload
+          if (initialData.pdf) {
+            setMapPdf([{ url: initialData.pdf, type: "pdf" }]);
+          } else {
+            setMapPdf([]);
+          }
+        } else {
+          reset({
+            title: "",
+            description: "",
+            hide: false,
+            mapImage: [],
+            mapPdf: [],
+            city_id: null,
+            society_id: null,
+            phase_id: null,
+          });
+          setMapImage([]);
+          setMapPdf([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch relations data:", error);
+        toast.error("Failed to load related data: " + error.message);
+      }
+    };
+
+    fetchData();
   }, [initialData, reset, isDuplicating]);
 
-  const onSubmit = (data) => {
+  const onSubmit = async () => {
+    const formDataFromHook = getValues(); // Get all form values directly
     const finalData = {
-      ...data,
+      ...formDataFromHook, // Use data from getValues
       mapImage,
       mapPdf,
-      id: (isDuplicating || !initialData) ? undefined : initialData.id,
+      id: isDuplicating || !initialData ? undefined : initialData.id,
     };
     onSuccess(finalData);
   };
@@ -99,26 +177,128 @@ export default function MapForm({ initialData, onSuccess, onCancel, isDuplicatin
           </CardContent>
         </Card>
 
+        {/* Relations Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Relations</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+                                                        <Label htmlFor="city_id">City</Label>
+                                                        <Controller
+                                                          name="city_id"
+                                                          control={control}
+                                                          render={({ field }) => {
+                                                            return (
+                                                              <Select
+                                                                key={field.value + '-' + (cities.length > 0)} // Added key prop
+                                                                value={field.value ?? ""}
+                                                                onValueChange={(value) => {
+                                                                  field.onChange(value === "" ? null : value); // Convert empty string to null
+                                                                }}
+                                                              >
+                                                                <SelectTrigger>
+                                                                  <SelectValue placeholder="Select a city" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                  <SelectItem value={null}>None</SelectItem>
+                                                                  {cities.map((city) => (
+                                                                    <SelectItem key={city.id} value={city.id.toString()}>
+                                                                      {city.name}
+                                                                    </SelectItem>
+                                                                  ))}
+                                                                </SelectContent>
+                                                              </Select>
+                                                            );
+                                                          }}
+                                                        />                                        </div>
+                            
+                                        <div className="space-y-2">
+                                                                      <Label htmlFor="society_id">Society</Label>
+                                                                      <Controller
+                                                                        name="society_id"
+                                                                        control={control}
+                                                                        render={({ field }) => {
+                                                                          return (
+                                                                            <Select
+                                                                              key={field.value + '-' + (societies.length > 0)} // Added key prop
+                                                                              value={field.value ?? ""}
+                                                                              onValueChange={(value) => {
+                                                                                field.onChange(value === "" ? null : value); // Convert empty string to null
+                                                                              }}
+                                                                            >
+                                                                              <SelectTrigger>
+                                                                                <SelectValue placeholder="Select a society" />
+                                                                              </SelectTrigger>
+                                                                              <SelectContent>
+                                                                                <SelectItem value={null}>None</SelectItem>
+                                                                                {societies.map((soc) => (
+                                                                                  <SelectItem key={soc.id} value={soc.id.toString()}>
+                                                                                    {soc.name}
+                                                                                  </SelectItem>
+                                                                                ))}
+                                                                              </SelectContent>
+                                                                            </Select>
+                                                                          );
+                                                                        }}
+                                                                      />                                        </div>
+                            
+                                        <div className="space-y-2">
+                                                                      <Label htmlFor="phase_id">Phase</Label>
+                                                                      <Controller
+                                                                        name="phase_id"
+                                                                        control={control}
+                                                                        render={({ field }) => {
+                                                                          return (
+                                                                            <Select
+                                                                              key={field.value + '-' + (phases.length > 0)} // Added key prop
+                                                                              value={field.value ?? ""}
+                                                                              onValueChange={(value) => {
+                                                                                field.onChange(value === "" ? null : value); // Convert empty string to null
+                                                                              }}
+                                                                            >
+                                                                              <SelectTrigger>
+                                                                                <SelectValue placeholder="Select a phase" />
+                                                                              </SelectTrigger>
+                                                                              <SelectContent>
+                                                                                <SelectItem value={null}>None</SelectItem>
+                                                                                {phases.map((phase) => (
+                                                                                  <SelectItem key={phase.id} value={phase.id.toString()}>
+                                                                                    {phase.name}
+                                                                                  </SelectItem>
+                                                                                ))}
+                                                                              </SelectContent>
+                                                                            </Select>
+                                                                          );
+                                                                        }}
+                                                                      />            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Map Media</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 py-4">
-            <h4 className="text-sm font-medium leading-none">Map Image (Max 1)</h4>
+            <h4 className="text-sm font-medium leading-none">
+              Map Image (Max 1)
+            </h4>
             <MediaUpload
               initialMedia={mapImage}
               onMediaChange={setMapImage}
               maxFiles={1}
-              allowedTypes={['image/*']}
+              allowedTypes={["image/*"]}
               allowMultiple={false}
               showPrimaryOption={false}
             />
-            <h4 className="text-sm font-medium leading-none">Map PDF (Max 1)</h4>
+            <h4 className="text-sm font-medium leading-none">
+              Map PDF (Max 1)
+            </h4>
             <MediaUpload
               initialMedia={mapPdf}
               onMediaChange={setMapPdf}
               maxFiles={1}
-              allowedTypes={['application/pdf']}
+              allowedTypes={["application/pdf"]}
               allowMultiple={false}
               showPrimaryOption={false}
             />

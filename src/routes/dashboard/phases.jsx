@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
-import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
+import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
+import { Spinner } from '@/components/ui/spinner';
+import PhaseForm from '@/components/dashboard/phase-form/PhaseForm'; // Import the new PhaseForm
 
 export const Route = createFileRoute('/dashboard/phases')({
   component: DashboardPhases,
@@ -14,12 +15,7 @@ export const Route = createFileRoute('/dashboard/phases')({
   },
 });
 
-const formFields = [
-    { name: 'name', label: 'Name', required: true },
-];
-
 const columns = [
-
     {
         id: 'select',
         header: ({ table }) => (
@@ -51,13 +47,23 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'name', header: 'Name' },
+    {
+      accessorKey: 'map_ids',
+      header: 'Associated Maps',
+      cell: ({ row }) => {
+        const mapIds = row.original.map_ids;
+        return mapIds && mapIds.length > 0 ? `${mapIds.length} Maps` : 'None';
+      },
+      enableSorting: false,
+      enableHiding: true,
+    },
     { 
-      accessorKey: 'changed_at', 
+      accessorKey: 'updated_at', 
       header: ({ column }) => {
         const sorted = column.getIsSorted();
         return (
           <Button variant="ghost" onClick={() => column.toggleSorting()}>
-            Changed
+            Last Updated
             {sorted === "asc" && <ArrowUp className="w-4 h-4 ml-2" />}
             {sorted === "desc" && <ArrowDown className="w-4 h-4 ml-2" />}
             {!sorted && <ArrowUpDown className="w-4 h-4 ml-2" />}
@@ -70,35 +76,162 @@ const columns = [
 ];
 
 function DashboardPhases() {
-  const [phases, setPhases] = useState([
-    { id: uuidv4(), name: 'Phase 8', changed_at: '2024-11-30 10:00' },
-    { id: uuidv4(), name: 'Phase 9', changed_at: '2024-11-30 15:00' },
-  ]);
+  const [phases, setPhases] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddPhase = (newItem) => {
-    setPhases((current) => [...current, { ...newItem, id: uuidv4(), changed_at: new Date().toLocaleString() }]);
-    toast.success("Phase added successfully!");
+  const fetchPhases = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/phases');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setPhases(data);
+    } catch (e) {
+      setError(e.message);
+      toast.error("Failed to load phases: " + e.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditPhase = (editedItem) => {
-    setPhases((current) =>
-      current.map((phase) =>
-        phase.id === editedItem.id ? { ...editedItem, changed_at: new Date().toLocaleString() } : phase
-      )
-    );
-    toast.success("Phase updated successfully!");
+  useEffect(() => {
+    fetchPhases();
+  }, []);
+
+  const handleAddPhase = async (newItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', newItem.name);
+      if (newItem.map_ids && newItem.map_ids.length > 0) {
+        newItem.map_ids.forEach(mapId => {
+          formData.append('map_ids[]', mapId);
+        });
+      }
+
+      const response = await fetch('/api/phases', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Phase added successfully!");
+      fetchPhases();
+      return true;
+    } catch (e) {
+      toast.error("Failed to add phase: " + e.message);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeletePhase = (id) => {
-    setPhases(phases.filter((p) => p.id !== id));
+  const handleEditPhase = async (editedItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editedItem.name);
+      // Always send map_ids, even if empty, to ensure unlinking works
+      if (editedItem.map_ids && editedItem.map_ids.length > 0) {
+        editedItem.map_ids.forEach(mapId => {
+          formData.append('map_ids[]', mapId);
+        });
+      } else {
+        // Explicitly send an empty array if no maps are selected to ensure unlinking
+        formData.append('map_ids[]', ''); 
+      }
+      formData.append('_method', 'PATCH'); // Method override
+
+      const response = await fetch(`/api/phases/${editedItem.id}`, {
+        method: 'POST', // Use POST for FormData with method override
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Phase updated successfully!");
+      fetchPhases();
+      return true;
+    } catch (e) {
+      toast.error("Failed to update phase: " + e.message);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    const selectedIds = new Set(selectedRows.map((row) => row.original.id));
-    setPhases(phases.filter((p) => !selectedIds.has(p.id)));
-    setSelectedRows([]);
+  const handleDeletePhase = async (id) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/phases/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Phase deleted successfully!");
+      fetchPhases();
+    } catch (e) {
+      toast.error("Failed to delete phase: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) {
+      toast.warning("No rows selected for deletion.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const deletePromises = selectedRows.map(row => 
+        fetch(`/api/phases/${row.original.id}`, { method: 'DELETE' })
+      );
+
+      const results = await Promise.allSettled(deletePromises);
+      
+      const failedDeletes = [];
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedDeletes.push(`ID ${selectedRows[index].original.id}: Network or server error`);
+        } else if (!result.value.ok) {
+          // Try to get error detail from response body
+          const
+           errorPromise = result.value.json().then(err => `ID ${selectedRows[index].original.id}: ${err.detail || result.value.statusText}`).catch(() => `ID ${selectedRows[index].original.id}: ${result.value.statusText}`);
+          failedDeletes.push(errorPromise);
+        }
+      });
+
+      const finalFailedMessages = await Promise.all(failedDeletes);
+
+      if (finalFailedMessages.length === 0) {
+        toast.success("Selected phases deleted successfully!");
+      } else {
+        toast.error(`Failed to delete ${finalFailedMessages.length} phase(s): ${finalFailedMessages.join(', ')}`);
+      }
+      
+      setSelectedRows([]);
+      fetchPhases();
+
+    } catch (e) {
+      toast.error("Error during batch deletion: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportCsv = () => {
@@ -116,11 +249,9 @@ function DashboardPhases() {
         column => column.getIsVisible() && column.columnDef.accessorKey
     );
     
-    // Create header row
     const headers = visibleColumns.map(col => typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id);
     let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
 
-    // Create data rows
     selectedData.forEach(item => {
         const row = visibleColumns.map(col => {
             let value = item[col.columnDef.accessorKey];
@@ -147,6 +278,23 @@ function DashboardPhases() {
     toast.info("Exporting as PDF...");
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Spinner size="lg" />
+        <p className="ml-2">Loading phases...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 text-center p-4">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div>
       <CrudDataTable
@@ -157,7 +305,7 @@ function DashboardPhases() {
         onAddItem={handleAddPhase}
         onEditItem={handleEditPhase}
         columns={columns}
-        formFields={formFields}
+        FormComp={PhaseForm}
         entityName="Phase"
         handleDeleteItem={handleDeletePhase}
         handleDeleteSelected={handleDeleteSelected}
@@ -168,6 +316,7 @@ function DashboardPhases() {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

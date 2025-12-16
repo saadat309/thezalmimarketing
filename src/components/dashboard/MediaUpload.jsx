@@ -27,15 +27,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-// Helper for deep comparison of media item arrays
+// Helper for deep comparison of media item arrays (Moved outside component)
 function areMediaItemsEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) return false;
   for (let i = 0; i < arr1.length; i++) {
     // Compare relevant properties for equality (excluding `file` object and URL.createObjectURL generated URLs)
+    // Ensure `item.url` is treated as a string for comparison.
+    const url1 = arr1[i].url === null || arr1[i].url === undefined ? '' : String(arr1[i].url);
+    const url2 = arr2[i].url === null || arr2[i].url === undefined ? '' : String(arr2[i].url);
+
     if (
       arr1[i].id !== arr2[i].id ||
       arr1[i].type !== arr2[i].type ||
-      arr1[i].url !== arr2[i].url
+      url1 !== url2
     ) {
       return false;
     }
@@ -113,7 +117,7 @@ const SortableMediaItem = ({ id, url, type, onRemove }) => {
         <div className="flex-shrink-0">{renderMediaPreview()}</div>
         <div className="flex-1 min-w-0">
           <p className="text-sm truncate">
-            {url.substring(url.lastIndexOf("/") + 1)}
+            {typeof url === 'string' ? url.substring(url.lastIndexOf("/") + 1) : "Invalid URL"}
           </p>
         </div>
         <div className="flex items-center space-x-1 flex-shrink-0">
@@ -149,6 +153,7 @@ export function MediaUpload({
   const lastPropagatedMedia = useRef([]);
 
   useEffect(() => {
+    // Only update internal state if initialMedia has genuinely changed content
     if (!areMediaItemsEqual(initialMedia, lastSyncedInitialMedia.current)) {
       let processedMedia = initialMedia.map((item) => ({
         id: item.id || uuidv4(),
@@ -166,12 +171,10 @@ export function MediaUpload({
         file: item.file || null,
       }));
 
-      if (!areMediaItemsEqual(mediaItems, processedMedia)) {
-        setMediaItems(processedMedia);
-      }
+      setMediaItems(processedMedia); // Set state directly
       lastSyncedInitialMedia.current = processedMedia;
     }
-  }, [initialMedia, mediaItems]);
+  }, [initialMedia]); // Removed mediaItems from dependencies
 
   useEffect(() => {
     if (!areMediaItemsEqual(mediaItems, lastPropagatedMedia.current)) {

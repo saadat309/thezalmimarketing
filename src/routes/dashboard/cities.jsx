@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
-import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
 import { toast } from "sonner";
+import { Spinner } from '@/components/ui/spinner'; // Assuming a spinner component for loading
+import CityForm from '@/components/dashboard/city-form/CityForm'; // Import the new CityForm
 
 export const Route = createFileRoute('/dashboard/cities')({
   component: DashboardCities,
@@ -14,12 +15,7 @@ export const Route = createFileRoute('/dashboard/cities')({
   },
 });
 
-const formFields = [
-    { name: 'name', label: 'Name', required: true },
-];
-
 const columns = [
-
     {
         id: 'select',
         header: ({ table }) => (
@@ -51,13 +47,23 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'name', header: 'Name' },
+    {
+      accessorKey: 'map_ids',
+      header: 'Associated Maps',
+      cell: ({ row }) => {
+        const mapIds = row.original.map_ids;
+        return mapIds && mapIds.length > 0 ? `${mapIds.length} Maps` : 'None';
+      },
+      enableSorting: false,
+      enableHiding: true,
+    },
     { 
-      accessorKey: 'changed_at', 
+      accessorKey: 'updated_at', // Use updated_at from backend
       header: ({ column }) => {
         const sorted = column.getIsSorted();
         return (
           <Button variant="ghost" onClick={() => column.toggleSorting()}>
-            Changed
+            Last Updated
             {sorted === "asc" && <ArrowUp className="w-4 h-4 ml-2" />}
             {sorted === "desc" && <ArrowDown className="w-4 h-4 ml-2" />}
             {!sorted && <ArrowUpDown className="w-4 h-4 ml-2" />}
@@ -70,35 +76,164 @@ const columns = [
 ];
 
 function DashboardCities() {
-  const [cities, setCities] = useState([
-    { id: uuidv4(), name: 'Lahore', changed_at: '2024-12-01 08:00' },
-    { id: uuidv4(), name: 'Karachi', changed_at: '2024-12-01 13:00' },
-  ]);
+  const [cities, setCities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // State for submission loading
 
-  const handleAddCity = (newItem) => {
-    setCities((current) => [...current, { ...newItem, id: uuidv4(), changed_at: new Date().toLocaleString() }]);
-    toast.success("City added successfully!");
+  const fetchCities = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/cities');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setCities(data);
+    } catch (e) {
+      setError(e.message);
+      toast.error("Failed to load cities: " + e.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditCity = (editedItem) => {
-    setCities((current) =>
-      current.map((city) =>
-        city.id === editedItem.id ? { ...editedItem, changed_at: new Date().toLocaleString() } : city
-      )
-    );
-    toast.success("City updated successfully!");
+  useEffect(() => {
+    fetchCities();
+  }, []);
+
+  const handleAddCity = async (newItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', newItem.name);
+      if (newItem.map_ids && newItem.map_ids.length > 0) {
+        newItem.map_ids.forEach(mapId => {
+          formData.append('map_ids[]', mapId);
+        });
+      }
+
+      const response = await fetch('/api/cities', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("City added successfully!");
+      fetchCities(); // Re-fetch cities to update the table
+      return true; // Indicate success
+    } catch (e) {
+      toast.error("Failed to add city: " + e.message);
+      return false; // Indicate failure
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteCity = (id) => {
-    setCities(cities.filter((c) => c.id !== id));
+  const handleEditCity = async (editedItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editedItem.name);
+      // Always send map_ids, even if empty, to ensure unlinking works
+      if (editedItem.map_ids && editedItem.map_ids.length > 0) {
+        editedItem.map_ids.forEach(mapId => {
+          formData.append('map_ids[]', mapId);
+        });
+      } else {
+        // Explicitly send an empty array if no maps are selected to ensure unlinking
+        formData.append('map_ids[]', ''); 
+      }
+      formData.append('_method', 'PATCH'); // Method override
+
+      const response = await fetch(`/api/cities/${editedItem.id}`, {
+        method: 'POST', // Use POST for FormData with method override
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("City updated successfully!");
+      fetchCities(); // Re-fetch cities to update the table
+      return true; // Indicate success
+    } catch (e) {
+      toast.error("Failed to update city: " + e.message);
+      return false; // Indicate failure
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    const selectedIds = new Set(selectedRows.map((row) => row.original.id));
-    setCities(cities.filter((c) => !selectedIds.has(c.id)));
-    setSelectedRows([]);
+  const handleDeleteCity = async (id) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/cities/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("City deleted successfully!");
+      fetchCities(); // Re-fetch cities to update the table
+    } catch (e) {
+      toast.error("Failed to delete city: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) {
+      toast.warning("No rows selected for deletion.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // Create an array of promises for all delete operations
+      const deletePromises = selectedRows.map(row => 
+        fetch(`/api/cities/${row.original.id}`, { method: 'DELETE' })
+      );
+
+      const results = await Promise.allSettled(deletePromises);
+      let allSucceeded = true;
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          allSucceeded = false;
+          console.error(`Failed to delete city ${selectedRows[index].original.id}:`, result.reason);
+        } else if (!result.value.ok) {
+          allSucceeded = false;
+          result.value.json().then(errorData => {
+            console.error(`Failed to delete city ${selectedRows[index].original.id}:`, errorData.detail || result.value.statusText);
+          });
+        }
+      });
+
+      if (allSucceeded) {
+        toast.success("Selected cities deleted successfully!");
+        setSelectedRows([]); // Clear selection
+        fetchCities(); // Re-fetch all cities
+      } else {
+        toast.error("Some cities failed to delete. Please check console for details.");
+      }
+
+    } catch (e) {
+      toast.error("Error during batch deletion: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportCsv = () => {
@@ -147,6 +282,23 @@ function DashboardCities() {
     toast.info("Exporting as PDF...");
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Spinner size="lg" />
+        <p className="ml-2">Loading cities...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 text-center p-4">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div>
       <CrudDataTable
@@ -157,7 +309,7 @@ function DashboardCities() {
         onAddItem={handleAddCity}
         onEditItem={handleEditCity}
         columns={columns}
-        formFields={formFields}
+        FormComp={CityForm} // Use the custom form component
         entityName="City"
         handleDeleteItem={handleDeleteCity}
         handleDeleteSelected={handleDeleteSelected}
@@ -168,6 +320,7 @@ function DashboardCities() {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
+        isSubmitting={isSubmitting} // Pass submitting state to disable form actions
       />
     </div>
   );

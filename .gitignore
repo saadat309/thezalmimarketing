@@ -2,8 +2,8 @@
 .tanstack
 MISC
 GEMINI.md
-DATABASE_ANALYSIS.md
-PHP_BACKEND_INTEGRATION_GUIDE.md
+plan_and_context.md
+
 
 # Logs
 logs

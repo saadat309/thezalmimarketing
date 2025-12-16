@@ -91,31 +91,46 @@ export function CrudDataTable({
     setFormData({}); // Reset formData as well
   }, [onEditingItemChange]);
 
-  const onFormSubmit = useCallback((submittedData) => {
+  const onFormSubmit = useCallback(async (submittedData) => {
     const itemToProcess = { ...submittedData, changed_at: new Date().toLocaleString() };
+    let success = false;
 
+    // A duplicate operation is just an "add" operation with pre-filled data.
+    // We prioritize onAddItem for duplication.
     if (isDuplicating) {
-      if (onDuplicateItem) {
-        onDuplicateItem({ ...itemToProcess, id: uuidv4() });
+      console.log("CrudDataTable - onFormSubmit: In duplicating mode.");
+      console.log("CrudDataTable - onFormSubmit: itemToProcess (before id/uuidv4 check):", itemToProcess);
+      if (onAddItem) {
+        const newItemWithId = { ...itemToProcess, id: uuidv4() };
+        console.log("CrudDataTable - onFormSubmit: Calling onAddItem with:", newItemWithId);
+        success = await onAddItem(newItemWithId);
+      } else if (onDuplicateItem) { // Fallback for components that might provide onDuplicateItem
+        success = await onDuplicateItem({ ...itemToProcess, id: uuidv4() });
       } else {
         setData((current) => [...current, { ...itemToProcess, id: uuidv4() }]);
+        success = true; // Assume success if setData is used directly
       }
     } else if (editingItem) {
       if (onEditItem) {
-        onEditItem({ ...editingItem, ...itemToProcess });
+        success = await onEditItem({ ...editingItem, ...itemToProcess });
       } else {
         setData((current) =>
           current.map((item) => (item.id === editingItem.id ? { ...editingItem, ...itemToProcess } : item))
         );
+        success = true;
       }
     } else {
       if (onAddItem) {
-        onAddItem({ ...itemToProcess, id: uuidv4() });
+        success = await onAddItem({ ...itemToProcess, id: uuidv4() });
       } else {
         setData((current) => [...current, { ...itemToProcess, id: uuidv4() }]);
+        success = true;
       }
     }
-    resetSheetState();
+    
+    if (success) {
+      resetSheetState();
+    }
   }, [isDuplicating, onDuplicateItem, setData, editingItem, onEditItem, onAddItem, resetSheetState]);
 
 

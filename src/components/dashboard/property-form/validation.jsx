@@ -23,14 +23,7 @@ export const propertyFormSchema = z
     unit: z
       .enum(["sqft", "marla", "kanal", "hectare", "acre", "yard"])
       .optional(),
-    features: z
-      .array(
-        z.object({
-          type: z.string(),
-          value: z.string(),
-        })
-      )
-      .optional(),
+    features: z.string().optional(),
 
     // ===== PRICING =====
     price_amount: z.coerce
@@ -66,15 +59,8 @@ export const propertyFormSchema = z
     // ===== LABELS/TAGS =====
     labels: z.array(z.coerce.number()).optional(),
 
-    // ===== RICH TEXT DETAIL DESCRIPTIONS =====
-    detail_descriptions: z
-      .array(
-        z.object({
-          heading: z.string().min(1, "Heading is required"),
-          text: z.string().min(1, "Description text is required"),
-        })
-      )
-      .optional(),
+    // ===== RICH TEXT DETAILED DESCRIPTION CONTENT =====
+    detailed_description_content: z.string().optional(),
 
     // ===== MEDIA & LINKS =====
     embed_link: z.string().optional(),

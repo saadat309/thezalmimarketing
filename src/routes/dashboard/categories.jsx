@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
-import { v4 as uuidv4 } from 'uuid';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowUpDown
 import { toast } from "sonner";
+import { Spinner } from '@/components/ui/spinner'; // Assuming a spinner component for loading
+import CategoryForm from '@/components/dashboard/category-form/CategoryForm'; // Import the new CategoryForm
 
 export const Route = createFileRoute('/dashboard/categories')({
   component: DashboardCategories,
@@ -13,10 +14,6 @@ export const Route = createFileRoute('/dashboard/categories')({
     title: 'Categories',
   },
 });
-
-const formFields = [
-    { name: 'name', label: 'Name', required: true },
-];
 
 const columns = [
     {
@@ -51,12 +48,23 @@ const columns = [
     },
     { accessorKey: 'name', header: 'Name' },
     { 
-      accessorKey: 'changed_at', 
+      accessorKey: 'pic', // Display image if available
+      header: 'Image',
+      cell: ({ row }) => row.original.pic ? (
+        <img src={row.original.pic} alt={row.original.name} className="object-cover w-10 h-10 rounded-md" />
+      ) : (
+        <span className="text-muted-foreground">No Image</span>
+      ),
+      enableSorting: false,
+      enableHiding: true,
+    },
+    { 
+      accessorKey: 'updated_at', // Use updated_at from backend
       header: ({ column }) => {
         const sorted = column.getIsSorted();
         return (
           <Button variant="ghost" onClick={() => column.toggleSorting()}>
-            Changed
+            Last Updated
             {sorted === "asc" && <ArrowUp className="w-4 h-4 ml-2" />}
             {sorted === "desc" && <ArrowDown className="w-4 h-4 ml-2" />}
             {!sorted && <ArrowUpDown className="w-4 h-4 ml-2" />}
@@ -69,35 +77,185 @@ const columns = [
 ];
 
 function DashboardCategories() {
-  const [categories, setCategories] = useState([
-    { id: uuidv4(), name: 'Residential', changed_at: '2024-11-29 10:00' },
-    { id: uuidv4(), name: 'Commercial', changed_at: '2024-11-29 14:00' },
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // State for submission loading
 
-  const handleAddCategory = (newItem) => {
-    setCategories((current) => [...current, { ...newItem, id: uuidv4(), changed_at: new Date().toLocaleString() }]);
-    toast.success("Category added successfully!");
+  const fetchCategories = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setCategories(data);
+    } catch (e) {
+      setError(e.message);
+      toast.error("Failed to load categories: " + e.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditCategory = (editedItem) => {
-    setCategories((current) =>
-      current.map((category) =>
-        category.id === editedItem.id ? { ...editedItem, changed_at: new Date().toLocaleString() } : category
-      )
-    );
-    toast.success("Category updated successfully!");
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = async (newItem) => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', newItem.name);
+      if (newItem.file) {
+        formData.append('image', newItem.file);
+      } else if (newItem.image_url) {
+        formData.append('image_url', newItem.image_url);
+      }
+
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("Category added successfully!");
+      fetchCategories(); // Re-fetch categories to update the table
+      return true; // Indicate success
+    } catch (e) {
+      toast.error("Failed to add category: " + e.message);
+      return false; // Indicate failure
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteCategory = (id) => {
-    setCategories(categories.filter((c) => c.id !== id));
+  const handleEditCategory = async (editedItem) => {
+    setIsSubmitting(true);
+    try {
+      let response;
+
+      // Check if an image is being uploaded or removed
+      const hasFileOperation = editedItem.file || editedItem.pic_removed;
+
+      if (hasFileOperation) {
+        // Use FormData if there's an image operation
+        const formData = new FormData();
+        formData.append('name', editedItem.name);
+
+        if (editedItem.file) {
+          formData.append('image', editedItem.file);
+        } else if (editedItem.pic_removed) {
+          formData.append('pic_removed', 'true');
+        }
+
+        // Add method override for multipart/form-data PATCH
+        formData.append('_method', 'PATCH');
+
+        response = await fetch(`/api/categories/${editedItem.id}`, {
+          method: 'POST', // Use POST for multipart forms
+          body: formData,
+        });
+      } else {
+        // No file operation, send as JSON
+        const jsonData = {
+          name: editedItem.name,
+        };
+
+        response = await fetch(`/api/categories/${editedItem.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(jsonData),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("Category updated successfully!");
+      fetchCategories(); // Re-fetch categories to update the table
+      return true; // Indicate success
+    } catch (e) {
+      console.error("Full error object when updating category:", e);
+      toast.error("Failed to update category: " + e.message);
+      return false; // Indicate failure
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    const selectedIds = new Set(selectedRows.map((row) => row.original.id));
-    setCategories(categories.filter((c) => !selectedIds.has(c.id)));
-    setSelectedRows([]);
+  const handleDeleteCategory = async (id) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("Category deleted successfully!");
+      fetchCategories(); // Re-fetch categories to update the table
+    } catch (e) {
+      toast.error("Failed to delete category: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) {
+      toast.warning("No rows selected for deletion.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // Create an array of promises for all delete operations
+      const deletePromises = selectedRows.map(row => 
+        fetch(`/api/categories/${row.original.id}`, { method: 'DELETE' })
+      );
+
+      const results = await Promise.allSettled(deletePromises);
+      let allSucceeded = true;
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          allSucceeded = false;
+          console.error(`Failed to delete category ${selectedRows[index].original.id}:`, result.reason);
+        } else if (!result.value.ok) {
+          allSucceeded = false;
+          result.value.json().then(errorData => {
+            console.error(`Failed to delete category ${selectedRows[index].original.id}:`, errorData.detail || result.value.statusText);
+          });
+        }
+      });
+
+      if (allSucceeded) {
+        toast.success("Selected categories deleted successfully!");
+        setSelectedRows([]); // Clear selection
+        fetchCategories(); // Re-fetch all categories
+      } else {
+        toast.error("Some categories failed to delete. Please check console for details.");
+      }
+
+    } catch (e) {
+      toast.error("Error during batch deletion: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportCsv = () => {
@@ -146,6 +304,23 @@ function DashboardCategories() {
     toast.info("Exporting as PDF...");
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner size="lg" />
+        <p className="ml-2">Loading categories...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div>
       <CrudDataTable
@@ -156,7 +331,7 @@ function DashboardCategories() {
         onAddItem={handleAddCategory}
         onEditItem={handleEditCategory}
         columns={columns}
-        formFields={formFields}
+        FormComp={CategoryForm} // Use the custom form component
         entityName="Category"
         handleDeleteItem={handleDeleteCategory}
         handleDeleteSelected={handleDeleteSelected}
@@ -167,6 +342,7 @@ function DashboardCategories() {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
+        isSubmitting={isSubmitting} // Pass submitting state to disable form actions
       />
     </div>
   );

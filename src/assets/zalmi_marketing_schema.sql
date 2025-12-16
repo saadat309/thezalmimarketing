@@ -22,9 +22,8 @@ CREATE TABLE images (
   path VARCHAR(1024) NOT NULL,
   thumb_path VARCHAR(1024) DEFAULT NULL,
   alt VARCHAR(255),
-  caption VARCHAR(512),
   position INT NOT NULL DEFAULT 0,
-  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  is_card_pic BOOLEAN NOT NULL DEFAULT FALSE,
   hide BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -34,11 +33,10 @@ CREATE TABLE images (
 -- 3. detail_descriptions (no dependencies)
 CREATE TABLE detail_descriptions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  heading VARCHAR(255) NOT NULL,
   text LONGTEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  hide BOOLEAN NOT NULL DEFAULT FALSE
+  hide BOOLEAN NOT NULL DEFAULT FALSE 
 );
 
 -- 4. map_docs (no dependencies)
@@ -49,11 +47,16 @@ CREATE TABLE map_docs (
   map_pic VARCHAR(1024),
   map_thumb VARCHAR(1024),
   pdf VARCHAR(1024),
-  embed_link TEXT,  
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FULLTEXT idx_map_docs_fulltext (title, description),
-  hide BOOLEAN NOT NULL DEFAULT FALSE
+  hide BOOLEAN NOT NULL DEFAULT FALSE, 
+  city_id BIGINT UNSIGNED NULL,
+  society_id BIGINT UNSIGNED NULL,
+  phase_id BIGINT UNSIGNED NULL
+  FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE SET NULL;
+  FOREIGN KEY (society_id) REFERENCES societies(id) ON DELETE SET NULL;
+  FOREIGN KEY (phase_id) REFERENCES phases(id) ON DELETE SET NULL;
 );
 
 -- 5. categories (no dependencies)
@@ -65,7 +68,7 @@ CREATE TABLE categories (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FULLTEXT idx_categories_fulltext (name),
-  hide BOOLEAN NOT NULL DEFAULT FALSE
+  hide BOOLEAN NOT NULL DEFAULT FALSE 
 );
 
 -- 6. labels (no dependencies)
@@ -87,10 +90,8 @@ CREATE TABLE cities (
   name VARCHAR(255) NOT NULL,
   pic VARCHAR(1024),
   thumb VARCHAR(1024),
-  map_id BIGINT UNSIGNED,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (map_id) REFERENCES map_docs(id) ON DELETE SET NULL,
   FULLTEXT idx_cities_fulltext (name),
   hide BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -101,12 +102,8 @@ CREATE TABLE societies (
   name VARCHAR(255) NOT NULL,
   pic VARCHAR(1024),
   thumb VARCHAR(1024),
-  map_id BIGINT UNSIGNED,
-  description TEXT,
-  address TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (map_id) REFERENCES map_docs(id) ON DELETE SET NULL,
   FULLTEXT idx_societies_fulltext (name, description),
   hide BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -117,11 +114,8 @@ CREATE TABLE phases (
   name VARCHAR(255) NOT NULL,
   pic VARCHAR(1024),
   thumb VARCHAR(1024),
-  map_id BIGINT UNSIGNED,
-  description TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (map_id) REFERENCES map_docs(id) ON DELETE SET NULL,
   FULLTEXT idx_phases_fulltext (name, description),
   hide BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -137,7 +131,7 @@ CREATE TABLE properties (
   is_furnished BOOLEAN NOT NULL DEFAULT TRUE,
   short_desc TEXT,
   address TEXT,
-  features JSON,
+  features TEXT NULL, -- comma+space separated features eg: "feature1, feature2, feature3"
   beds INT DEFAULT 0,
   baths INT DEFAULT 0,
   area BIGINT DEFAULT 0,
@@ -156,7 +150,7 @@ CREATE TABLE properties (
   city_id BIGINT UNSIGNED,
   society_id BIGINT UNSIGNED,
   phase_id BIGINT UNSIGNED,
-  embed_link TEXT,
+  embed_link TEXT, --for google maps
   hide BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -166,11 +160,19 @@ CREATE TABLE properties (
   FOREIGN KEY (society_id) REFERENCES societies(id) ON DELETE SET NULL,
   FOREIGN KEY (phase_id) REFERENCES phases(id) ON DELETE SET NULL,
   FULLTEXT idx_properties_fulltext (title, short_desc),
+  FULLTEXT idx_properties_features (features),
   CONSTRAINT chk_beds CHECK (beds >= 0),
   CONSTRAINT chk_baths CHECK (baths >= 0),
   CONSTRAINT chk_area CHECK (area >= 0),
-  CONSTRAINT chk_price CHECK (price_amount >= 0)
+  CONSTRAINT chk_price CHECK (price_amount >= 0),
+  detail_description_id BIGINT UNSIGNED NULL;
 );
+
+ALTER TABLE properties
+ADD CONSTRAINT fk_properties_detail_description
+FOREIGN KEY (detail_description_id)
+REFERENCES detail_descriptions(id)
+ON DELETE SET NULL;
 
 -- ============================================
 -- Junction/Relationship Tables
@@ -180,6 +182,7 @@ CREATE TABLE property_related_properties (
   property_id BIGINT UNSIGNED NOT NULL,
   related_property_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY(property_id, related_property_id),
+  position INT NOT NULL DEFAULT 0;
   FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE,
   FOREIGN KEY(related_property_id) REFERENCES properties(id) ON DELETE CASCADE
 );
@@ -187,115 +190,13 @@ CREATE TABLE property_related_properties (
 CREATE TABLE property_labels (
   property_id BIGINT UNSIGNED NOT NULL,
   label_id BIGINT UNSIGNED NOT NULL,
+  position INT NOT NULL DEFAULT 0;
   PRIMARY KEY(property_id, label_id),
   FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE,
   FOREIGN KEY(label_id) REFERENCES labels(id) ON DELETE CASCADE
-);
+); 
 
-CREATE TABLE category_labels (
-  category_id BIGINT UNSIGNED NOT NULL,
-  label_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(category_id, label_id),
-  FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE,
-  FOREIGN KEY(label_id) REFERENCES labels(id) ON DELETE CASCADE
-);
-
-CREATE TABLE category_societies (
-  category_id BIGINT UNSIGNED NOT NULL,
-  society_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(category_id, society_id),
-  FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE,
-  FOREIGN KEY(society_id) REFERENCES societies(id) ON DELETE CASCADE
-);
-
-CREATE TABLE category_phases (
-  category_id BIGINT UNSIGNED NOT NULL,
-  phase_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(category_id, phase_id),
-  FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE,
-  FOREIGN KEY(phase_id) REFERENCES phases(id) ON DELETE CASCADE
-);
-
-CREATE TABLE category_cities (
-  category_id BIGINT UNSIGNED NOT NULL,
-  city_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(category_id, city_id),
-  FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE,
-  FOREIGN KEY(city_id) REFERENCES cities(id) ON DELETE CASCADE
-);
-
-CREATE TABLE society_labels (
-  society_id BIGINT UNSIGNED NOT NULL,
-  label_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(society_id, label_id),
-  FOREIGN KEY(society_id) REFERENCES societies(id) ON DELETE CASCADE,
-  FOREIGN KEY(label_id) REFERENCES labels(id) ON DELETE CASCADE
-);
-
-CREATE TABLE phase_labels (
-  phase_id BIGINT UNSIGNED NOT NULL,
-  label_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(phase_id, label_id),
-  FOREIGN KEY(phase_id) REFERENCES phases(id) ON DELETE CASCADE,
-  FOREIGN KEY(label_id) REFERENCES labels(id) ON DELETE CASCADE
-);
-
-CREATE TABLE city_labels (
-  city_id BIGINT UNSIGNED NOT NULL,
-  label_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(city_id, label_id),
-  FOREIGN KEY(city_id) REFERENCES cities(id) ON DELETE CASCADE,
-  FOREIGN KEY(label_id) REFERENCES labels(id) ON DELETE CASCADE
-);
-
-CREATE TABLE city_societies (
-  city_id BIGINT UNSIGNED NOT NULL,
-  society_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(city_id, society_id),
-  FOREIGN KEY(city_id) REFERENCES cities(id) ON DELETE CASCADE,
-  FOREIGN KEY(society_id) REFERENCES societies(id) ON DELETE CASCADE
-);
-
-CREATE TABLE city_phases (
-  city_id BIGINT UNSIGNED NOT NULL,
-  phase_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(city_id, phase_id),
-  FOREIGN KEY(city_id) REFERENCES cities(id) ON DELETE CASCADE,
-  FOREIGN KEY(phase_id) REFERENCES phases(id) ON DELETE CASCADE
-);
-
-CREATE TABLE property_detail_descriptions (
-  property_id BIGINT UNSIGNED NOT NULL,
-  detail_description_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(property_id, detail_description_id),
-  FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE,
-  FOREIGN KEY(detail_description_id) REFERENCES detail_descriptions(id) ON DELETE CASCADE
-);
-
-CREATE TABLE map_doc_detail_descriptions (
-  map_doc_id BIGINT UNSIGNED NOT NULL,
-  detail_description_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(map_doc_id, detail_description_id),
-  FOREIGN KEY(map_doc_id) REFERENCES map_docs(id) ON DELETE CASCADE,
-  FOREIGN KEY(detail_description_id) REFERENCES detail_descriptions(id) ON DELETE CASCADE
-);
-
-CREATE TABLE society_detail_descriptions (
-  society_id BIGINT UNSIGNED NOT NULL,
-  detail_description_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(society_id, detail_description_id),
-  FOREIGN KEY(society_id) REFERENCES societies(id) ON DELETE CASCADE,
-  FOREIGN KEY(detail_description_id) REFERENCES detail_descriptions(id) ON DELETE CASCADE
-);
-
-CREATE TABLE phase_detail_descriptions (
-  phase_id BIGINT UNSIGNED NOT NULL,
-  detail_description_id BIGINT UNSIGNED NOT NULL,
-  PRIMARY KEY(phase_id, detail_description_id),
-  FOREIGN KEY(phase_id) REFERENCES phases(id) ON DELETE CASCADE,
-  FOREIGN KEY(detail_description_id) REFERENCES detail_descriptions(id) ON DELETE CASCADE
-);
-
+ 
 -- ============================================
 -- Search Index Table
 -- ============================================
@@ -316,6 +217,13 @@ CREATE TABLE search_indices (
 -- ============================================
 -- INDEXES (Optimized)
 -- ============================================
+
+CREATE INDEX idx_properties_detail_description
+ON properties(detail_description_id);
+
+CREATE INDEX idx_map_docs_city_id ON map_docs(city_id);
+CREATE INDEX idx_map_docs_society_id ON map_docs(society_id);
+CREATE INDEX idx_map_docs_phase_id ON map_docs(phase_id);
 
 -- properties filter/sort indexes (FK indexes removed as they're auto-created)
 CREATE INDEX idx_properties_title ON properties(title);
@@ -369,11 +277,8 @@ CREATE INDEX idx_images_media_id_position ON images(media_id, position);
 
 -- Junction table reverse-lookups
 CREATE INDEX idx_property_labels_label_id ON property_labels(label_id);
-CREATE INDEX idx_property_detail_descriptions_detail_id ON property_detail_descriptions(detail_description_id);
-CREATE INDEX idx_category_labels_label_id ON category_labels(label_id);
-CREATE INDEX idx_phase_labels_label_id ON phase_labels(label_id);
-CREATE INDEX idx_city_labels_label_id ON city_labels(label_id);
-CREATE INDEX idx_society_labels_label_id ON society_labels(label_id);
+CREATE INDEX idx_pl_property_position ON property_labels(property_id, position);
+CREATE INDEX idx_prp_property_position ON property_related_properties(property_id, position);
 
 -- search_indices table indexes
 CREATE INDEX idx_search_indices_entity_type ON search_indices(entity_type);

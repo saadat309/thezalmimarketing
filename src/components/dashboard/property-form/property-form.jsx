@@ -72,9 +72,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
   const [propertiesOptions, setPropertiesOptions] = useState([]);
 
 
-  // State for dynamic lists
-  const [detailDescriptions, setDetailDescriptions] = useState([]);
-  const [features, setFeatures] = useState([]);
+
 
   const [galleryMedia, setGalleryMedia] = useState([]);
   const [thumbnailMedia, setThumbnailMedia] = useState([]);
@@ -127,7 +125,9 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
       embed_link: "",
       hide: false,
       template: "default",
-      _new_label_variant: "secondary", // Initialize new label variant
+      _new_label_variant: "secondary",
+      features: "", // Default to empty string for features textarea
+      detailed_description_content: "", // New field for single rich text editor
       // Merge initialData with defaults, ensuring specific fields have fallbacks
       ...(initialData || {}),
       is_file: initialData?.is_file ?? false,
@@ -191,6 +191,20 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
     if (initialData) {
       // Use reset to populate form with initialData, and handle ID for duplication
       const formDataToSet = isDuplicating ? { ...initialData, id: undefined } : initialData;
+
+      // Handle features: convert array of objects to comma-separated string
+      if (formDataToSet.features && Array.isArray(formDataToSet.features)) {
+        formDataToSet.features = formDataToSet.features.map(f => f.value).join(', ');
+      }
+
+      // Handle detailed_description_content: concatenate from array of objects
+      if (formDataToSet.detail_descriptions && Array.isArray(formDataToSet.detail_descriptions)) {
+        formDataToSet.detailed_description_content = formDataToSet.detail_descriptions.map(d => `<h3>${d.heading}</h3>${d.text}`).join('');
+      } else if (typeof formDataToSet.detail_descriptions === 'string') {
+          // If it's already a string, just use it
+          formDataToSet.detailed_description_content = formDataToSet.detail_descriptions;
+      }
+
       reset(formDataToSet);
 
       // Initialize media states
@@ -219,11 +233,6 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
         setVideoEmbedLinkForMedia('');
       }
 
-      // Initialize dynamic lists
-      setDetailDescriptions(initialData.detail_descriptions || []);
-      setFeatures(initialData.features || []);
-      // Labels are handled by react-hook-form directly now via `setValue("labels", ...)` but mock for existing labels
-      // setLabels should ideally fetch full label objects from an API based on initialData.labels (ids)
     } else {
       // Reset form to default empty values when adding new item
       reset({
@@ -261,12 +270,12 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
         hide: false,
         template: "default",
         _new_label_variant: "secondary",
+        features: "", // Default to empty string
+        detailed_description_content: "", // Default to empty string
       });
       setGalleryMedia([]);
       setThumbnailMedia([]);
       setVideoMedia([]);
-      setDetailDescriptions([]);
-      setFeatures([]);
       setVideoEmbedLinkForMedia('');
     }
   }, [initialData, reset, isDuplicating]); // Add reset and isDuplicating to dependency array
@@ -312,17 +321,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
     }
   };
 
-  const handleDragEndFeatures = (event) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      const oldIndex = features.findIndex((feature) => feature.id === active.id);
-      const newIndex = features.findIndex((feature) => feature.id === over.id);
-      const updatedFeatures = arrayMove(features, oldIndex, newIndex);
-      setFeatures(updatedFeatures);
-      // Update react-hook-form state if 'features' is managed by it
-      setValue("features", updatedFeatures);
-    }
-  };
+
 
   const onSubmit = (data) => {
     let finalVideoMedia = [];
@@ -343,51 +342,9 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
     onSuccess(finalData);
   };
 
-  // ===== DETAIL DESCRIPTIONS MANAGEMENT =====
-  const addDetailDescription = () => {
-    const newDescription = { heading: "", text: "" };
-    const updatedDescriptions = [...detailDescriptions, newDescription];
-    setDetailDescriptions(updatedDescriptions);
-    setValue("detail_descriptions", updatedDescriptions);
-  };
 
-  const removeDetailDescription = (index) => {
-    const updatedDescriptions = detailDescriptions.filter(
-      (_, i) => i !== index
-    );
-    setDetailDescriptions(updatedDescriptions);
-    setValue("detail_descriptions", updatedDescriptions);
-  };
 
-  const updateDetailDescription = (index, field, value) => {
-    const updatedDescriptions = detailDescriptions.map((desc, i) =>
-      i === index ? { ...desc, [field]: value } : desc
-    );
-    setDetailDescriptions(updatedDescriptions);
-    setValue("detail_descriptions", updatedDescriptions);
-  };
 
-  // ===== FEATURES MANAGEMENT =====
-  const addFeature = () => {
-    const newFeature = { id: Date.now().toString(), type: "Other", value: "" };
-    const updatedFeatures = [...features, newFeature];
-    setFeatures(updatedFeatures);
-    setValue("features", updatedFeatures);
-  };
-
-  const removeFeature = (idToRemove) => {
-    const updatedFeatures = features.filter((feature) => feature.id !== idToRemove);
-    setFeatures(updatedFeatures);
-    setValue("features", updatedFeatures);
-  };
-
-  const updateFeature = (idToUpdate, field, value) => {
-    const updatedFeatures = features.map((feature) =>
-      feature.id === idToUpdate ? { ...feature, [field]: value } : feature
-    );
-    setFeatures(updatedFeatures);
-    setValue("features", updatedFeatures);
-  };
 
   return (
     <div className="p-6 mx-auto space-y-8 max-w-7xl">
@@ -1206,33 +1163,20 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                 <CardTitle>Property Features</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEndFeatures}
-                >
-                  <SortableContext
-                    items={features.map((f) => f.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-2">
-                      {features.map((feature) => (
-                        <SortableFeatureItem
-                          key={feature.id}
-                          id={feature.id}
-                          value={feature.value}
-                          onRemove={() => removeFeature(feature.id)}
-                          onUpdateValue={(value) =>
-                            updateFeature(feature.id, "value", value)
-                          }
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-                <Button type="button" variant="outline" onClick={addFeature}>
-                  <PlusIcon className="w-4 h-4 mr-2" /> Add Feature
-                </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="features">Features (comma-separated)</Label>
+                  <Textarea
+                    id="features"
+                    placeholder="e.g., Garden, Swimming Pool, Gym"
+                    className="min-h-[100px]"
+                    {...register("features")}
+                  />
+                  {errors.features && (
+                    <p className="text-sm text-red-500">
+                      {errors.features.message}
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </section>
@@ -1342,61 +1286,26 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {detailDescriptions.map((description, index) => (
-                    <div
-                      key={index}
-                      className="p-4 space-y-4 border rounded-lg bg-gray-50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-semibold">
-                          Description #{index + 1}
-                        </h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeDetailDescription(index)}
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Heading</Label>
-                        <Input
-                          placeholder="Section heading"
-                          value={description.heading}
-                          onChange={(e) =>
-                            updateDetailDescription(
-                              index,
-                              "heading",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Description Text</Label>
-                        <QuillRichText
-                          value={description.text}
-                          onChange={(value) =>
-                            updateDetailDescription(index, "text", value)
-                          }
-                          placeholder="Enter detailed description..."
-                        />
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addDetailDescription}
-                  >
-                    <PlusIcon className="w-4 h-4 mr-2" /> Add Description
-                  </Button>
-                </CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="detailed_description_content">Detailed Description Content</Label>
+                  <Controller
+                    name="detailed_description_content"
+                    control={control}
+                    render={({ field }) => (
+                      <QuillRichText
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Enter detailed property description..."
+                      />
+                    )}
+                  />
+                  {errors.detailed_description_content && (
+                    <p className="text-sm text-red-500">
+                      {errors.detailed_description_content.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
               </Card>
 
               {/* Publishing Settings Card (span both columns) */}
@@ -1543,56 +1452,6 @@ function SortableLabelItem({ id, name, badge_variant, is_badge, onRemove, onTogg
           <XIcon className="w-4 h-4" />
         </button>
       </div>
-    </div>
-  );
-}
-// Child component for sortable features
-function SortableFeatureItem({ id, value, onRemove, onUpdateValue }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : "auto",
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      className="flex items-center gap-2 p-2 border rounded-lg bg-gray-50"
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="flex-shrink-0 cursor-grab"
-        {...listeners}
-      >
-        <GripVertical className="w-4 h-4 text-muted-foreground" />
-      </Button>
-      <Input
-        placeholder="Feature value/name"
-        value={value}
-        onChange={(e) => onUpdateValue(e.target.value)}
-        className="flex-1"
-      />
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        onClick={onRemove}
-      >
-        <XIcon className="w-4 h-4" />
-      </Button>
     </div>
   );
 }
