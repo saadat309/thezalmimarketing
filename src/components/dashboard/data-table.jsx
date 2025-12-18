@@ -40,21 +40,19 @@ import { useTablePreferencesStore, initialPreferenceState } from '@/store/tableP
 export function DataTable({
   data: initialData,
   columns,
-  setData,
   children,
   onRowClick,
   preferenceKey, // Add preferenceKey prop
   onSelectionChange,
   getRowClassName, // New prop
+  _hasHydrated, // Destructure _hasHydrated from props
 }) {
-  const data = initialData;
-
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnFilters, setColumnFilters] = React.useState([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   // Zustand store integration for table preferences
-  const { preferences, setPreference, getAllPreferences, initializePreferences, resetPreferences: storeResetPreferences, _hasHydrated } = useTablePreferencesStore();
+  const { preferences, setPreference, getAllPreferences, initializePreferences, resetPreferences: storeResetPreferences } = useTablePreferencesStore();
 
 
   // If preferenceKey is not provided or store has not hydrated, render a loading state.
@@ -91,7 +89,7 @@ export function DataTable({
   }, [preferenceKey, preferences, initializePreferences, getAllPreferences, setColumnVisibilityState, setSortingState, setPaginationState]);
 
   const table = useReactTable({
-    data,
+    data: initialData, // Use initialData directly
     columns,
     state: {
       sorting: sortingState,

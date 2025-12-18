@@ -139,6 +139,9 @@ export default function MapForm({
       ...formDataFromHook, // Use data from getValues
       mapImage,
       mapPdf,
+      // Add explicit removal flags if arrays are empty and initial data had them
+      mapImage_removed: mapImage.length === 0 && !!initialData?.map_pic,
+      mapPdf_removed: mapPdf.length === 0 && !!initialData?.pdf,
       id: isDuplicating || !initialData ? undefined : initialData.id,
     };
     onSuccess(finalData);
@@ -298,6 +301,7 @@ export default function MapForm({
               initialMedia={mapPdf}
               onMediaChange={setMapPdf}
               maxFiles={1}
+              maxFileSizeMb={100}
               allowedTypes={["application/pdf"]}
               allowMultiple={false}
               showPrimaryOption={false}
@@ -327,7 +331,7 @@ export default function MapForm({
           </CardContent>
         </Card>
 
-        <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
+        <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
           <Button type="submit" size="lg">
             Save Map
           </Button>

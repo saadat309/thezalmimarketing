@@ -1,6 +1,7 @@
 <?php
 // api/routes/cities.php
 
+require_once __DIR__ . '/../utils/slug_util.php';   // Include slug utility
 
 function send_json($data, $status = 200) {
     http_response_code($status);
@@ -57,23 +58,41 @@ function get_maps_for_entity(PDO $pdo, string $entity_type, int $entity_id) {
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+function get_properties_for_entity(PDO $pdo, string $entity_type, int $entity_id) {
+    $column = $entity_type . '_id';
+    $stmt = $pdo->prepare("SELECT id FROM properties WHERE {$column} = ? AND is_file = 0");
+    $stmt->execute([$entity_id]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+function get_files_for_entity(PDO $pdo, string $entity_type, int $entity_id) {
+    $column = $entity_type . '_id';
+    $stmt = $pdo->prepare("SELECT id FROM properties WHERE {$column} = ? AND is_file = 1");
+    $stmt->execute([$entity_id]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
 function list_cities(PDO $pdo) {
-    $stmt = $pdo->query("SELECT id, name, created_at, updated_at FROM cities ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, name, slug, created_at, updated_at FROM cities ORDER BY id DESC");
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rows as &$row) {
         $row['map_ids'] = get_maps_for_entity($pdo, 'city', $row['id']);
+        $row['property_ids'] = get_properties_for_entity($pdo, 'city', $row['id']);
+        $row['file_ids'] = get_files_for_entity($pdo, 'city', $row['id']);
     }
     send_json($rows);
 }
 
 function get_city(PDO $pdo, $id) {
-    $stmt = $pdo->prepare("SELECT id, name, created_at, updated_at FROM cities WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, name, slug, created_at, updated_at FROM cities WHERE id = ?");
     $stmt->execute([$id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) return send_json(['error' => 'City not found'], 404);
 
     $row['map_ids'] = get_maps_for_entity($pdo, 'city', $row['id']);
+    $row['property_ids'] = get_properties_for_entity($pdo, 'city', $row['id']);
+    $row['file_ids'] = get_files_for_entity($pdo, 'city', $row['id']);
     send_json($row);
 }
 
@@ -86,10 +105,12 @@ function create_city(PDO $pdo) {
         return send_json(['error' => 'name is required'], 400);
     }
 
+    $slug = generate_unique_slug($pdo, 'cities', $input['name']);
+
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("INSERT INTO cities (name) VALUES (?)");
-        $stmt->execute([$input['name']]);
+        $stmt = $pdo->prepare("INSERT INTO cities (name, slug) VALUES (?, ?)");
+        $stmt->execute([$input['name'], $slug]);
         $new_city_id = $pdo->lastInsertId();
 
         if (!$new_city_id) {
@@ -106,7 +127,7 @@ function create_city(PDO $pdo) {
 
         $pdo->commit();
 
-        $stmt2 = $pdo->prepare("SELECT id, name, created_at, updated_at FROM cities WHERE id = ?");
+        $stmt2 = $pdo->prepare("SELECT id, name, slug, created_at, updated_at FROM cities WHERE id = ?");
         $stmt2->execute([$new_city_id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
         $row['map_ids'] = get_maps_for_entity($pdo, 'city', $new_city_id); // Include map_ids
@@ -132,19 +153,24 @@ function update_city(PDO $pdo, $id) {
     error_log("--- UPDATE CITY DEBUG (ID: $id) ---");
     error_log("Input data received: " . print_r($input, true));
 
-    $stmt = $pdo->prepare("SELECT id, name FROM cities WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, name, slug FROM cities WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$exists) return send_json(['error' => 'City not found'], 404);
     error_log("Existing city data (from DB): " . print_r($exists, true));
 
     $name = $input['name'] ?? $exists['name'];
+    $slug = $exists['slug'];
+
+    if (isset($input['name']) && $input['name'] !== $exists['name']) {
+        $slug = generate_unique_slug($pdo, 'cities', $input['name'], $id);
+    }
 
     $pdo->beginTransaction();
     try {
-        $update_params = [$name, $id];
+        $update_params = [$name, $slug, $id];
         error_log("Final params for UPDATE: " . print_r($update_params, true));
-        $stmt = $pdo->prepare("UPDATE cities SET name = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE cities SET name = ?, slug = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
         error_log("UPDATE affected rows: " . $affected_rows);
@@ -178,7 +204,7 @@ function update_city(PDO $pdo, $id) {
         
         $pdo->commit();
 
-        $stmt2 = $pdo->prepare("SELECT id, name, created_at, updated_at FROM cities WHERE id = ?");
+        $stmt2 = $pdo->prepare("SELECT id, name, slug, created_at, updated_at FROM cities WHERE id = ?");
         $stmt2->execute([$id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
         $row['map_ids'] = get_maps_for_entity($pdo, 'city', $id); // Include map_ids

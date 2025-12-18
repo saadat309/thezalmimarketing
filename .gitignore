@@ -1,8 +1,11 @@
 .env
 .tanstack
 MISC
-GEMINI.md
-plan_and_context.md
+# GEMINI.md
+public/files/**
+public/images/**
+public/mapsMedia/**
+public/videos/**
 
 
 # Logs

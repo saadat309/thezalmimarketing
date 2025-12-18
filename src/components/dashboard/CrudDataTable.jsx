@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/dashboard/data-table';
@@ -37,16 +37,17 @@ import { PlusCircle, FilePenIcon, TrashIcon, MoreVerticalIcon, ColumnsIcon, Arro
 import { v4 as uuidv4 } from 'uuid';
 import { CopyIcon } from "lucide-react";
 import QuillRichText from './QuillRichText'; // Import the new rich text editor
+import { useTablePreferencesStore } from '@/store/tablePreferencesStore';
 
 export function CrudDataTable({
   title,
   description,
-  searchPlaceholder,
+  searchPlaceholder = "Filter...",
   data,
-  setData,
   columns,
   formFields, // Retain for backward compatibility
   FormComp,   // New prop for custom form component
+  formProps = {}, // Extra props for the form to pass to FormComp
   entityName,
   disableAdd = false,
   handleDeleteItem,
@@ -64,11 +65,20 @@ export function CrudDataTable({
   handleDeleteSelected,
   handleExportCsv,
   handleExportPdf,
+  onTablePreferencesLoadingChange, // New prop
+  canEditItem,   // Function (item) => boolean, optional
+  canDeleteItem, // Function (item) => boolean, optional
 }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [formData, setFormData] = useState({}); // Retain for default form behavior
+
+  const { _hasHydrated } = useTablePreferencesStore();
+
+  useEffect(() => {
+    onTablePreferencesLoadingChange?.(!_hasHydrated);
+  }, [_hasHydrated, onTablePreferencesLoadingChange]);
 
   // Effect for initializing formData when using the default form
   useEffect(() => {
@@ -98,32 +108,26 @@ export function CrudDataTable({
     // A duplicate operation is just an "add" operation with pre-filled data.
     // We prioritize onAddItem for duplication.
     if (isDuplicating) {
-      console.log("CrudDataTable - onFormSubmit: In duplicating mode.");
-      console.log("CrudDataTable - onFormSubmit: itemToProcess (before id/uuidv4 check):", itemToProcess);
       if (onAddItem) {
-        const newItemWithId = { ...itemToProcess, id: uuidv4() };
-        console.log("CrudDataTable - onFormSubmit: Calling onAddItem with:", newItemWithId);
-        success = await onAddItem(newItemWithId);
-      } else if (onDuplicateItem) { // Fallback for components that might provide onDuplicateItem
-        success = await onDuplicateItem({ ...itemToProcess, id: uuidv4() });
+        success = await onAddItem(itemToProcess); // Let onAddItem handle the ID
       } else {
-        setData((current) => [...current, { ...itemToProcess, id: uuidv4() }]);
-        success = true; // Assume success if setData is used directly
+        // If no onAddItem, fall back to internal data management (not typical for custom forms)
+        // For default form, assume new ID on add.
+        // This case is primarily for cases where CrudDataTable is used without external handlers.
+        success = true;
       }
     } else if (editingItem) {
       if (onEditItem) {
         success = await onEditItem({ ...editingItem, ...itemToProcess });
       } else {
-        setData((current) =>
-          current.map((item) => (item.id === editingItem.id ? { ...editingItem, ...itemToProcess } : item))
-        );
+        // Fallback for internal data management if no onEditItem
         success = true;
       }
     } else {
       if (onAddItem) {
-        success = await onAddItem({ ...itemToProcess, id: uuidv4() });
+        success = await onAddItem(itemToProcess); // Let onAddItem handle the ID
       } else {
-        setData((current) => [...current, { ...itemToProcess, id: uuidv4() }]);
+        // Fallback for internal data management
         success = true;
       }
     }
@@ -131,7 +135,7 @@ export function CrudDataTable({
     if (success) {
       resetSheetState();
     }
-  }, [isDuplicating, onDuplicateItem, setData, editingItem, onEditItem, onAddItem, resetSheetState]);
+  }, [isDuplicating, editingItem, onEditItem, onAddItem, resetSheetState]);
 
 
   const onFormCancel = useCallback(() => {
@@ -149,7 +153,9 @@ export function CrudDataTable({
   };
 
   const actualHandleDeleteItem = handleDeleteItem || ((id) => {
-    setData(data.filter((item) => item.id !== id));
+    // This case should ideally be handled by the parent component via handleDeleteItem
+    // If not provided, CrudDataTable doesn't know how to delete from external 'data' prop
+    
   });
 
   const openEditSheet = (item) => {
@@ -167,12 +173,14 @@ export function CrudDataTable({
   };
 
   const internalOnRowClick = (item) => {
-    onRowClick?.(item); // Execute the passed onRowClick prop first
-    openEditSheet(item); // Then open the edit sheet
+    const shouldOpenEditSheet = onRowClick ? onRowClick(item) : true;
+    if (shouldOpenEditSheet) {
+      openEditSheet(item);
+    }
   };
 
   const defaultOnDuplicateItem = (item) => {
-    const duplicatedItem = { ...item, id: uuidv4(), changed_at: new Date().toLocaleString() };
+    const duplicatedItem = { ...item, changed_at: new Date().toLocaleString(), id: undefined }; // Clear ID for duplication
     setEditingItem(duplicatedItem); // Pre-fill form with duplicated data
     setIsDuplicating(true); // Indicate duplicating mode
     setIsSheetOpen(true);
@@ -194,7 +202,7 @@ export function CrudDataTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {!disableAdd && (
+              {(!disableAdd && (!canEditItem || canEditItem(item))) && (
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditSheet(item); }}>
                   <FilePenIcon className="w-4 h-4 mr-2" />
                   Edit
@@ -209,10 +217,12 @@ export function CrudDataTable({
               {renderCustomActions && renderCustomActions(item, openEditSheet, actualHandleDeleteItem)}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onClick={(e) => e.stopPropagation()} onSelect={(e) => e.preventDefault()}>
-                    <TrashIcon className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
+                  {(!canDeleteItem || canDeleteItem(item)) && (
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()} onSelect={(e) => e.preventDefault()}>
+                      <TrashIcon className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                   <AlertDialogHeader>
@@ -307,11 +317,11 @@ export function CrudDataTable({
       <DataTable
         columns={allColumns}
         data={data}
-        setData={setData}
         onRowClick={internalOnRowClick}
         onSelectionChange={(rows, table) => onSelectionChange?.(rows, table)}
         preferenceKey={`${routePath}-table-prefs`} // Pass unique key for preferences
         getRowClassName={getRowClassName} // Pass the new prop here
+        _hasHydrated={_hasHydrated} // Pass _hasHydrated to DataTable
       >
         {(table, { resetPreferences }) => (
           <>
@@ -349,14 +359,14 @@ export function CrudDataTable({
                       }
                       className="h-8 w-[150px] lg:w-[250px]"
                     />
-                    <Button variant="outline" size="sm" className="h-8">
+                    {/* <Button variant="outline" size="sm" className="h-8">
                       <PlusIcon className="w-4 h-4 mr-2" />
                       Status
                     </Button>
                     <Button variant="outline" size="sm" className="h-8">
                       <PlusIcon className="w-4 h-4 mr-2" />
                       Priority
-                    </Button>
+                    </Button> */}
                   </>
                 )}
               </div>

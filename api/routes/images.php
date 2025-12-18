@@ -42,7 +42,7 @@ function handle_images($method, PDO $pdo, $id = null) {
 function list_images(PDO $pdo) {
     // List images, perhaps by media_id if provided in query params
     $media_id = $_GET['media_id'] ?? null;
-    $sql = "SELECT id, media_id, path, thumb_path, alt, caption, position, is_primary, hide, created_at, updated_at FROM images";
+    $sql = "SELECT id, media_id, path, thumb_path, alt, position, is_card_pic, hide, created_at, updated_at FROM images";
     $params = [];
     if ($media_id) {
         $sql .= " WHERE media_id = ?";
@@ -57,7 +57,7 @@ function list_images(PDO $pdo) {
 }
 
 function get_image(PDO $pdo, $id) {
-    $stmt = $pdo->prepare("SELECT id, media_id, path, thumb_path, alt, caption, position, is_primary, hide, created_at, updated_at FROM images WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, media_id, path, thumb_path, alt, position, is_card_pic, hide, created_at, updated_at FROM images WHERE id = ?");
     $stmt->execute([$id]);
     $row = $stmt->fetch();
     if (!$row) return send_json(['error' => 'Image not found'], 404);
@@ -79,14 +79,14 @@ function update_image(PDO $pdo, $id) {
     if (!$exists) return send_json(['error' => 'Image not found'], 404);
 
     $alt = $input['alt'] ?? $exists['alt'];
-    $caption = $input['caption'] ?? $exists['caption'];
-    $is_primary = $input['is_primary'] ?? $exists['is_primary'];
+    // Removed $caption = $input['caption'] ?? $exists['caption']; as 'caption' column does not exist
+    $is_card_pic = $input['is_card_pic'] ?? $exists['is_card_pic'];
     $hide = $input['hide'] ?? $exists['hide'];
 
-    $stmt = $pdo->prepare("UPDATE images SET alt = ?, caption = ?, is_primary = ?, hide = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE images SET alt = ?, is_card_pic = ?, hide = ? WHERE id = ?");
     try {
-        $stmt->execute([$alt, $caption, $is_primary, $hide, $id]);
-        $stmt2 = $pdo->prepare("SELECT id, media_id, path, thumb_path, alt, caption, position, is_primary, hide, created_at, updated_at FROM images WHERE id = ?");
+        $stmt->execute([$alt, $is_card_pic, $hide, $id]);
+        $stmt2 = $pdo->prepare("SELECT id, media_id, path, thumb_path, alt, position, is_card_pic, hide, created_at, updated_at FROM images WHERE id = ?");
         $stmt2->execute([$id]);
         $row = $stmt2->fetch();
         return send_json($row);

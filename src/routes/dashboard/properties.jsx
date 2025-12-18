@@ -1,14 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';                                                                               
-import React, { useState } from 'react';                                                                                                 
+import React, { useState, useEffect } from 'react';                                                                                                 
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';                                                                   
-import { v4 as uuidv4 } from 'uuid';                                                                         
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from '@/components/ui/button';
 import { Badge } from "@/components/ui/badge"; // Import Badge component
 import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; 
 import { toast } from "sonner";
 import PropertyForm from '@/components/dashboard/property-form/property-form'; // Import PropertyForm
-import { usePropertiesStore } from '@/store/propertiesStore'; // Import the store
+import { Spinner } from '@/components/ui/spinner'; // Import Spinner
+import { getYoutubeEmbedUrl } from "@/lib/utils";
+import { useAuthStore } from '@/store/authStore';
 
 export const Route = createFileRoute('/dashboard/properties')({
   component: DashboardProperties,
@@ -16,16 +17,6 @@ export const Route = createFileRoute('/dashboard/properties')({
     title: 'Properties',
   },
 });
-
-// const formFields = [ // Removed as PropertyForm will handle this
-//     { name: 'title', label: 'Title', required: true },
-//     { name: 'short_description', label: 'Short Description', type: 'textarea' },
-//     { name: 'detail_description', label: 'Detail Description', type: 'richtext' },
-//     { name: 'type', label: 'Type' },
-//     { name: 'price', label: 'Price' },
-//     { name: 'status', label: 'Status' },
-// ];
-
 
 const columns = [
     {
@@ -59,10 +50,49 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'title', header: 'Title' },
-    { accessorKey: 'type', header: 'Type' },
-    { accessorKey: 'price', header: 'Price' },
+    { 
+      accessorKey: 'thumbnail_url', // Display thumbnail image if available
+      header: 'Image',
+      cell: ({ row }) => row.original.thumbnail_url ? (
+        <img src={row.original.thumbnail_url} alt={row.original.title} className="object-cover w-10 h-10 rounded-md" />
+      ) : (
+        <span className="text-muted-foreground">No Image</span>
+      ),
+      enableSorting: false,
+      enableHiding: true,
+    },
+    { accessorKey: 'property_type', header: 'Type' },
+    { accessorKey: 'price_amount', header: 'Price' },
+    { 
+      accessorKey: 'category_name', 
+      header: 'Category',
+      cell: ({ row }) => row.original.category_name || 'N/A',
+      enableSorting: true,
+      enableHiding: true,
+    },
+    { 
+      accessorKey: 'city_name', 
+      header: 'City',
+      cell: ({ row }) => row.original.city_name || 'N/A',
+      enableSorting: true,
+      enableHiding: true,
+    },
+    { 
+      accessorKey: 'society_name', 
+      header: 'Society',
+      cell: ({ row }) => row.original.society_name || 'N/A',
+      enableSorting: true,
+      enableHiding: true,
+    },
+    { 
+      accessorKey: 'phase_name', 
+      header: 'Phase',
+      cell: ({ row }) => row.original.phase_name || 'N/A',
+      enableSorting: true,
+      enableHiding: true,
+    },
     {
-      accessorKey: 'status',
+      accessorKey: 'hide', // This matches the 'hide' column in the API response which indicates status
       header: 'Status',
       cell: ({ row }) => {
         const isHidden = row.original.hide;
@@ -74,12 +104,12 @@ const columns = [
       },
     },
     { 
-      accessorKey: 'changed_at', 
+      accessorKey: 'updated_at', 
       header: ({ column }) => {
         const sorted = column.getIsSorted();
         return (
           <Button variant="ghost" onClick={() => column.toggleSorting()}>
-            Changed
+            Last Updated
             {sorted === "asc" && <ArrowUp className="w-4 h-4 ml-2" />}
             {sorted === "desc" && <ArrowDown className="w-4 h-4 ml-2" />}
             {!sorted && <ArrowUpDown className="w-4 h-4 ml-2" />}
@@ -92,34 +122,273 @@ const columns = [
 ];
 
 function DashboardProperties() {
-  const properties = usePropertiesStore((state) => state.properties);
-  const addProperty = usePropertiesStore((state) => state.addProperty);
-  const editProperty = usePropertiesStore((state) => state.editProperty);
-  const deleteProperty = usePropertiesStore((state) => state.deleteProperty);
-  const deleteSelectedProperties = usePropertiesStore((state) => state.deleteSelectedProperties);
-  
+  const [properties, setProperties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
-  const [crudTableEditingItem, setCrudTableEditingItem] = React.useState(null); // State to hold editingItem from CrudDataTable
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { token } = useAuthStore();
 
-  const handleAddProperty = (newItem) => {
-    addProperty({ ...newItem });
-    toast.success("Property added successfully!");
+  const fetchProperties = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/properties?is_file=0', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }); // Explicitly fetch properties where is_file is false
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setProperties(data);
+    } catch (e) {
+      setError(e.message);
+      toast.error("Failed to load properties: " + e.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditProperty = (editedItem) => {
-    editProperty({ ...editedItem });
-    toast.success("Property updated successfully!");
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const prepareFormData = (data) => {
+    const formData = new FormData();
+
+    // Append basic form data
+    for (const key in data) {
+      if (['thumbnailMedia', 'galleryMedia', 'videoMedia', 'videoInputMethod', 'videoEmbedLinkForMedia', 'removedGalleryImageIds', 'id', 'related_products', 'related_properties', 'labels', 'existing_labels'].includes(key)) continue; // Skip handled separately or internal
+
+      if (key.startsWith('_')) continue; // Skip internal form state variables
+
+      // Convert boolean to '0' or '1' as PHP expects
+      if (typeof data[key] === 'boolean') {
+        formData.append(key, data[key] ? '1' : '0');
+      }
+      // Handle empty string for relationship IDs
+      else if (['category_id', 'city_id', 'society_id', 'phase_id'].includes(key) && data[key] === "") {
+        formData.append(key, '0'); // Send '0' or null for backend to handle SET NULL
+      }
+      // Handle arrays for features (comma-separated string)
+      else if (key === 'features') {
+        formData.append(key, String(data[key]));
+      }
+      else if (data[key] !== undefined && data[key] !== null) {
+        formData.append(key, data[key]);
+      }
+    }
+
+    // Explicitly ensure is_file is false for this form
+    formData.set('is_file', '0');
+
+    // Handle thumbnail media
+    const { thumbnailMedia } = data;
+    if (thumbnailMedia && thumbnailMedia.length > 0 && thumbnailMedia[0].file) {
+      formData.append('thumbnail_image', thumbnailMedia[0].file);
+    } else if (thumbnailMedia && thumbnailMedia.length > 0 && thumbnailMedia[0].url) {
+       // Check if it's a new URL selection (duplication or picked from gallery in a future feature)
+       // We pass it as thumbnail_image_url if it is intended to be duplicated/used
+       formData.append('thumbnail_image_url', thumbnailMedia[0].url);
+    } else if (thumbnailMedia && thumbnailMedia.length === 0) {
+      // Logic for removal if needed, though usually handled by replacement or explicit flag if we tracked "was there an image before"
+      formData.append('thumbnail_image_removed', 'true');
+    }
+
+    // Handle gallery media
+    const { galleryMedia, removedGalleryImageIds } = data;
+    if (removedGalleryImageIds && removedGalleryImageIds.length > 0) {
+        formData.append('removed_gallery_image_ids', JSON.stringify(removedGalleryImageIds));
+    }
+    
+    if (galleryMedia) {
+        galleryMedia.forEach((item, index) => {
+        if (item.file) { // Case 1: NEWLY UPLOADED FILE
+            formData.append(`gallery_images[${index}]`, item.file);
+            formData.append(`gallery_images_data[${index}][is_new]`, 'true'); 
+        } else if (item.id) { // Case 2: EXISTING DATABASE IMAGE (for EDIT mode)
+            // Send the actual DB ID, URL, and position. Backend uses ID to match and update position.
+            formData.append(`gallery_images_data[${index}][id]`, item.id);
+            formData.append(`gallery_images_data[${index}][url]`, item.url); // Include URL, it's useful
+            formData.append(`gallery_images_data[${index}][position]`, index);
+        } else if (item.url) { // Case 3: DUPLICATED IMAGE (for CREATE mode after duplication, item.id is undefined/UUID, url is present)
+            // This is for create_property duplicating a URL.
+            // No item.id here, just the URL to duplicate.
+            formData.append(`gallery_images_data[${index}][url]`, item.url);
+            formData.append(`gallery_images_data[${index}][position]`, index);
+        }
+        });
+    }
+
+    // Handle video media
+    const { videoMedia, videoInputMethod, videoEmbedLinkForMedia } = data;
+    let hasVideo = false;
+
+    if (videoInputMethod === 'upload') {
+        if (videoMedia && videoMedia.length > 0) {
+            if (videoMedia[0].file) {
+                formData.append('video', videoMedia[0].file);
+                hasVideo = true;
+            } else if (videoMedia[0].url) {
+                // Existing video, keep it (send URL for duplication if needed)
+                formData.append('video_url', videoMedia[0].url);
+                hasVideo = true;
+            }
+        }
+    } else if (videoInputMethod === 'embed') {
+        if (videoEmbedLinkForMedia) {
+            formData.append('video_embed_link', getYoutubeEmbedUrl(videoEmbedLinkForMedia));
+            hasVideo = true;
+        }
+    }
+
+    if (!hasVideo) {
+        formData.append('video_removed', 'true');
+    }
+
+    // Handle related products
+    const relatedProps = data.related_properties || data.related_products || [];
+    relatedProps.forEach((id, index) => {
+      formData.append(`related_properties[${index}]`, id);
+    });
+
+    // Handle labels
+    const existingLabels = data.existing_labels || data.labels || [];
+    existingLabels.forEach((id, index) => {
+      formData.append(`existing_labels[${index}]`, id);
+    });
+
+    return formData;
   };
 
-  const handleDeleteProperty = (id) => {
-    deleteProperty(id);
+  const handleAddProperty = async (data) => {
+    setIsSubmitting(true);
+    try {
+        const formData = prepareFormData(data);
+        const response = await fetch('/api/properties', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+
+        toast.success("Property added successfully!");
+        fetchProperties();
+        return true;
+    } catch (e) {
+        console.error("Submission error:", e);
+        toast.error("Failed to add property: " + e.message);
+        return false;
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    const selectedIds = new Set(selectedRows.map((row) => row.original.id));
-    deleteSelectedProperties(selectedIds);
-    setSelectedRows([]);
+  const handleEditProperty = async (data) => {
+    setIsSubmitting(true);
+    try {
+        const formData = prepareFormData(data);
+        formData.append('_method', 'PATCH');
+
+        const response = await fetch(`/api/properties/${data.id}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+
+        toast.success("Property updated successfully!");
+        fetchProperties();
+        return true;
+    } catch (e) {
+        console.error("Submission error:", e);
+        toast.error("Failed to update property: " + e.message);
+        return false;
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProperty = async (id) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/properties/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      toast.success("Property deleted successfully!");
+      fetchProperties();
+    } catch (e) {
+      toast.error("Failed to delete property: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.length === 0) {
+      toast.warning("No rows selected for deletion.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+            const deletePromises = selectedRows.map(row =>
+              fetch(`/api/properties/${row.original.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+              })
+            );
+      const results = await Promise.allSettled(deletePromises);
+      
+      const failedDeletes = [];
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          failedDeletes.push(`ID ${selectedRows[index].original.id}: Network or server error`);
+        } else if (!result.value.ok) {
+          const errorPromise = result.value.json().then(err => `ID ${selectedRows[index].original.id}: ${err.detail || result.value.statusText}`).catch(() => `ID ${selectedRows[index].original.id}: ${result.value.statusText}`);
+          failedDeletes.push(errorPromise);
+        }
+      });
+
+      const finalFailedMessages = await Promise.all(failedDeletes);
+
+      if (finalFailedMessages.length === 0) {
+        toast.success("Selected properties deleted successfully!");
+      } else {
+        toast.error(`Failed to delete ${finalFailedMessages.length} property(s): ${finalFailedMessages.join(', ')}`);
+      }
+      
+      setSelectedRows([]);
+      fetchProperties();
+
+    } catch (e) {
+      toast.error("Error during batch deletion: " + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportCsv = () => {
@@ -168,6 +437,23 @@ function DashboardProperties() {
     toast.info("Exporting as PDF...");
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner size="lg" />
+        <p className="ml-2">Loading properties...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div>
       <CrudDataTable
@@ -190,7 +476,7 @@ function DashboardProperties() {
             setSelectedRows(rows);
             setTableInstance(table);
         }}
-        onEditingItemChange={setCrudTableEditingItem} // Pass the setter to CrudDataTable
+        isSubmitting={isSubmitting} // Pass submitting state to disable form actions
       />
     </div>
   );

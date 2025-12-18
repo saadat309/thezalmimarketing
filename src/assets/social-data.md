@@ -1,9 +1,0 @@
-- [Facebook ](https://www.facebook.com/share/182ygLHmct/)
-- [Tiktok](https://www.tiktok.com/@thezalmimarketingdha?_r=1&_t=ZS-922kJzik3lf)
-- [Youtube](https://youtube.com/@thezalmimarketing?si=vDrnNAQ9pl9y1DU_)
-- Instagram : yet to add
-- Email : thezalmimarkettingsajidmahmood@gmail.com
-- Whatsapp : +923218446496
-- Call: +923218446496
-- [Office Address Directions Map](https://maps.app.goo.gl/XdCCsuZ3zNnswVko6?g_st=aw)
-- Office Address Text: 67MB Commercial, 2nd Floor, Phase 6, DHA Lahore, Pakistan

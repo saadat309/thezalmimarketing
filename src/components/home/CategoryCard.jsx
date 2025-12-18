@@ -6,6 +6,7 @@ import { Map } from "lucide-react"; // Import Map icon
 import { Link } from "@tanstack/react-router";
 
 export default function CategoryCard({
+  id,
   title = "Category",
   count = 0,
   src,
@@ -13,14 +14,12 @@ export default function CategoryCard({
   ratio = 3 / 4,
   className = "",
   onClick = undefined,
-  filePath = null,
   titleClassName = "",
+  disableLink = false,
 }) {
   // basic runtime validation
   if (!src) {
-    console.warn(
-      "CategoryCard: `src` prop is required. Rendering placeholder."
-    );
+    console.warn("CategoryCard: `src` prop is required.");
   }
 
   const cardContent = (
@@ -28,23 +27,19 @@ export default function CategoryCard({
       onClick={onClick}
       className={`overflow-hidden rounded-2xl shadow-md p-0 cursor-pointer group ${className}`}
     >
-      {/* container that establishes aspect-ratio (tall card) */}
       <div
         className="relative w-full"
         style={{ paddingBottom: `${100 / (ratio || 1)}%` }}
       >
-        {/* Image fills card */}
         <SmartImage
           src={src || "/lahore-city-pic.webp"}
           thumb={thumb || "/lahore-city-pic.webp"}
           alt={title}
           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-          imgClassName=""
           style={{ position: "absolute", inset: 0 }}
           priority={false}
         />
 
-        {/* optional top gradient to ensure legibility on very bright images */}
         <div
           className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
           style={{
@@ -52,7 +47,6 @@ export default function CategoryCard({
           }}
         />
 
-        {/* subtle top-left content: title + count (matches provided design) */}
         <div className="absolute left-8 top-6 ">
           <div className={"flex flex-col items-start"}>
             <div
@@ -69,39 +63,24 @@ export default function CategoryCard({
             </Badge>
           </div>
         </div>
-
-        {/* View Map Button - bottom right */}
-        {filePath && (
-          <div
-            className="absolute z-10 bottom-4 right-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <a
-              href={`${filePath}#navpanes=0&view=FitV`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button
-                variant="default"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Map size={16} /> View Map
-              </Button>
-            </a>
-          </div>
-        )}
       </div>
     </Card>
   );
 
-  if (!filePath) {
-    return (
-      <Link to="/properties" search={{ category: title }}>
-        {cardContent}
-      </Link>
-    );
+  if (disableLink) {
+    return cardContent;
   }
 
-  return cardContent;
+  return (
+    <Link 
+      to="/properties" 
+      search={{ 
+        category: title, 
+        categoryName: title, 
+        image: src 
+      }}
+    >
+      {cardContent}
+    </Link>
+  );
 }

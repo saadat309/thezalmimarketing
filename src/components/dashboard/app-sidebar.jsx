@@ -11,7 +11,6 @@ import {
   Mail,
   Map,
   Milestone,
-  SettingsIcon,
   User,
   UsersIcon,
 } from "lucide-react";
@@ -29,6 +28,7 @@ import {
 import { MdOutlineRealEstateAgent } from "react-icons/md";
 import { useQueriesStore } from "@/store/queriesStore"; 
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/store/authStore";
 
 const navItems = [
   {
@@ -75,11 +75,6 @@ const navItems = [
 
 const secondaryNavItems = [
   {
-    title: "Settings",
-    url: "#",
-    icon: SettingsIcon,
-  },
-  {
     title: "Landing Page",
     url: "/dashboard/landing-page",
     icon: LayoutDashboardIcon,
@@ -96,20 +91,29 @@ const secondaryNavItems = [
   },
 ];
 
-const data = {
-  user: {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "https://github.com/shadcn.png",
-  },
-};
-
 export function AppSidebar({ ...props }) {
   const location = useLocation();
   const { isMobile, setOpenMobile } = useSidebar(); // Use useSidebar hook
   const unreadQueriesCount = useQueriesStore((state) =>
     state.getUnreadQueriesCount()
   );
+  const user = useAuthStore((state) => state.user);
+  
+   // Fallback if user is null (though auth guard should prevent this)
+  const safeUser = user || { name: "Guest", email: "", avatar: "" };
+
+  // Helper to get avatar URL (handle both absolute and relative paths)
+  const getAvatarUrl = (u) => {
+    if (!u?.profile_pic) return "https://github.com/shadcn.png"; // Default fallback
+    if (u.profile_pic.startsWith('http')) return u.profile_pic;
+    return u.profile_pic; 
+  };
+
+  const displayUser = {
+    name: safeUser.name,
+    email: safeUser.email,
+    avatar: getAvatarUrl(safeUser),
+  };
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -179,7 +183,7 @@ export function AppSidebar({ ...props }) {
       </SidebarContent>
       <SidebarFooter>
         <NavUser
-          user={data.user}
+          user={displayUser}
           isMobile={isMobile}
           setOpenMobile={setOpenMobile}
         />

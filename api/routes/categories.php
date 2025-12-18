@@ -2,6 +2,7 @@
 // api/routes/categories.php
 
 require_once __DIR__ . '/../utils/ImageUpload.php'; // Include the ImageUpload utility
+require_once __DIR__ . '/../utils/slug_util.php';   // Include slug utility
 
 function send_json($data, $status = 200) {
     http_response_code($status);
@@ -51,16 +52,49 @@ function handle_categories($method, PDO $pdo, $id = null) {
     }
 }
 
+function get_category_with_stats(PDO $pdo, $id) {
+    $stmt = $pdo->prepare("
+        SELECT 
+            c.id, c.name, c.slug, c.pic, c.thumb, c.created_at, c.updated_at,
+            COUNT(p.id) AS properties_count,
+            GROUP_CONCAT(p.id) AS property_ids
+        FROM categories c
+        LEFT JOIN properties p ON c.id = p.category_id AND p.is_file = 0
+        WHERE c.id = ?
+        GROUP BY c.id
+    ");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $row['property_ids'] = $row['property_ids'] ? array_map('intval', explode(',', $row['property_ids'])) : [];
+        $row['properties_count'] = (int)$row['properties_count'];
+    }
+    return $row;
+}
+
 function list_categories(PDO $pdo) {
-    $stmt = $pdo->query("SELECT id, name, pic, thumb, created_at, updated_at FROM categories ORDER BY id DESC");
-    $rows = $stmt->fetchAll();
+    $stmt = $pdo->query("
+        SELECT 
+            c.id, c.name, c.slug, c.pic, c.thumb, c.created_at, c.updated_at,
+            COUNT(p.id) AS properties_count,
+            GROUP_CONCAT(p.id) AS property_ids
+        FROM categories c
+        LEFT JOIN properties p ON c.id = p.category_id AND p.is_file = 0
+        GROUP BY c.id
+        ORDER BY c.id DESC
+    ");
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($rows as &$row) {
+        $row['property_ids'] = $row['property_ids'] ? array_map('intval', explode(',', $row['property_ids'])) : [];
+        $row['properties_count'] = (int)$row['properties_count'];
+    }
+
     send_json($rows);
 }
 
 function get_category(PDO $pdo, $id) {
-    $stmt = $pdo->prepare("SELECT id, name, pic, thumb, created_at, updated_at FROM categories WHERE id = ?");
-    $stmt->execute([$id]);
-    $row = $stmt->fetch();
+    $row = get_category_with_stats($pdo, $id);
     if (!$row) return send_json(['error' => 'Category not found'], 404);
     send_json($row);
 }
@@ -74,14 +108,15 @@ function create_category(PDO $pdo) {
         return send_json(['error' => 'name is required'], 400);
     }
 
+    $slug = generate_unique_slug($pdo, 'categories', $input['name']);
     $pic = null;
     $thumb = null;
 
     $pdo->beginTransaction();
     try {
         // First, insert the category record to get an ID
-        $stmt = $pdo->prepare("INSERT INTO categories (name) VALUES (?)");
-        $stmt->execute([$input['name']]);
+        $stmt = $pdo->prepare("INSERT INTO categories (name, slug) VALUES (?, ?)");
+        $stmt->execute([$input['name'], $slug]);
         $new_category_id = $pdo->lastInsertId();
 
         if ($new_category_id) {
@@ -123,7 +158,7 @@ function create_category(PDO $pdo) {
         $pdo->commit();
 
         // Fetch and return the newly created category
-        $stmt2 = $pdo->prepare("SELECT id, name, pic, thumb, created_at, updated_at FROM categories WHERE id = ?");
+        $stmt2 = $pdo->prepare("SELECT id, name, slug, pic, thumb, created_at, updated_at FROM categories WHERE id = ?");
         $stmt2->execute([$new_category_id]);
         $row = $stmt2->fetch();
         return send_json($row, 201);
@@ -145,13 +180,19 @@ function update_category(PDO $pdo, $id) {
     error_log("Input data received: " . print_r($input, true));
     error_log("Files data received: " . print_r($_FILES, true));
 
-    $stmt = $pdo->prepare("SELECT id, name, pic, thumb FROM categories WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, name, slug, pic, thumb FROM categories WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch();
     if (!$exists) return send_json(['error' => 'Category not found'], 404);
     error_log("Existing category data (from DB): " . print_r($exists, true));
 
     $name = $input['name'] ?? $exists['name'];
+    $slug = $exists['slug'];
+
+    // Regenerate slug if name changed
+    if (isset($input['name']) && $input['name'] !== $exists['name']) {
+        $slug = generate_unique_slug($pdo, 'categories', $input['name'], $id);
+    }
 
     $current_pic = $exists['pic'];
     $current_thumb = $exists['thumb'];
@@ -186,15 +227,15 @@ function update_category(PDO $pdo, $id) {
 
     $pdo->beginTransaction();
     try {
-        $update_params = [$name, $new_pic, $new_thumb, $id];
+        $update_params = [$name, $slug, $new_pic, $new_thumb, $id];
         error_log("Final params for UPDATE: " . print_r($update_params, true));
-        $stmt = $pdo->prepare("UPDATE categories SET name = ?, pic = ?, thumb = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE categories SET name = ?, slug = ?, pic = ?, thumb = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
         error_log("UPDATE affected rows: " . $affected_rows);
         $pdo->commit();
 
-        $stmt2 = $pdo->prepare("SELECT id, name, pic, thumb, created_at, updated_at FROM categories WHERE id = ?");
+        $stmt2 = $pdo->prepare("SELECT id, name, slug, pic, thumb, created_at, updated_at FROM categories WHERE id = ?");
         $stmt2->execute([$id]);
         $row = $stmt2->fetch();
         error_log("Category after update: " . print_r($row, true));

@@ -2,16 +2,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SmartImage from "@/components/global/SmartImage";
 import { FileDown, Expand } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function MapCard({ title, thumb, pdfPath, description }) {
+export default function MapCard({ title, image, thumb, pdfPath, description, isLoading }) {
+  if (isLoading) {
+    return (
+      <Card className="group px-0 py-0 border-0 min-w-[200px] bg-background p-1">
+        <CardContent className="flex flex-col items-start w-full gap-2 px-0">
+          <Skeleton className="w-full aspect-video rounded-t-lg" />
+          <div className="flex flex-col items-center w-full p-2 gap-2">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-8 w-24 self-end mt-2" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="group px-0 py-0 border-0 min-w-[200px] bg-background p-1">
-      <CardContent className="flex flex-col items-start w-full gap-2 px-0">
+    <Card className="group px-0 py-0 border-0 min-w-[200px] bg-background p-1 h-full flex flex-col">
+      <CardContent className="flex flex-col items-start w-full gap-2 px-0 flex-1">
         <div className="w-full">
           <div className="relative overflow-hidden rounded-t-lg">
-            {thumb ? (
+            {image || thumb ? (
               <SmartImage
-                src={thumb}
+                src={image || thumb}
+                thumb={thumb}
                 alt={title}
                 ratio={16 / 9}
                 className="w-full min-h-[180px] object-cover overflow-hidden"
@@ -47,14 +65,14 @@ export default function MapCard({ title, thumb, pdfPath, description }) {
           </div>
         </div>
 
-        <div className="flex flex-col items-center w-full p-2 justify-evenly">
-          <h2 className="text-lg font-semibold">{title}</h2>
+        <div className="flex flex-col items-start w-full p-2 flex-1">
+          <h2 className="text-lg font-semibold line-clamp-1">{title}</h2>
 
-          <p className="mb-3 text-sm text-muted-foreground">
+          <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
             {description}
           </p>
 
-          <a href={pdfPath} download className="flex self-end mt-2">
+          <a href={pdfPath} download className="mt-auto self-end">
             <Button variant="default" size="sm">
               <FileDown size={14} /> Download
             </Button>

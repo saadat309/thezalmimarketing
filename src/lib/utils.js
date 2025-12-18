@@ -7,15 +7,22 @@ export function cn(...inputs) {
 
 export function getYoutubeVideoId(url) {
   if (!url) return null;
+  
+  // If it's an iframe, extract src first
+  const iframeMatch = url.match(/<iframe.*?src=["'](.*?)["']/i);
+  const actualUrl = iframeMatch ? iframeMatch[1] : url;
+
   let videoId = null;
   const patterns = [
     /(?:https?:\/\/)?(?:www\.)?(?:m\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
     /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/,
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ];
 
   for (const pattern of patterns) {
-    const match = url.match(pattern);
+    const match = actualUrl.match(pattern);
     if (match && match[1]) {
       videoId = match[1];
       break;
@@ -24,12 +31,22 @@ export function getYoutubeVideoId(url) {
   return videoId;
 }
 
-export function getYoutubeEmbedUrl(url) {
+export function getEmbedUrl(input) {
+  if (!input) return null;
+
+  // Extract src from iframe if present
+  const iframeMatch = input.match(/<iframe.*?src=["'](.*?)["']/i);
+  const url = iframeMatch ? iframeMatch[1] : input;
+
   const videoId = getYoutubeVideoId(url);
   if (videoId) {
     return `https://www.youtube.com/embed/${videoId}`;
   }
-  // Return original url if it's not a youtube link, or if it's already an embed link (that doesn't need cleaning)
-  // A more robust solution could validate other embeddable video sources.
+  
+  // Return original url if it's not a youtube link, or if it's already an embed link (like Google Maps)
   return url;
+}
+
+export function getYoutubeEmbedUrl(input) {
+  return getEmbedUrl(input);
 }

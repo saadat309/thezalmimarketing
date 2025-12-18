@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlobalHero } from "@/components/global/GlobalHero";
-import { User, Phone, Mail, MapPin } from "lucide-react";
+import { User, Phone, Mail, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { submitQuery } from "@/lib/api";
 
 import {
   Form,
@@ -76,10 +78,23 @@ function Contact() {
     },
   });
 
+  const mutation = useMutation({
+    mutationFn: submitQuery,
+    onSuccess: () => {
+      toast.success("Your inquiry has been sent successfully!");
+      form.reset();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to send inquiry. Please try again later.");
+    },
+  });
+
   function onSubmit(values) {
-    console.log(values);
-    toast.success("Your inquiry has been sent successfully!");
-    form.reset();
+    const { firstName, lastName, ...rest } = values;
+    mutation.mutate({
+      name: `${firstName} ${lastName}`,
+      ...rest,
+    });
   }
 
   return (
@@ -125,6 +140,7 @@ function Contact() {
                               placeholder="First Name"
                               {...field}
                               className="h-12 pl-10 border-border bg-card"
+                              disabled={mutation.isPending}
                             />
                           </div>
                         </FormControl>
@@ -144,6 +160,7 @@ function Contact() {
                               placeholder="Last Name"
                               {...field}
                               className="h-12 pl-10 border-border bg-card"
+                              disabled={mutation.isPending}
                             />
                           </div>
                         </FormControl>
@@ -166,6 +183,7 @@ function Contact() {
                             type="tel"
                             {...field}
                             className="h-12 pl-10 border-border bg-card"
+                            disabled={mutation.isPending}
                           />
                         </div>
                       </FormControl>
@@ -187,6 +205,7 @@ function Contact() {
                             type="email"
                             {...field}
                             className="h-12 pl-10 border-border bg-card"
+                            disabled={mutation.isPending}
                           />
                         </div>
                       </FormControl>
@@ -205,6 +224,7 @@ function Contact() {
                           placeholder="Your message (e.g. property type, location, budget, or any questions)"
                           {...field}
                           className="resize-none border-border bg-card min-h-32"
+                          disabled={mutation.isPending}
                         />
                       </FormControl>
                       <FormMessage />
@@ -221,6 +241,7 @@ function Contact() {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          disabled={mutation.isPending}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
@@ -237,8 +258,15 @@ function Contact() {
                 />
                 
 
-                <Button type="submit" size="lg">
-                  Send Your Inquiry
+                <Button type="submit" size="lg" disabled={mutation.isPending}>
+                  {mutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Your Inquiry"
+                  )}
                 </Button>
               </form>
             </Form>

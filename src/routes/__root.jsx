@@ -5,9 +5,11 @@ import Navbar from '@/components/home/Navbar'
 import Footer from '@/components/home/Footer'
 import { Toaster } from "@/components/ui/sonner"
 import { useAuthStore } from '@/store/authStore'
+import NotFound from '@/components/global/NotFound'
 
 export const Route = createRootRoute({
   component: RootComponent,
+  notFoundComponent: NotFound,
   staticData: {
     auth: null,
   },
@@ -16,7 +18,14 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const location = useLocation();
-  const isAuthRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/login') || location.pathname.startsWith('/signup');
+  const shouldHideNavbarAndFooter =
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/accept-invite") ||
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/reset-password") ||
+    location.pathname.startsWith("/accept-invite") ||
+    location.pathname.startsWith("/forgot-password")
+    ;
   const auth = useAuthStore();
 
   useEffect(() => {
@@ -26,9 +35,9 @@ function RootComponent() {
   return (
     <React.Fragment>
       <div className="flex flex-col justify-between min-h-screen bg-background text-foreground">
-      {!isAuthRoute && <Navbar/>}
+      {!shouldHideNavbarAndFooter && <Navbar/>}
       <Outlet context={{ auth }} />
-      {!isAuthRoute && <Footer/>}
+      {!shouldHideNavbarAndFooter && <Footer/>}
       <Toaster />
     </div>
       

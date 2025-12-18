@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner';
 import PhaseForm from '@/components/dashboard/phase-form/PhaseForm'; // Import the new PhaseForm
+import { useAuthStore } from '@/store/authStore';
 
 export const Route = createFileRoute('/dashboard/phases')({
   component: DashboardPhases,
@@ -82,12 +83,17 @@ function DashboardPhases() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { token } = useAuthStore();
 
   const fetchPhases = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/phases');
+      const response = await fetch('/api/phases', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -118,6 +124,9 @@ function DashboardPhases() {
 
       const response = await fetch('/api/phases', {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -154,6 +163,9 @@ function DashboardPhases() {
 
       const response = await fetch(`/api/phases/${editedItem.id}`, {
         method: 'POST', // Use POST for FormData with method override
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -177,6 +189,9 @@ function DashboardPhases() {
     try {
       const response = await fetch(`/api/phases/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -198,10 +213,14 @@ function DashboardPhases() {
     }
     setIsSubmitting(true);
     try {
-      const deletePromises = selectedRows.map(row => 
-        fetch(`/api/phases/${row.original.id}`, { method: 'DELETE' })
-      );
-
+            const deletePromises = selectedRows.map(row =>
+              fetch(`/api/phases/${row.original.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+              })
+            );
       const results = await Promise.allSettled(deletePromises);
       
       const failedDeletes = [];

@@ -311,11 +311,43 @@ function RouteComponent() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
-                      handleFilterChange("areaUnit", "sq yards");
+                      handleFilterChange("areaUnit", "marla");
+                      setIsAreaUnitDropdownOpen(false);
+                    }}
+                  >
+                    Marla
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      handleFilterChange("areaUnit", "kanal");
+                      setIsAreaUnitDropdownOpen(false);
+                    }}
+                  >
+                    Kanal
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      handleFilterChange("areaUnit", "yard");
                       setIsAreaUnitDropdownOpen(false);
                     }}
                   >
                     Sq Yards
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      handleFilterChange("areaUnit", "hectare");
+                      setIsAreaUnitDropdownOpen(false);
+                    }}
+                  >
+                    Hectare
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      handleFilterChange("areaUnit", "acre");
+                      setIsAreaUnitDropdownOpen(false);
+                    }}
+                  >
+                    Acre
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -478,7 +510,11 @@ function RouteComponent() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="sqft">Sqft</SelectItem>
-                          <SelectItem value="sq yards">Sq Yards</SelectItem>
+                          <SelectItem value="marla">Marla</SelectItem>
+                          <SelectItem value="kanal">Kanal</SelectItem>
+                          <SelectItem value="yard">Sq Yards</SelectItem>
+                          <SelectItem value="hectare">Hectare</SelectItem>
+                          <SelectItem value="acre">Acre</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

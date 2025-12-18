@@ -1,6 +1,7 @@
 <?php
 // api/routes/societies.php
 
+require_once __DIR__ . '/../utils/slug_util.php';   // Include slug utility
 
 function send_json($data, $status = 200) {
     http_response_code($status);
@@ -9,11 +10,17 @@ function send_json($data, $status = 200) {
     exit;
 }
 
+// Modified to get input from POST, and JSON body as fallback for non-file requests
 function get_request_data() {
     $data = [];
 
+    // For POST, PUT, PATCH requests
     if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'PATCH') {
+        // 1. Always start with $_POST (for x-www-form-urlencoded or multipart/form-data if files are present)
         $data = $_POST;
+
+        // 2. If $_POST is empty, and there are no files, try to parse JSON from php://input
+        // This handles application/json requests.
         if (empty($data) && empty($_FILES)) {
             $raw = file_get_contents('php://input');
             $json_data = json_decode($raw, true);
@@ -51,23 +58,41 @@ function get_maps_for_entity(PDO $pdo, string $entity_type, int $entity_id) {
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+function get_properties_for_entity(PDO $pdo, string $entity_type, int $entity_id) {
+    $column = $entity_type . '_id';
+    $stmt = $pdo->prepare("SELECT id FROM properties WHERE {$column} = ? AND is_file = 0");
+    $stmt->execute([$entity_id]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+function get_files_for_entity(PDO $pdo, string $entity_type, int $entity_id) {
+    $column = $entity_type . '_id';
+    $stmt = $pdo->prepare("SELECT id FROM properties WHERE {$column} = ? AND is_file = 1");
+    $stmt->execute([$entity_id]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
 function list_societies(PDO $pdo) {
-    $stmt = $pdo->query("SELECT id, name, created_at, updated_at FROM societies ORDER BY id DESC");
+    $stmt = $pdo->query("SELECT id, name, slug, created_at, updated_at FROM societies ORDER BY id DESC");
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rows as &$row) {
         $row['map_ids'] = get_maps_for_entity($pdo, 'society', $row['id']);
+        $row['property_ids'] = get_properties_for_entity($pdo, 'society', $row['id']);
+        $row['file_ids'] = get_files_for_entity($pdo, 'society', $row['id']);
     }
     send_json($rows);
 }
 
 function get_society(PDO $pdo, $id) {
-    $stmt = $pdo->prepare("SELECT id, name, created_at, updated_at FROM societies WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, name, slug, created_at, updated_at FROM societies WHERE id = ?");
     $stmt->execute([$id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) return send_json(['error' => 'Society not found'], 404);
 
     $row['map_ids'] = get_maps_for_entity($pdo, 'society', $row['id']);
+    $row['property_ids'] = get_properties_for_entity($pdo, 'society', $row['id']);
+    $row['file_ids'] = get_files_for_entity($pdo, 'society', $row['id']);
     send_json($row);
 }
 
@@ -80,10 +105,12 @@ function create_society(PDO $pdo) {
         return send_json(['error' => 'name is required'], 400);
     }
 
+    $slug = generate_unique_slug($pdo, 'societies', $input['name']);
+
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("INSERT INTO societies (name) VALUES (?)");
-        $stmt->execute([$input['name']]);
+        $stmt = $pdo->prepare("INSERT INTO societies (name, slug) VALUES (?, ?)");
+        $stmt->execute([$input['name'], $slug]);
         $new_id = $pdo->lastInsertId();
 
         if (!$new_id) {
@@ -100,7 +127,7 @@ function create_society(PDO $pdo) {
 
         $pdo->commit();
         
-        $stmt2 = $pdo->prepare("SELECT id, name, created_at, updated_at FROM societies WHERE id = ?");
+        $stmt2 = $pdo->prepare("SELECT id, name, slug, created_at, updated_at FROM societies WHERE id = ?");
         $stmt2->execute([$new_id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
         $row['map_ids'] = get_maps_for_entity($pdo, 'society', $new_id); // Include map_ids
@@ -126,19 +153,24 @@ function update_society(PDO $pdo, $id) {
     error_log("--- UPDATE SOCIETY DEBUG (ID: $id) ---");
     error_log("Input data received: " . print_r($input, true));
 
-    $stmt = $pdo->prepare("SELECT id, name FROM societies WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, name, slug FROM societies WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$exists) return send_json(['error' => 'Society not found'], 404);
     error_log("Existing society data (from DB): " . print_r($exists, true));
 
     $name = $input['name'] ?? $exists['name'];
+    $slug = $exists['slug'];
+
+    if (isset($input['name']) && $input['name'] !== $exists['name']) {
+        $slug = generate_unique_slug($pdo, 'societies', $input['name'], $id);
+    }
 
     $pdo->beginTransaction();
     try {
-        $update_params = [$name, $id];
+        $update_params = [$name, $slug, $id];
         error_log("Final params for UPDATE: " . print_r($update_params, true));
-        $stmt = $pdo->prepare("UPDATE societies SET name = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE societies SET name = ?, slug = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
         error_log("UPDATE affected rows: " . $affected_rows);
@@ -172,7 +204,7 @@ function update_society(PDO $pdo, $id) {
         
         $pdo->commit();
 
-        $stmt2 = $pdo->prepare("SELECT id, name, created_at, updated_at FROM societies WHERE id = ?");
+        $stmt2 = $pdo->prepare("SELECT id, name, slug, created_at, updated_at FROM societies WHERE id = ?");
         $stmt2->execute([$id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
         $row['map_ids'] = get_maps_for_entity($pdo, 'society', $id); // Include map_ids

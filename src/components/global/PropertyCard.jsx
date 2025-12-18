@@ -29,6 +29,7 @@ const DEFAULT_WHATSAPP_NUMBER = "923218446496"; // Fallback WhatsApp number (wit
 function PropertyCard(props) {
   const {
     image,
+    imageThumb,
     title,
     price,
     priceType,
@@ -54,7 +55,10 @@ function PropertyCard(props) {
     is_discounted,
     price_original_amount,
     installment_advance_amount,
+    installment_amount,
+    installment_total_period_text,
     installment_display_mode,
+    price_period_unit,
     is_file, // Destructure is_file
     file_type, // Destructure file_type
     phase, // Destructure phase
@@ -93,16 +97,23 @@ function PropertyCard(props) {
   const finalCurrency = currency || "Rs";
   const finalAreaUnit = areaUnit || "sqft";
   const finalBadges = category
-    ? [{ label: category, variant: "default" }, ...(badges || [])]
-    : [...(badges || [])]; // Removed default propertyType badge if it's a file
+    ? [{ label: category, variant: "default" }, ...(badges || []).filter(b => b.is_badge)]
+    : [...(badges || []).filter(b => b.is_badge)]; // Removed default propertyType badge if it's a file
   
-
-
   if (property_type) {
     finalBadges.push({ label: property_type, variant: 'outline' });
   }
 
-  const finalInstallmentPeriod = installmentPeriod || "month";
+  if (is_file && file_type) {
+    finalBadges.push({ label: file_type, variant: 'secondary' });
+  }
+
+  if (!!is_furnished) {
+    finalBadges.push({ label: "Furnished", variant: "default" });
+  }
+
+  const finalInstallmentPeriod = installmentPeriod || price_period_unit || "month";
+  const finalInstallmentDuration = installmentDuration || installment_total_period_text;
 
   // Resolve original price (component prop wins, else DB field)
   const resolvedOriginalPrice =
@@ -116,8 +127,13 @@ function PropertyCard(props) {
   const hasInstallmentAdvanceDisplay =
     finalPriceType === "installment" && installment_display_mode === "advance" && typeof installment_advance_amount !== "undefined" && installment_advance_amount !== null;
 
+  const hasInstallmentAmountDisplay = 
+    finalPriceType === "installment" && (installment_display_mode === "installment" || !installment_display_mode) && typeof installment_amount !== "undefined" && installment_amount !== null;
+
   const displayNumericPrice = hasInstallmentAdvanceDisplay
     ? installment_advance_amount
+    : hasInstallmentAmountDisplay
+    ? installment_amount
     : typeof price !== "undefined" && price !== null
     ? price
     : null;
@@ -154,13 +170,17 @@ function PropertyCard(props) {
       );
     }
 
-    // INSTALLMENT with advance-display-mode: show advance plainly (no per-duration suffix)
-    if (finalPriceType === "installment" && hasInstallmentAdvanceDisplay) {
-      const advanceLabel = displayNumericPrice === 0 ? "Free" : finalCurrency + " " + Number(displayNumericPrice).toLocaleString();
+    // INSTALLMENT 
+    if (finalPriceType === "installment") {
+      const label = displayNumericPrice === 0 ? "Free" : finalCurrency + " " + Number(displayNumericPrice).toLocaleString();
       return (
         <div className="flex flex-row items-center gap-2 space-y-0.5 justify-between">
-          <div className="text-base font-bold text-amber-600">{advanceLabel}</div>
-          {installmentDuration && <div className="text-xs text-primary">Time Period: {installmentDuration}</div>}
+          <div className="text-base font-bold text-amber-600">
+            {label}
+            {hasInstallmentAmountDisplay && <span className="text-xs font-normal text-primary">/{finalInstallmentPeriod}</span>}
+            {hasInstallmentAdvanceDisplay && <span className="ml-1 text-xs font-normal text-primary">(Advance)</span>}
+          </div>
+          {finalInstallmentDuration && <div className="text-xs text-primary">Period: {finalInstallmentDuration}</div>}
         </div>
       );
     }
@@ -218,19 +238,7 @@ function PropertyCard(props) {
     >
       <div className="p-3 will-change-transform">
         <div className="relative overflow-hidden rounded-lg aspect-video bg-muted will-change-transform">
-          {image ? ( // Display SmartImage if an image is provided (even if it's a file)
-            <SmartImage
-              src={image}
-              alt={title || "Property"}
-              thumb="/lahore-city-pic.webp"
-              className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110 will-change-transform"
-              errorPlaceholder={
-                <div className="flex items-center justify-center w-full h-full bg-muted">
-                  <ImageOff className="w-12 h-12 text-muted-foreground/50" />
-                </div>
-              }
-            />
-          ) : is_file && !image ? ( // Display FileText icon if is_file is true and no image is provided
+          {is_file ? (
             <div className="flex items-center justify-center w-full h-full bg-white bg-[radial-gradient(#413c58_1px,transparent_1px)] bg-size-[12px_12px]">
               <img
                 src="/files.svg"
@@ -238,8 +246,19 @@ function PropertyCard(props) {
                 className="w-20 h-20 text-primary"
               />
             </div>
+          ) : image ? (
+            <SmartImage
+              src={image}
+              alt={title || "Property"}
+              thumb={imageThumb}
+              className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110 will-change-transform"
+              errorPlaceholder={
+                <div className="flex items-center justify-center w-full h-full bg-muted">
+                  <ImageOff className="w-12 h-12 text-muted-foreground/50" />
+                </div>
+              }
+            />
           ) : (
-            // Fallback for non-file properties without an image
             <div className="flex items-center justify-center w-full h-full bg-muted">
               <ImageOff className="w-12 h-12 text-muted-foreground/50" />
             </div>
@@ -331,10 +350,10 @@ function PropertyCard(props) {
           </div>
         )}
 
-        {(beds || baths || area) && (
+        {(beds > 0 || baths > 0 || area > 0) ? (
           <div className="space-y-1.5 will-change-transform">
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1.5  text-left will-change-transform">
-              {!is_file && beds && beds > 0 && (
+              {!is_file && beds > 0 ? (
                 <div className="flex items-center gap-1 text-xs text-left will-change-transform">
                   <Bed
                     strokeWidth={1.5}
@@ -347,9 +366,9 @@ function PropertyCard(props) {
                     {pluralize(beds, "Bed")}
                   </span>
                 </div>
-              )}
+              ) : null}
 
-              {!is_file && baths && baths > 0 && (
+              {!is_file && baths > 0 ? (
                 <div className="flex items-center gap-1 text-xs text-left will-change-transform">
                   <Bath
                     strokeWidth={1.5}
@@ -362,9 +381,9 @@ function PropertyCard(props) {
                     {pluralize(baths, "Bath")}
                   </span>
                 </div>
-              )}
+              ) : null}
 
-              {area && area > 0 && (
+              {area > 0 ? (
                 <div className="flex items-center gap-1 text-xs text-left will-change-transform">
                   <Maximize2
                     strokeWidth={1.5}
@@ -377,12 +396,12 @@ function PropertyCard(props) {
                     {finalAreaUnit}
                   </span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
-        )}
+        ) : null}
 
-        {is_file && (
+        {!!is_file && (
           <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="ghost"

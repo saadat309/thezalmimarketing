@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowU
 import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner'; // Assuming a spinner component for loading
 import CategoryForm from '@/components/dashboard/category-form/CategoryForm'; // Import the new CategoryForm
+import { useAuthStore } from '@/store/authStore';
 
 export const Route = createFileRoute('/dashboard/categories')({
   component: DashboardCategories,
@@ -83,12 +84,17 @@ function DashboardCategories() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // State for submission loading
+  const { token } = useAuthStore();
 
   const fetchCategories = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch('/api/categories', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -119,6 +125,9 @@ function DashboardCategories() {
 
       const response = await fetch('/api/categories', {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -162,6 +171,9 @@ function DashboardCategories() {
 
         response = await fetch(`/api/categories/${editedItem.id}`, {
           method: 'POST', // Use POST for multipart forms
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
           body: formData,
         });
       } else {
@@ -174,6 +186,7 @@ function DashboardCategories() {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(jsonData),
         });
@@ -201,6 +214,9 @@ function DashboardCategories() {
     try {
       const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
       });
 
       if (!response.ok) {
@@ -225,10 +241,14 @@ function DashboardCategories() {
     setIsSubmitting(true);
     try {
       // Create an array of promises for all delete operations
-      const deletePromises = selectedRows.map(row => 
-        fetch(`/api/categories/${row.original.id}`, { method: 'DELETE' })
-      );
-
+            const deletePromises = selectedRows.map(row =>
+              fetch(`/api/categories/${row.original.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+              })
+            );
       const results = await Promise.allSettled(deletePromises);
       let allSucceeded = true;
       results.forEach((result, index) => {

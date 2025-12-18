@@ -48,7 +48,8 @@ function areMediaItemsEqual(arr1, arr2) {
 }
 
 // Sortable Media Item Component
-const SortableMediaItem = ({ id, url, type, onRemove }) => {
+const SortableMediaItem = ({ item, onRemove }) => {
+  const { id, url, type, file } = item;
   const {
     attributes,
     listeners,
@@ -64,6 +65,8 @@ const SortableMediaItem = ({ id, url, type, onRemove }) => {
     zIndex: isDragging ? 1 : "auto",
   };
 
+  const fileName = file?.name || (typeof url === 'string' ? url.substring(url.lastIndexOf("/") + 1) : "Unknown File");
+
   const renderMediaPreview = () => {
     if (type === "image") {
       return (
@@ -77,9 +80,14 @@ const SortableMediaItem = ({ id, url, type, onRemove }) => {
       return (
         <video
           src={url}
-          className="object-cover w-10 h-10 sm:w-16 sm:h-16 rounded-md"
+          className="object-cover w-10 h-10 sm:w-16 sm:h-16 rounded-md bg-black"
           controls={false}
           preload="metadata"
+          muted
+          onLoadedMetadata={(e) => {
+            // Try to seek to 0.1s to show a frame if metadata doesn't show anything
+            e.target.currentTime = 0.1;
+          }}
         >
           Your browser does not support the video tag.
         </video>
@@ -116,8 +124,11 @@ const SortableMediaItem = ({ id, url, type, onRemove }) => {
         </Button>
         <div className="flex-shrink-0">{renderMediaPreview()}</div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm truncate">
-            {typeof url === 'string' ? url.substring(url.lastIndexOf("/") + 1) : "Invalid URL"}
+          <p className="text-sm font-medium truncate" title={fileName}>
+            {fileName}
+          </p>
+          <p className="text-xs text-muted-foreground capitalize">
+            {type}
           </p>
         </div>
         <div className="flex items-center space-x-1 flex-shrink-0">
@@ -340,9 +351,7 @@ export function MediaUpload({
                 {mediaItems.map((item) => (
                   <SortableMediaItem
                     key={item.id}
-                    id={item.id}
-                    url={item.url}
-                    type={item.type}
+                    item={item}
                     onRemove={handleRemoveMedia}
                   />
                 ))}

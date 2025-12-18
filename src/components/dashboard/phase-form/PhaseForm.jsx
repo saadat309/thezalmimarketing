@@ -121,11 +121,7 @@ export default function PhaseForm({ initialData, onSuccess, onCancel, isDuplicat
                 name="name"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    id="name"
-                    placeholder="Enter phase name"
-                    {...field}
-                  />
+                  <Input id="name" placeholder="Enter phase name" {...field} />
                 )}
               />
               {errors.name && (
@@ -154,9 +150,9 @@ export default function PhaseForm({ initialData, onSuccess, onCancel, isDuplicat
           </CardContent>
         </Card>
 
-        <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
+        <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
           <Button type="submit" size="lg">
-            {initialData ? 'Save Changes' : `Add Phase`}
+            {initialData ? "Save Changes" : `Add Phase`}
           </Button>
           <Button type="button" variant="outline" size="lg" onClick={onCancel}>
             Cancel

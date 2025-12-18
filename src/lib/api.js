@@ -1,4 +1,4 @@
-import { getYoutubeEmbedUrl } from "./utils";
+import { getEmbedUrl, getYoutubeEmbedUrl } from "./utils";
 
 // To simulate a real API, we'll use a short delay.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -286,8 +286,8 @@ const enrichedRawPropertyCardVariants = initialRawPropertyCardVariants.map((p, i
     if (p.image) {
       media.push({ type: 'image', path: p.image, isPrimary: true });
     }
-    return {
-        ...p,
+  return {
+    ...p,
         media,
         image: p.image, // Keep for compatibility
     };
@@ -332,6 +332,9 @@ const enrichedRawPropertyCardVariants = initialRawPropertyCardVariants.map((p, i
   }
 
   const newP = { ...p };
+  if (newP.locationMap) {
+      newP.locationMap = getYoutubeEmbedUrl(newP.locationMap);
+  }
   delete newP.image;
   delete newP.images;
   delete newP.youtubeEmbedLink;
@@ -558,7 +561,7 @@ export const mapsData = rawMapsData.map((m, index) => ({
 }));
 
 export const categoryCardData = rawCategoryCardData.map((c, index) => ({
-  ...c,
+    ...c,
   id: `${c.title.toLowerCase().replace(/\s+/g, "-")}-${index}`,
 }));
 
@@ -571,163 +574,178 @@ export const personalizedCardsData = rawPersonalizedCardsData;
 
 // --- API Functions ---
 
+const transformProperty = (p) => {
+  // Normalize media if it's the object structure from the real API
+  let normalizedMedia = [];
+  if (p.media && !Array.isArray(p.media)) {
+    if (p.media.thumbnail_image) {
+      normalizedMedia.push({ 
+        ...p.media.thumbnail_image, 
+        type: 'image', 
+        isPrimary: true 
+      });
+    }
+    if (Array.isArray(p.media.gallery_images)) {
+      p.media.gallery_images.forEach(img => normalizedMedia.push({ 
+        ...img, 
+        type: 'image', 
+        isPrimary: false 
+      }));
+    }
+    if (p.media.video) {
+      normalizedMedia.push({ 
+        ...p.media.video, 
+        type: 'video',
+        video_embed_link: p.media.video.video_embed_link ? getEmbedUrl(p.media.video.video_embed_link) : null
+      });
+    }
+  } else if (Array.isArray(p.media)) {
+    normalizedMedia = p.media;
+  }
+
+  const primaryImage = normalizedMedia.find(m => m.type === 'image' && m.isPrimary) || normalizedMedia.find(m => m.type === 'image');
+
+  return {
+    ...p,
+    id: String(p.id),
+    media: normalizedMedia,
+    image: primaryImage?.path || null,
+    imageThumb: primaryImage?.thumb_path || null,
+    price: p.price_amount,
+    originalPrice: p.price_original_amount,
+    currency: "Rs",
+    location: p.address,
+    city: p.city_name,
+    societyName: p.society_name,
+    phase: p.phase_name,
+    areaUnit: p.unit,
+    priceType: p.purchase_type,
+    shortDescription: p.short_desc,
+    detailedDescription: p.detailed_description_content,
+    locationMap: p.embed_link ? getEmbedUrl(p.embed_link) : null,
+    badges: (p.labels || []).map(l => ({
+      label: l.name,
+      variant: l.badge_variant || "secondary",
+      is_badge: !!l.is_badge
+    })),
+    features: typeof p.features === 'string' ? p.features.split(',').map(f => f.trim()).filter(Boolean) : (Array.isArray(p.features) ? p.features.map(f => f.value || f) : []),
+  };
+};
+
 export const fetchProperties = async (filters = {}) => {
-  await sleep(200); // Simulate network delay
-  let filteredProperties = propertyCardVariants.filter(p => p.category !== "File" && !p.is_file);
+  const params = new URLSearchParams();
+  if (filters.query) params.append('query', filters.query);
+  if (filters.category) params.append('category', filters.category);
+  if (filters.city) params.append('city', filters.city);
+  if (filters.beds) params.append('beds', filters.beds);
+  if (filters.baths) params.append('baths', filters.baths);
+  if (filters.property_type) params.append('property_type', filters.property_type);
+  if (filters.priceType) params.append('priceType', filters.priceType);
+  if (filters.societyName) params.append('societyName', filters.societyName);
+  if (filters.phase) params.append('phase', filters.phase);
+  if (filters.area) params.append('area', filters.area);
+  if (filters.areaUnit) params.append('areaUnit', filters.areaUnit);
+  if (filters.is_file !== undefined) params.append('is_file', filters.is_file ? '1' : '0');
+  else params.append('is_file', '0'); // Default to properties
 
-  const { category, city, beds, baths, area, areaUnit, query, priceType, property_type, societyName, phase } = filters;
-
-  if (query) {
-    const lowerCaseQuery = query.toLowerCase();
-    filteredProperties = filteredProperties.filter(
-      (p) =>
-        p.title.toLowerCase().includes(lowerCaseQuery) ||
-        p.shortDescription.toLowerCase().includes(lowerCaseQuery) ||
-        p.city.toLowerCase().includes(lowerCaseQuery) ||
-        p.location.toLowerCase().includes(lowerCaseQuery) ||
-        (p.societyName && p.societyName.toLowerCase().includes(lowerCaseQuery)) ||
-        (p.phase && p.phase.toLowerCase().includes(lowerCaseQuery)) ||
-        p.badges.some(badge => badge.label.toLowerCase().includes(lowerCaseQuery))
-    );
-  }
-
-  if (category) {
-    filteredProperties = filteredProperties.filter(p => p.category === category);
-  }
-  if (city) {
-    filteredProperties = filteredProperties.filter(p => p.city === city);
-  }
-  if (beds) {
-    filteredProperties = filteredProperties.filter(p => p.beds >= parseInt(beds, 10));
-  }
-  if (baths) {
-    filteredProperties = filteredProperties.filter(p => p.baths >= parseInt(baths, 10));
-  }
-  if (area) {
-    const targetArea = parseInt(area, 10);
-    filteredProperties = filteredProperties.filter(p => {
-      // Assuming all property areas are in sqft for comparison or need conversion
-      // For simplicity, directly compare if units match or perform a basic conversion if needed.
-      // Here, we'll assume a direct numerical comparison.
-      if (p.areaUnit === areaUnit || !areaUnit) { // If units match or no unit specified, compare directly
-        return p.area === targetArea;
-      } else if (areaUnit === "sq yards" && p.areaUnit === "sqft") {
-        // Convert p.area (sqft) to sq yards for comparison
-        return Math.round(p.area / 9) === targetArea;
-      } else if (areaUnit === "sqft" && p.areaUnit === "sq yards") {
-        // Convert p.area (sq yards) to sqft for comparison
-        return Math.round(p.area * 9) === targetArea;
-      }
-      return false; // Mismatched units without conversion logic
-    });
-  }
-  if (priceType) {
-    filteredProperties = filteredProperties.filter(p => p.priceType === priceType);
-  }
-  if (property_type) {
-    filteredProperties = filteredProperties.filter(p => p.property_type === property_type);
-  }
-  if (societyName) {
-    filteredProperties = filteredProperties.filter(p => p.societyName === societyName);
-  }
-  if (phase) {
-    filteredProperties = filteredProperties.filter(p => p.phase === phase);
-  }
-
-  return filteredProperties;
+  const response = await fetch(`/api/properties?${params.toString()}`);
+  if (!response.ok) throw new Error('Failed to fetch properties');
+  const data = await response.json();
+  
+  return data.map(transformProperty);
 };
 
 export const fetchFilterOptions = async () => {
-  await sleep(100); // Simulate network delay for filter options
+  const [categoriesRes, citiesRes, societiesRes, phasesRes, labelsRes] = await Promise.all([
+    fetch('/api/categories'),
+    fetch('/api/cities'),
+    fetch('/api/societies'),
+    fetch('/api/phases'),
+    fetch('/api/labels'),
+  ]);
 
-  const allProperties = propertyCardVariants.filter(p => p.category !== "File" && !p.is_file);
-
-  const categories = [...new Set(allProperties.map(p => p.category))];
-  const cities = [...new Set(allProperties.map(p => p.city))];
-  // Assuming badges can act as 'labels' for filtering
-  const labels = [...new Set(allProperties.flatMap(p => p.badges ? p.badges.map(b => b.label) : []))];
-  // Assuming 'phase' can be a filter
-  const phases = [...new Set(allProperties.map(p => p.phase).filter(Boolean))]; // Filter out undefined/null
-  const propertyTypes = [...new Set(allProperties.map(p => p.property_type).filter(Boolean))];
-  const priceTypes = [...new Set(allProperties.map(p => p.priceType).filter(Boolean))];
-  const societyNames = [...new Set(allProperties.map(p => p.societyName).filter(Boolean))];
-
-
-  // For beds, baths, area, we might want ranges or min/max, but for now, just unique values or max values
-  const maxBeds = Math.max(...allProperties.map(p => p.beds || 0));
-  const maxBaths = Math.max(...allProperties.map(p => p.baths || 0));
-
+  const [categories, cities, societies, phases, labels] = await Promise.all([
+    categoriesRes.json(),
+    citiesRes.json(),
+    societiesRes.json(),
+    phasesRes.json(),
+    labelsRes.json(),
+  ]);
 
   return {
-    categories,
-    cities,
-    labels,
-    phases,
-    propertyTypes,
-    priceTypes,
-    maxBeds,
-    maxBaths,
-    societyNames,
+    categories: categories.map(c => c.name),
+    cities: cities.map(c => c.name),
+    societyNames: societies.map(s => s.name),
+    phases: phases.map(p => p.name),
+    labels: labels.filter(l => l.is_filter).map(l => l.name), // Only include labels marked as filters
+    propertyTypes: ["Residential", "Commercial"],
+    priceTypes: ["sale", "rent", "installment"],
+    maxBeds: 10,
+    maxBaths: 10,
   };
 };
 
 export const fetchProperty = async (id) => {
-  await sleep(200);
-  const property = propertyCardVariants.find((p) => p.id === id);
-  if (!property) {
-    throw new Error("Property not found");
-  }
-  return property;
+  const response = await fetch(`/api/properties/${id}`);
+  if (!response.ok) throw new Error('Property not found');
+  const data = await response.json();
+  return transformProperty(data);
 }
 
 export const fetchMaps = async (filters = {}) => {
-  await sleep(200);
-  let filteredMaps = mapsData;
+  const params = new URLSearchParams();
+  if (filters.query) params.append('query', filters.query);
+  if (filters.city) params.append('city', filters.city);
+  if (filters.societyName) params.append('societyName', filters.societyName);
+  if (filters.phase) params.append('phase', filters.phase);
 
-  const { query, city, societyName, phase } = filters;
-
-  if (query) {
-    const lowerCaseQuery = query.toLowerCase();
-    filteredMaps = filteredMaps.filter(
-      (m) =>
-        m.title.toLowerCase().includes(lowerCaseQuery) ||
-        m.description.toLowerCase().includes(lowerCaseQuery) ||
-        (m.city && m.city.toLowerCase().includes(lowerCaseQuery)) ||
-        (m.societyName && m.societyName.toLowerCase().includes(lowerCaseQuery)) ||
-        (m.phase && m.phase.toLowerCase().includes(lowerCaseQuery))
-    );
-  }
-
-  if (city) {
-    filteredMaps = filteredMaps.filter(m => m.city === city);
-  }
-  if (societyName) {
-    filteredMaps = filteredMaps.filter(m => m.societyName === societyName);
-  }
-  if (phase) {
-    filteredMaps = filteredMaps.filter(m => m.phase === phase);
-  }
-
-  return filteredMaps;
+  const response = await fetch(`/api/maps?${params.toString()}`);
+  if (!response.ok) throw new Error('Failed to fetch maps');
+  const data = await response.json();
+  return data.map(m => ({
+    ...m,
+    id: String(m.id),
+    image: m.map_pic,
+    thumb: m.map_thumb,
+    pdfPath: m.pdf,
+    societyName: m.society_name,
+    cityName: m.city_name,
+    phaseName: m.phase_name
+  }));
 };
 
 export const fetchMapFilterOptions = async () => {
-  await sleep(100);
+  const [citiesRes, societiesRes, phasesRes] = await Promise.all([
+    fetch('/api/cities'),
+    fetch('/api/societies'),
+    fetch('/api/phases'),
+  ]);
 
-  const cities = [...new Set(mapsData.map(m => m.city).filter(Boolean))];
-  const societyNames = [...new Set(mapsData.map(m => m.societyName).filter(Boolean))];
-  const phases = [...new Set(mapsData.map(m => m.phase).filter(Boolean))];
+  const [cities, societies, phases] = await Promise.all([
+    citiesRes.json(),
+    societiesRes.json(),
+    phasesRes.json(),
+  ]);
 
   return {
-    cities,
-    societyNames,
-    phases,
+    cities: cities.map(c => c.name),
+    societyNames: societies.map(s => s.name),
+    phases: phases.map(p => p.name),
   };
 };
 
 export const fetchCategories = async () => {
-  await sleep(200);
-  return categoryCardData;
+  const response = await fetch('/api/categories');
+  if (!response.ok) throw new Error('Failed to fetch categories');
+  const data = await response.json();
+  return data.map(c => ({
+    ...c,
+    id: String(c.id),
+    title: c.name,
+    src: c.pic,
+    thumb: c.thumb,
+    count: c.properties_count || 0
+  }));
 };
 
 export const fetchPersonalizedCards = async () => {
@@ -741,100 +759,129 @@ export const fetchReviews = async () => {
 }
 
 export const fetchFileProperties = async (filters = {}) => {
-  await sleep(200);
-  let filteredFiles = propertyCardVariants.filter(p => p.category === "File");
-
-  const { city, societyName, phase, file_type, area, areaUnit, query } = filters;
-
-  if (query) {
-    const lowerCaseQuery = query.toLowerCase();
-    filteredFiles = filteredFiles.filter(
-      (p) =>
-        p.title.toLowerCase().includes(lowerCaseQuery) ||
-        (p.societyName && p.societyName.toLowerCase().includes(lowerCaseQuery)) ||
-        (p.phase && p.phase.toLowerCase().includes(lowerCaseQuery)) ||
-        (p.file_type && p.file_type.toLowerCase().includes(lowerCaseQuery)) ||
-        (p.city && p.city.toLowerCase().includes(lowerCaseQuery)) ||
-        (p.location && p.location.toLowerCase().includes(lowerCaseQuery)) ||
-        (p.badges && p.badges.some(badge => badge.label.toLowerCase().includes(lowerCaseQuery)))
-    );
-  }
-
-  if (city) {
-    filteredFiles = filteredFiles.filter(p => p.city === city);
-  }
-  if (societyName) {
-    filteredFiles = filteredFiles.filter(p => p.societyName === societyName);
-  }
-  if (phase) {
-    filteredFiles = filteredFiles.filter(p => p.phase === phase);
-  }
-  if (file_type) {
-    filteredFiles = filteredFiles.filter(p => p.file_type === file_type);
-  }
-  if (area) {
-    const targetArea = parseInt(area, 10);
-    filteredFiles = filteredFiles.filter(p => {
-      if (p.areaUnit === areaUnit || !areaUnit) {
-        return p.area === targetArea;
-      } else if (areaUnit === "sq yards" && p.areaUnit === "sqft") {
-        return Math.round(p.area / 9) === targetArea;
-      } else if (areaUnit === "sqft" && p.areaUnit === "sq yards") {
-        return Math.round(p.area * 9) === targetArea;
-      }
-      return false;
-    });
-  }
-
-  return filteredFiles;
+  return fetchProperties({ ...filters, is_file: true });
 }
 
 export const fetchFileFilterOptions = async () => {
-  await sleep(100);
-
-  const allFiles = propertyCardVariants.filter(p => p.category === "File");
-
-  const cities = [...new Set(allFiles.map(p => p.city).filter(Boolean))];
-  const societyNames = [...new Set(allFiles.map(p => p.societyName).filter(Boolean))];
-  const phases = [...new Set(allFiles.map(p => p.phase).filter(Boolean))];
-  const fileTypes = [...new Set(allFiles.map(p => p.file_type).filter(Boolean))];
-
-  const maxArea = Math.max(...allFiles.map(p => p.area || 0));
-
+  const options = await fetchFilterOptions();
   return {
-    cities,
-    societyNames,
-    phases,
-    fileTypes,
-    maxArea,
+    ...options,
+    fileTypes: ["Allocation", "Affidavit"],
+    maxArea: 10000,
   };
 }
 
+export const fetchLandingSections = async () => {
+    try {
+        const response = await fetch('/api/landing-sections');
+        if (!response.ok) throw new Error('Failed to fetch landing sections');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching landing sections:', error);
+        return [];
+    }
+};
+
+export const fetchItemsByIds = async (collectionType, ids) => {
+    if (!ids || ids.length === 0) return [];
+    
+    // In a real scenario, we might have an endpoint like /api/${collectionType}?ids=${ids.join(',')}
+    // For now, we'll fetch all and filter, or use existing mock fetchers if they were real
+    try {
+        let items = [];
+        if (collectionType === 'properties') {
+            // We'll use the existing mock fetcher but in reality it would be a real API call
+            const all = await fetchProperties();
+            const allFiles = await fetchFileProperties();
+            const combined = [...all, ...allFiles];
+            // Since mock IDs are strings like 'title-0', and backend IDs are ints, 
+            // we need to be careful. If IDs in landing_section_items are real DB IDs, 
+            // and our current fetchers return mock data with string IDs, they won't match.
+            // ASSUMPTION: For this task, we assume the backend returns real IDs that match 
+            // what the real API would return. Since we're still using mock data for items, 
+            // we'll just take a slice for now if it's mock, or filter if we had real IDs.
+            
+            // If the IDs are integers, it means they are real. 
+            // Let's try to fetch real data if available, otherwise filter mock.
+            items = combined.filter(p => ids.includes(parseInt(p.id)) || ids.includes(p.id));
+            
+            // Fallback if no matches (because of mock/real ID mismatch)
+            if (items.length === 0) items = combined.slice(0, ids.length);
+
+        } else if (collectionType === 'categories') {
+            const all = await fetchCategories();
+            items = all.filter(c => ids.includes(parseInt(c.id)) || ids.includes(c.id));
+            if (items.length === 0) items = all.slice(0, ids.length);
+        } else if (collectionType === 'maps') {
+            const all = await fetchMaps();
+            items = all.filter(m => ids.includes(parseInt(m.id)) || ids.includes(m.id));
+            if (items.length === 0) items = all.slice(0, ids.length);
+        }
+        return items;
+    } catch (error) {
+        console.error(`Error fetching items for ${collectionType}:`, error);
+        return [];
+    }
+};
+
 export const fetchHomeData = async () => {
-    await sleep(300);
-    const [properties, maps, categories, personalizedCards, reviews, fileProperties] = await Promise.all([
-        fetchProperties(),
-        fetchMaps(),
-        fetchCategories(),
+    // Fetch landing sections from backend
+    const sections = await fetchLandingSections();
+    
+    // Fetch other static mock data for now
+    const [personalizedCards, reviews] = await Promise.all([
         fetchPersonalizedCards(),
         fetchReviews(),
-        fetchFileProperties(),
     ]);
+
+    // Process each section to fetch its specific items
+    const processedSections = await Promise.all(sections.map(async (section) => {
+        if (section.visibility === 0) return null;
+
+        if (section.collection_type === 'video') {
+            return {
+                type: 'video',
+                slug: section.slug,
+                isVisible: true,
+                heading: section.title,
+                subheading: section.subtitle,
+                videoInputMethod: section.video_input_method,
+                videoMedia: section.video_path ? [{ type: 'video', path: section.video_path }] : [],
+                videoEmbedLink: section.video_embed_link,
+            };
+        }
+
+        const items = await fetchItemsByIds(section.collection_type, section.selected_items);
+        return {
+            type: 'collection',
+            collection_type: section.collection_type,
+            slug: section.slug,
+            heading: section.title,
+            subheading: section.subtitle,
+            items: items
+        };
+    }));
+
+    const activeSections = processedSections.filter(Boolean);
+
+    // Map back to the structure the homepage expects, or a new flexible one
+    // For now, let's keep the return object structure but populate from sections
+    const getSectionBySlug = (slug) => activeSections.find(s => s.slug === slug);
+
     return {
-        properties: properties.slice(0, 4), // Return only 4 properties for the homepage slider
-        maps: maps.slice(0, 4), // Return only 4 maps for the homepage slider
-        categories,
+        // Fallback to old keys for compatibility if sections are missing
+        properties: getSectionBySlug('featured-properties')?.items || [],
+        maps: getSectionBySlug('maps')?.items || [],
+        categories: getSectionBySlug('categories')?.items || [],
+        fileProperties: getSectionBySlug('files')?.items || [],
+        videoSection: getSectionBySlug('video-section') || null,
+        
+        // Static sections
         personalizedCards,
         reviews,
-        fileProperties: fileProperties.slice(0, 3), // Return only 3 file properties for the homepage grid
-        videoSection: {
-            isVisible: true,
-            heading: 'Featured Video',
-            subheading: 'Watch our latest property showcase.',
-            videoInputMethod: 'upload',
-            videoMedia: [{ type: 'video', path: '/videos/property.mp4' }],
-            videoEmbedLink: '',
-        }
+        
+        // New: Raw sections for dynamic rendering if needed
+        dynamicSections: activeSections
     }
 }
         
@@ -845,17 +892,17 @@ export const fetchHomeData = async () => {
           }
         
           const lowerCaseQuery = query.toLowerCase();
-        
+  
           const [properties, files, maps, filterOptions, mapFilterOptions, fileFilterOptions, allCategories] = await Promise.all([
-            fetchProperties({ query }),
-            fetchFileProperties({ query }),
-            fetchMaps({ query }),
-            fetchFilterOptions(),
+    fetchProperties({ query }),
+    fetchFileProperties({ query }),
+    fetchMaps({ query }),
+    fetchFilterOptions(),
             fetchMapFilterOptions(),
-            fetchFileFilterOptions(),
+    fetchFileFilterOptions(),
             fetchCategories()
-          ]);
-          
+  ]);
+
           const categories = allCategories.filter(c => c.title.toLowerCase().includes(lowerCaseQuery));
         
           // Combine and deduplicate filter options
@@ -872,11 +919,11 @@ export const fetchHomeData = async () => {
           const propertyTypes = filterOptions.propertyTypes.filter(pt => pt.toLowerCase().includes(lowerCaseQuery));
           const priceTypes = filterOptions.priceTypes.filter(pt => pt.toLowerCase().includes(lowerCaseQuery));
           const fileTypes = fileFilterOptions.fileTypes.filter(ft => ft.toLowerCase().includes(lowerCaseQuery));
-        
-          return {
-            properties,
-            files,
-            maps,
+
+  return {
+    properties,
+    files,
+    maps,
             categories,
             cities,
             societies,
@@ -885,6 +932,23 @@ export const fetchHomeData = async () => {
             propertyTypes,
             priceTypes,
             fileTypes
-          };
-        };
+  };
+};
+
+export const submitQuery = async (queryData) => {
+  const response = await fetch('/api/queries', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(queryData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to submit inquiry');
+  }
+
+  return response.json();
+};
         

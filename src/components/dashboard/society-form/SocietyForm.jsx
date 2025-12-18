@@ -150,7 +150,7 @@ export default function SocietyForm({ initialData, onSuccess, onCancel, isDuplic
           </CardContent>
         </Card>
 
-        <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
+        <div className="sticky bottom-0 flex gap-3 p-6 bg-background border-t">
           <Button type="submit" size="lg">
             {initialData ? 'Save Changes' : `Add Society`}
           </Button>

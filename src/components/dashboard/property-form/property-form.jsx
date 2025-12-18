@@ -46,6 +46,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { getYoutubeEmbedUrl } from "@/lib/utils";
+import { toast } from "sonner"; // Import toast for notifications
+import { useAuthStore } from "@/store/authStore";
 const labelVariants = [
   "default",
   "secondary",
@@ -61,7 +63,11 @@ const labelVariants = [
 
 export default function PropertyForm({ initialData, onSuccess, onCancel, isDuplicating }) {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
   const [cities, setCities] = useState([]);
@@ -70,9 +76,6 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
   const [categories, setCategories] = useState([]);
   const [labels, setLabels] = useState([]);
   const [propertiesOptions, setPropertiesOptions] = useState([]);
-
-
-
 
   const [galleryMedia, setGalleryMedia] = useState([]);
   const [thumbnailMedia, setThumbnailMedia] = useState([]);
@@ -87,7 +90,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
     control,
     setValue,
     getValues,
-    reset, // Add reset from useForm
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(propertyFormSchema),
@@ -109,8 +112,6 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
       price_original_amount: "",
       price_period_unit: "month",
       price_period_value: 1,
-      discount_type: "percentage",
-      discount_value: "",
       installment_advance_amount: "",
       installment_total_period_text: "",
       installment_amount: "",
@@ -126,9 +127,11 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
       hide: false,
       template: "default",
       _new_label_variant: "secondary",
-      features: "", // Default to empty string for features textarea
-      detailed_description_content: "", // New field for single rich text editor
-      // Merge initialData with defaults, ensuring specific fields have fallbacks
+      _selected_property: "",
+      _selected_label: "",
+      _new_label_name: "",
+      features: "",
+      detailed_description_content: "",
       ...(initialData || {}),
       is_file: initialData?.is_file ?? false,
       is_furnished: initialData?.is_furnished ?? true,
@@ -146,145 +149,209 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
   // Fetch data on mount and initialize form with initialData
   useEffect(() => {
-    // Mock data (replace with API calls)
-    setCities([
-      { id: 1, name: "Lahore" },
-      { id: 2, name: "Islamabad" },
-      { id: 3, name: "Karachi" },
-    ]);
+    console.error("PropertyForm initialData.id:", initialData?.id); // Debugging line
+    const fetchData = async () => {
+      try {
+        const promises = [
+          fetch('/api/categories'),
+          fetch('/api/cities'),
+          fetch('/api/societies'),
+          fetch('/api/phases'),
+          fetch('/api/labels'),
+          fetch('/api/properties')
+        ];
 
-    setSocieties([
-      { id: 1, name: "Gulberg" },
-      { id: 2, name: "Bahria Town" },
-      { id: 3, name: "DHA" },
-    ]);
+        // If editing or duplicating, fetch full property details to get media and other deep data not present in list view
+        if (initialData?.id) {
+            promises.push(fetch(`/api/properties/${initialData.id}`));
+        }
 
-    setPhases([
-      { id: 1, name: "Phase 1" },
-      { id: 2, name: "Phase 2" },
-      { id: 3, name: "Phase 3" },
-    ]);
+        const responses = await Promise.all(promises);
 
-    setCategories([
-      { id: 1, name: "Residential" },
-      { id: 2, name: "Commercial" },
-      { id: 3, name: "Plot" },
-    ]);
+        const categoriesData = responses[0].ok ? await responses[0].json() : [];
+        const citiesData = responses[1].ok ? await responses[1].json() : [];
+        const societiesData = responses[2].ok ? await responses[2].json() : [];
+        const phasesData = responses[3].ok ? await responses[3].json() : [];
+        const labelsData = responses[4].ok ? await responses[4].json() : [];
+        const propertiesData = responses[5].ok ? await responses[5].json() : [];
+        
+        let fullPropertyData = null;
+        if (initialData?.id && responses[6] && responses[6].ok) {
+            fullPropertyData = await responses[6].json();
+        }
 
-    setLabels([
-      { id: "l1", name: "New", badge_variant: "destructive", is_badge: true },
-      {
-        id: "l2",
-        name: "Featured",
-        badge_variant: "secondary",
-        is_badge: true,
-      },
-      { id: "l3", name: "Hot", badge_variant: "warning", is_badge: false },
-    ]);
+        setCategories(categoriesData.map(d => ({ ...d, id: String(d.id) })));
+        setCities(citiesData.map(d => ({ ...d, id: String(d.id) })));
+        setSocieties(societiesData.map(d => ({ ...d, id: String(d.id) })));
+        setPhases(phasesData.map(d => ({ ...d, id: String(d.id) })));
+        setLabels(labelsData.map(d => ({
+          ...d,
+          id: String(d.id),
+          is_badge: !!d.is_badge // Convert 0/1 to boolean
+        })));
+        setPropertiesOptions(propertiesData.map(p => ({ id: String(p.id), name: p.title })));
 
-    setPropertiesOptions([
-      { id: "p1", name: "Property A" },
-      { id: "p2", name: "Property B" },
-      { id: "p3", name: "Property C" },
-    ]);
+        // Initialize form after data is loaded
+        if (initialData) {
+          // Use full property data if available (for editing), otherwise use initialData (for duplicating or if fetch failed)
+          const sourceData = fullPropertyData || initialData;
+          
+          
 
-    if (initialData) {
-      // Use reset to populate form with initialData, and handle ID for duplication
-      const formDataToSet = isDuplicating ? { ...initialData, id: undefined } : initialData;
+          // Use reset to populate form, and handle ID for duplication
+          const formDataToSet = isDuplicating ? { ...sourceData, id: undefined } : { ...sourceData };
 
-      // Handle features: convert array of objects to comma-separated string
-      if (formDataToSet.features && Array.isArray(formDataToSet.features)) {
-        formDataToSet.features = formDataToSet.features.map(f => f.value).join(', ');
-      }
+          // Explicitly convert boolean-like fields from numbers (0 or 1) to actual booleans (true or false)
+          formDataToSet.is_file = !!formDataToSet.is_file;
+          formDataToSet.is_furnished = !!formDataToSet.is_furnished;
+          formDataToSet.is_discounted = !!formDataToSet.is_discounted;
+          formDataToSet.hide = !!formDataToSet.hide;
 
-      // Handle detailed_description_content: concatenate from array of objects
-      if (formDataToSet.detail_descriptions && Array.isArray(formDataToSet.detail_descriptions)) {
-        formDataToSet.detailed_description_content = formDataToSet.detail_descriptions.map(d => `<h3>${d.heading}</h3>${d.text}`).join('');
-      } else if (typeof formDataToSet.detail_descriptions === 'string') {
-          // If it's already a string, just use it
-          formDataToSet.detailed_description_content = formDataToSet.detail_descriptions;
-      }
+          // Null safety for string fields to prevent Zod "expected string, received null" errors
+          if (formDataToSet.short_desc === null) formDataToSet.short_desc = "";
+          if (formDataToSet.address === null) formDataToSet.address = "";
+          if (formDataToSet.embed_link === null) formDataToSet.embed_link = "";
+          if (formDataToSet.features === null) formDataToSet.features = "";
+          if (formDataToSet.detailed_description_content === null) formDataToSet.detailed_description_content = "";
+          if (formDataToSet.installment_total_period_text === null) formDataToSet.installment_total_period_text = "";
 
-      reset(formDataToSet);
+          // Ensure IDs for related fields are strings
+          if (formDataToSet.category_id) formDataToSet.category_id = String(formDataToSet.category_id);
+          if (formDataToSet.city_id) formDataToSet.city_id = String(formDataToSet.city_id);
+          if (formDataToSet.society_id) formDataToSet.society_id = String(formDataToSet.society_id);
+          if (formDataToSet.phase_id) formDataToSet.phase_id = String(formDataToSet.phase_id);
 
-      // Initialize media states
-      if (initialData.media) {
-        const video = initialData.media.find(item => item.type === 'video');
-        setGalleryMedia(initialData.media.filter(item => item.type === 'image'));
-        setThumbnailMedia(initialData.media.filter(item => item.type === 'image' && item.isPrimary));
-        if (video) {
-            if (video.path) {
-                setVideoInputMethod('upload');
-                setVideoMedia([video]);
-                setVideoEmbedLinkForMedia('');
-            } else if (video.video_embed_link) {
-                setVideoInputMethod('embed');
+          // Handle features: convert array of objects to comma-separated string
+          if (formDataToSet.features && Array.isArray(formDataToSet.features)) {
+            formDataToSet.features = formDataToSet.features.map(f => f.value).join(', ');
+          }
+
+          // Handle related_products: map to an array of just IDs
+          if (formDataToSet.related_properties && Array.isArray(formDataToSet.related_properties)) {
+            formDataToSet.related_products = formDataToSet.related_properties.map(p => p.related_property_id.toString());
+          } else {
+            formDataToSet.related_products = [];
+          }
+
+          // Handle labels: map to an array of just IDs
+          if (formDataToSet.labels && Array.isArray(formDataToSet.labels)) {
+             // Ensure we have all labels in our state, even if they are new/custom
+             const incomingLabels = formDataToSet.labels.map(l => ({
+              id: l.label_id.toString(),
+              name: l.name,
+              badge_variant: l.badge_variant,
+              is_badge: l.is_badge,
+            }));
+            setLabels(currentLabels => {
+              const newLabels = incomingLabels.filter(
+                il => !currentLabels.some(cl => String(cl.id) === il.id)
+              );
+              return [...currentLabels, ...newLabels];
+            });
+            formDataToSet.labels = formDataToSet.labels.map(l => l.label_id.toString());
+          } else {
+            formDataToSet.labels = [];
+          }
+
+          reset(formDataToSet);
+
+          // Initialize media states from sourceData (which should have media object now)
+          if (sourceData.media) {
+            setGalleryMedia(sourceData.media.gallery_images ? sourceData.media.gallery_images.map(img => ({
+              id: isDuplicating ? undefined : img.id,
+              url: img.path,
+              thumb_path: img.thumb_path,
+              type: 'image', // Explicitly set type
+              file: null, 
+            })) : []);
+            
+            setThumbnailMedia(sourceData.media.thumbnail_image ? [{
+              id: isDuplicating ? undefined : sourceData.media.thumbnail_image.id,
+              url: sourceData.media.thumbnail_image.path,
+              thumb_path: sourceData.media.thumbnail_image.thumb_path,
+              type: 'image', // Explicitly set type
+              file: null,
+            }] : []);
+
+            if (sourceData.media.video) {
+                if (sourceData.media.video.type === 'upload') {
+                    setVideoInputMethod('upload');
+                    setVideoMedia([{ url: sourceData.media.video.path, type: 'video', file: null }]); // Change type from 'upload' to 'video'
+                    setVideoEmbedLinkForMedia('');
+                } else if (sourceData.media.video.type === 'embed') {
+                    setVideoInputMethod('embed');
+                    setVideoMedia([]);
+                    setVideoEmbedLinkForMedia(sourceData.media.video.video_embed_link);
+                }
+            } else {
                 setVideoMedia([]);
-                setVideoEmbedLinkForMedia(video.video_embed_link);
+                setVideoEmbedLinkForMedia('');
             }
-        } else {
+          } else {
+            setGalleryMedia([]);
+            setThumbnailMedia([]);
             setVideoMedia([]);
             setVideoEmbedLinkForMedia('');
-        }
-      } else {
-        setGalleryMedia([]);
-        setThumbnailMedia([]);
-        setVideoMedia([]);
-        setVideoEmbedLinkForMedia('');
-      }
+          }
 
-    } else {
-      // Reset form to default empty values when adding new item
-      reset({
-        title: "",
-        short_desc: "",
-        address: "",
-        property_type: "Residential",
-        is_file: false,
-        file_type: "Affidavit",
-        purchase_type: "sale",
-        is_furnished: true,
-        beds: 0,
-        baths: 0,
-        area: 0,
-        unit: "sqft",
-        price_amount: "",
-        is_discounted: false,
-        price_original_amount: "",
-        price_period_unit: "month",
-        price_period_value: 1,
-        discount_type: "percentage",
-        discount_value: "",
-        installment_advance_amount: "",
-        installment_total_period_text: "",
-        installment_amount: "",
-        installment_display_mode: "installment",
-        vat_amount: "0",
-        category_id: "",
-        city_id: "",
-        society_id: "",
-        phase_id: "",
-        related_products: [],
-        labels: [],
-        embed_link: "",
-        hide: false,
-        template: "default",
-        _new_label_variant: "secondary",
-        features: "", // Default to empty string
-        detailed_description_content: "", // Default to empty string
-      });
-      setGalleryMedia([]);
-      setThumbnailMedia([]);
-      setVideoMedia([]);
-      setVideoEmbedLinkForMedia('');
-    }
-  }, [initialData, reset, isDuplicating]); // Add reset and isDuplicating to dependency array
+
+        } else {
+          // Reset form to default empty values when adding new item
+          reset({
+            title: "",
+            short_desc: "",
+            address: "",
+            property_type: "Residential",
+            is_file: false,
+            file_type: "Affidavit",
+            purchase_type: "sale",
+            is_furnished: true,
+            beds: 0,
+            baths: 0,
+            area: 0,
+            unit: "sqft",
+            price_amount: "",
+            is_discounted: false,
+            price_original_amount: "",
+            price_period_unit: "month",
+            price_period_value: 1,
+            installment_advance_amount: "",
+            installment_total_period_text: "",
+            installment_amount: "",
+            installment_display_mode: "installment",
+            vat_amount: "0",
+            category_id: "",
+            city_id: "",
+            society_id: "",
+            phase_id: "",
+            related_products: [],
+            labels: [],
+            embed_link: "",
+            hide: false,
+            template: "default",
+            _new_label_variant: "secondary",
+            features: "",
+            detailed_description_content: "",
+          });
+          setGalleryMedia([]);
+          setThumbnailMedia([]);
+          setVideoMedia([]);
+          setVideoEmbedLinkForMedia('');
+        }
+      } catch (error) {
+        console.error("Failed to load form data:", error);
+        toast.error("Failed to load form dependencies.");
+      }
+    };
+
+    fetchData();
+  }, [initialData, reset, isDuplicating]);
 
   // Reactive watches for related properties, selected property, and labels
   const related = watch("related_products");
   const selectedProperty = watch("_selected_property");
   const selectedLabelIds = watch("labels") || [];
-
+  const { token } = useAuthStore();
   // Helpers for related properties selection + drag/reorder
   const getRelated = () => getValues("related_products") || [];
 
@@ -324,21 +391,29 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
 
   const onSubmit = (data) => {
-    let finalVideoMedia = [];
-    if (videoInputMethod === 'upload' && videoMedia.length > 0) {
-      finalVideoMedia = videoMedia;
-    } else if (videoInputMethod === 'embed' && videoEmbedLinkForMedia) {
-      const embedUrl = getYoutubeEmbedUrl(videoEmbedLinkForMedia);
-      finalVideoMedia = [{ type: 'video', video_embed_link: embedUrl }];
-    }
+    // Determine removed gallery images
+    const initialGalleryImageIds = initialData?.media?.gallery_images?.map(img => img.id) || [];
+    const currentGalleryImageIds = galleryMedia.filter(item => item.id).map(item => item.id);
+    const removedGalleryImageIds = initialGalleryImageIds.filter(id => !currentGalleryImageIds.includes(id));
 
-    const combinedMedia = [...galleryMedia, ...thumbnailMedia, ...finalVideoMedia];
-    // Ensure that if initialData exists and has an ID, it's preserved unless duplicating
+    // Map form fields to API expected fields
+    // The API expects 'related_properties' and 'existing_labels' arrays
+    const related_properties = data.related_products;
+    const existing_labels = data.labels;
+
     const finalData = {
-      ...data,
-      media: combinedMedia,
-      id: (isDuplicating || !initialData) ? undefined : initialData.id, // Only keep ID if not duplicating and initialData exists
+        ...data,
+        related_properties, 
+        existing_labels,
+        thumbnailMedia,
+        galleryMedia,
+        videoMedia,
+        videoInputMethod,
+        videoEmbedLinkForMedia,
+        removedGalleryImageIds,
+        id: isDuplicating || !initialData ? undefined : initialData.id,
     };
+
     onSuccess(finalData);
   };
 
@@ -346,9 +421,14 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
 
 
+  const onError = (errors) => {
+    console.error("Form errors:", errors);
+    toast.error("Form validation failed. Please check the fields.");
+  };
+
   return (
     <div className="p-6 mx-auto space-y-8 max-w-7xl">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8">
         {/* Responsive grid layout replacing Tabs */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* ===== SECTION: GENERAL INFORMATION ===== */}
@@ -533,7 +613,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="price_amount">
-                    Price Amount <span className="text-red-500">*</span>
+                    Price Amount
                   </Label>
                   <Input
                     id="price_amount"
@@ -556,17 +636,27 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       <Label htmlFor="price_period_unit">
                         Price Period Unit
                       </Label>
-                      <Select defaultValue="month">
-                        <SelectTrigger id="price_period_unit">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="day">Day</SelectItem>
-                          <SelectItem value="week">Week</SelectItem>
-                          <SelectItem value="month">Month</SelectItem>
-                          <SelectItem value="year">Year</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name="price_period_unit"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            key={field.value} // Added key prop
+                            onValueChange={field.onChange} // No null conversion needed here as these are fixed values
+                            value={field.value}
+                          >
+                            <SelectTrigger id="price_period_unit">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="day">Day</SelectItem>
+                              <SelectItem value="week">Week</SelectItem>
+                              <SelectItem value="month">Month</SelectItem>
+                              <SelectItem value="year">Year</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                       {errors.price_period_unit && (
                         <p className="text-sm text-red-500">
                           {errors.price_period_unit.message}
@@ -631,53 +721,6 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                         </p>
                       )}
                     </div>
-
-                    <div className="space-y-2">
-                      <Label>
-                        Discount Type <span className="text-red-500">*</span>
-                      </Label>
-                      <RadioGroup defaultValue="percentage">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="percentage"
-                            id="percentage"
-                            {...register("discount_type")}
-                          />
-                          <Label htmlFor="percentage">Percentage (%)</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="fixed"
-                            id="fixed"
-                            {...register("discount_type")}
-                          />
-                          <Label htmlFor="fixed">Fixed Amount</Label>
-                        </div>
-                      </RadioGroup>
-                      {errors.discount_type && (
-                        <p className="text-sm text-red-500">
-                          {errors.discount_type.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="discount_value">
-                        Discount Value <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="discount_value"
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        {...register("discount_value")}
-                      />
-                      {errors.discount_value && (
-                        <p className="text-sm text-red-500">
-                          {errors.discount_value.message}
-                        </p>
-                      )}
-                    </div>
                   </div>
                 )}
               </CardContent>
@@ -697,7 +740,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="installment_amount">
-                      Installment Amount <span className="text-red-500">*</span>
+                      Installment Amount
                     </Label>
                     <Input
                       id="installment_amount"
@@ -715,7 +758,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
                   <div className="space-y-2">
                     <Label htmlFor="installment_total_period_text">
-                      Total Period <span className="text-red-500">*</span>
+                      Total Period
                     </Label>
                     <Input
                       id="installment_total_period_text"
@@ -792,68 +835,117 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category_id">Category</Label>
-                    <Select defaultValue="">
-                      <SelectTrigger id="category_id">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id.toString()}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="category_id"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={field.value + '-' + (categories.length > 0)} // Added key prop
+                          onValueChange={(value) => {
+                            field.onChange(value === "" ? null : value); // Convert empty string to null
+                          }}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger id="category_id">
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None</SelectItem>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={String(cat.id)}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city_id">City</Label>
-                    <Select defaultValue="">
-                      <SelectTrigger id="city_id">
-                        <SelectValue placeholder="Select a city" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city.id} value={city.id.toString()}>
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="city_id"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={field.value + '-' + (cities.length > 0)} // Added key prop
+                          onValueChange={(value) => {
+                            field.onChange(value === "0" ? null : value);
+                          }}
+                          value={field.value ? String(field.value) : "0"}
+                        >
+                          <SelectTrigger id="city_id">
+                            <SelectValue placeholder="Select a city" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None</SelectItem>
+                            {cities.map((city) => (
+                              <SelectItem key={city.id} value={String(city.id)}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="society_id">Society</Label>
-                    <Select defaultValue="">
-                      <SelectTrigger id="society_id">
-                        <SelectValue placeholder="Select a society" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {societies.map((soc) => (
-                          <SelectItem key={soc.id} value={soc.id.toString()}>
-                            {soc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="society_id"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={field.value + '-' + (societies.length > 0)} // Added key prop
+                          onValueChange={(value) => {
+                            field.onChange(value === "0" ? null : value); 
+                          }}
+                          value={field.value ? String(field.value) : "0"}
+                        >
+                          <SelectTrigger id="society_id">
+                            <SelectValue placeholder="Select a society" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None</SelectItem>
+                            {societies.map((soc) => (
+                              <SelectItem key={soc.id} value={String(soc.id)}>
+                                {soc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phase_id">Phase</Label>
-                    <Select defaultValue="">
-                      <SelectTrigger id="phase_id">
-                        <SelectValue placeholder="Select a phase" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {phases.map((phase) => (
-                          <SelectItem
-                            key={phase.id}
-                            value={phase.id.toString()}
-                          >
-                            {phase.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="phase_id"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={field.value + '-' + (phases.length > 0)} // Added key prop
+                          onValueChange={(value) => {
+                            field.onChange(value === "0" ? null : value);
+                          }}
+                          value={field.value ? String(field.value) : "0"}
+                        >
+                          <SelectTrigger id="phase_id">
+                            <SelectValue placeholder="Select a phase" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None</SelectItem>
+                            {phases.map((phase) => (
+                              <SelectItem key={phase.id} value={String(phase.id)}>
+                                {phase.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -861,27 +953,39 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                 <div className="mt-6 space-y-3">
                   <Label>Related Properties</Label>
                   <div className="flex gap-2">
-                    <Select
-                      onValueChange={(value) =>
-                        setValue("_selected_property", value)
-                      }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select a property to relate" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {propertiesOptions.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="_selected_property"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={propertiesOptions.length} // Changed key to avoid remount on value change
+                          onValueChange={(value) => {
+                            field.onChange(value === "" ? null : value); // Convert empty string to null
+                          }}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select a property to relate" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={null}>Select a property</SelectItem>
+                            {propertiesOptions.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto"
-                      onClick={() => addRelatedProperty()}
+                      onClick={() => {
+                        addRelatedProperty();
+                        setValue("_selected_property", ""); // Clear selection after adding
+                      }}
                     >
                       <PlusIcon className="w-4 h-4 mr-2" /> Add Related
                     </Button>
@@ -965,13 +1069,33 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                                 );
                                 setValue("labels", updated);
                               }}
-                              onToggleIsBadge={(checked) => {
-                                const updatedLabels = labels.map((l) =>
-                                  l.id === lab.id
-                                    ? { ...l, is_badge: checked }
-                                    : l
-                                );
-                                setLabels(updatedLabels);
+                              onToggleIsBadge={async (checked) => {
+                                try {
+                                  const response = await fetch(`/api/labels/${lab.id}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({ is_badge: checked }),
+                                  });
+
+                                  if (!response.ok) {
+                                    const errorData = await response.json();
+                                    throw new Error(errorData.detail || `Failed to update label: ${response.statusText}`);
+                                  }
+
+                                  // Update local state only on successful API call
+                                  setLabels((currentLabels) =>
+                                    currentLabels.map((l) =>
+                                      l.id === lab.id ? { ...l, is_badge: checked } : l
+                                    )
+                                  );
+                                  toast.success(`Label "${lab.name}" updated successfully.`);
+                                } catch (error) {
+                                  console.error("Error updating label is_badge status:", error);
+                                  toast.error(error.message || "Failed to update label status.");
+                                }
                               }}
                             />
                           ))}
@@ -980,35 +1104,45 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                   </DndContext>
 
                   <div className="flex flex-col gap-2 mt-3 sm:flex-row">
-                    <Select
-                      onValueChange={(value) =>
-                        setValue("_selected_label", value)
-                      }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select an existing label" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {labels.map((label) => (
-                          <SelectItem
-                            key={label.id}
-                            value={label.id.toString()}
-                          >
-                            {label.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="_selected_label"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={labels.length} // Changed key to avoid remount on value change
+                          onValueChange={(value) => {
+                            field.onChange(value === "" ? null : value); // Convert empty string to null
+                          }}
+                          value={field.value || ""} // Ensure controlled component has a value
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select an existing label" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={null}>Select a label</SelectItem>
+                            {labels.map((label) => (
+                              <SelectItem
+                                key={label.id}
+                                value={String(label.id)}
+                              >
+                                {label.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto"
                       onClick={() => {
-                        const sel = control._formValues?._selected_label;
+                        const sel = getValues("_selected_label");
                         if (!sel) return;
                         if (!selectedLabelIds.includes(sel)) {
                           const updated = [...selectedLabelIds, sel];
                           setValue("labels", updated);
+                          setValue("_selected_label", ""); // Clear selection after adding
                         }
                       }}
                     >
@@ -1024,45 +1158,80 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       }
                       className="flex-1"
                     />
-                    <Select
-                      onValueChange={(value) =>
-                        setValue("_new_label_variant", value)
-                      }
-                      defaultValue={
-                        control._formValues?._new_label_variant || "secondary"
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select variant" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {labelVariants.map((variant) => (
-                          <SelectItem key={variant} value={variant}>
-                            {variant.charAt(0).toUpperCase() + variant.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="_new_label_variant"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={field.value} // Added key prop
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select variant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {labelVariants.map((variant) => (
+                              <SelectItem key={variant} value={variant}>
+                                {variant.charAt(0).toUpperCase() + variant.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto"
-                      onClick={() => {
-                        const name =
-                          control._formValues?._new_label_name?.trim();
-                        const variant = control._formValues?._new_label_variant;
+                      onClick={async () => {
+                        const name = getValues("_new_label_name")?.trim();
+                        const variant = getValues("_new_label_variant");
                         if (!name) return;
-                        // create a new label with badge enabled by default
-                        const newLabel = {
-                          id: Date.now().toString(),
-                          name,
-                          badge_variant: variant || "secondary",
-                          is_badge: true,
-                        };
-                        setLabels((s) => [...s, newLabel]);
-                        setValue("labels", [...selectedLabelIds, newLabel.id]);
-                        // clear input
-                        setValue("_new_label_name", "");
+
+                        try {
+                            const response = await fetch("/api/labels", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({
+                                name: name,
+                                is_badge: true, // Default to true as per frontend logic
+                                is_filter: true, // Default to true as per schema
+                                badge_variant: variant || "secondary",
+                              }),
+                            });
+
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.detail || `Failed to create label: ${response.statusText}`);
+                            }
+
+                            const newCreatedLabel = await response.json();
+                            toast.success(`Label "${newCreatedLabel.name}" created successfully!`);
+
+                            // Update local labels state with the newly created label from DB
+                            setLabels((s) => [...s, {
+                                id: String(newCreatedLabel.id), // Ensure ID is string for consistency
+                                name: newCreatedLabel.name,
+                                badge_variant: newCreatedLabel.badge_variant,
+                                is_badge: !!newCreatedLabel.is_badge,
+                                is_filter: !!newCreatedLabel.is_filter,
+                            }]);
+
+                            // Add the real database ID to the selected labels for the form
+                            setValue("labels", [...selectedLabelIds, String(newCreatedLabel.id)]);
+                            
+                            // Clear input
+                            setValue("_new_label_name", "");
+                            setValue("_new_label_variant", "secondary"); // Reset variant to default
+
+                        } catch (error) {
+                            console.error("Error creating new label:", error);
+                            toast.error(error.message || "Failed to create new label.");
+                        }
                       }}
                     >
                       <PlusIcon className="w-4 h-4 mr-2" /> Create & Add
@@ -1134,19 +1303,29 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unit</Label>
-                    <Select defaultValue="sqft">
-                      <SelectTrigger id="unit">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sqft">Square Feet</SelectItem>
-                        <SelectItem value="marla">Marla</SelectItem>
-                        <SelectItem value="kanal">Kanal</SelectItem>
-                        <SelectItem value="hectare">Hectare</SelectItem>
-                        <SelectItem value="acre">Acre</SelectItem>
-                        <SelectItem value="yard">Yard</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="unit"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          key={field.value} // Added key prop
+                          onValueChange={field.onChange} // No null conversion needed here as these are fixed values
+                          value={field.value}
+                        >
+                          <SelectTrigger id="unit">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sqft">Square Feet</SelectItem>
+                            <SelectItem value="marla">Marla</SelectItem>
+                            <SelectItem value="kanal">Kanal</SelectItem>
+                            <SelectItem value="hectare">Hectare</SelectItem>
+                            <SelectItem value="acre">Acre</SelectItem>
+                            <SelectItem value="yard">Yard</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {errors.unit && (
                       <p className="text-sm text-red-500">
                         {errors.unit.message}
@@ -1236,7 +1415,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       />
                     </TabsContent>
                     <TabsContent value="embed">
-                      <div className="space-y-2 mt-4">
+                      <div className="mt-4 space-y-2">
                         <Label htmlFor="video_embed_link_for_media">Video Embed URL</Label>
                         <Textarea
                           id="video_embed_link_for_media"
@@ -1336,7 +1515,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
         </div>
 
         {/* Form Actions */}
-        <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
+        <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
           <Button type="submit" size="lg">
             Save Property
           </Button>
@@ -1439,7 +1618,7 @@ function SortableLabelItem({ id, name, badge_variant, is_badge, onRemove, onTogg
         <div className="flex items-center gap-2">
           <Label className="text-xs">Show as badge</Label>
           <Switch
-            checked={is_badge !== false}
+            checked={!!is_badge}
             onCheckedChange={onToggleIsBadge}
           />
         </div>

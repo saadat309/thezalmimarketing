@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner';
 import SocietyForm from '@/components/dashboard/society-form/SocietyForm'; // Import the new SocietyForm
+import { useAuthStore } from '@/store/authStore';
 
 export const Route = createFileRoute('/dashboard/societies')({
   component: DashboardSocieties,
@@ -81,12 +82,17 @@ function DashboardSocieties() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { token } = useAuthStore();
 
   const fetchSocieties = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/societies');
+      const response = await fetch('/api/societies', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -117,6 +123,9 @@ function DashboardSocieties() {
 
       const response = await fetch('/api/societies', {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -153,6 +162,9 @@ function DashboardSocieties() {
 
       const response = await fetch(`/api/societies/${editedItem.id}`, {
         method: 'POST', // Use POST for FormData with method override
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -176,6 +188,9 @@ function DashboardSocieties() {
     try {
       const response = await fetch(`/api/societies/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -197,10 +212,14 @@ function DashboardSocieties() {
     }
     setIsSubmitting(true);
     try {
-      const deletePromises = selectedRows.map(row => 
-        fetch(`/api/societies/${row.original.id}`, { method: 'DELETE' })
-      );
-      
+            const deletePromises = selectedRows.map(row =>
+              fetch(`/api/societies/${row.original.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+              })
+            );      
       const results = await Promise.allSettled(deletePromises);
       
       const failedDeletes = [];

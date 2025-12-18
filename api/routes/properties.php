@@ -2,6 +2,7 @@
 // api/routes/properties.php
 
 require_once __DIR__ . '/../utils/ImageUpload.php';
+require_once __DIR__ . '/../utils/slug_util.php';   // Include slug utility
 
 function send_json($data, $status = 200) {
     http_response_code($status);
@@ -36,16 +37,27 @@ function get_request_data() {
 }
 
 function handle_properties($method, PDO $pdo, $id = null) {
-    switch ($method) {
+    // Get all request data, including _method if present
+    $request_data = get_request_data();
+    
+    // Check for method override (e.g., for PATCH/PUT via POST)
+    $actual_method = $method;
+    if (isset($request_data['_method'])) {
+        $actual_method = strtoupper($request_data['_method']);
+    }
+
+    switch ($actual_method) {
         case 'GET':
             if ($id) return get_property($pdo, $id);
-            return list_properties($pdo);
+            $is_file_filter = isset($request_data['is_file']) ? (bool)$request_data['is_file'] : null;
+            return list_properties($pdo, $is_file_filter);
         case 'POST':
             return create_property($pdo);
         case 'PUT':
         case 'PATCH':
             if (!$id) return send_json(['error' => 'ID required'], 400);
-            return update_property($pdo, $id);
+            // Pass the request_data to update_property
+            return update_property($pdo, $id, $request_data); 
         case 'DELETE':
             if (!$id) return send_json(['error' => 'ID required'], 400);
             return delete_property($pdo, $id);
@@ -64,7 +76,7 @@ function get_property_media(PDO $pdo, $media_id) {
     $gallery_images = [];
     $thumbnail_image = null;
 
-    $stmt = $pdo->prepare("SELECT id, path, thumb_path, alt, caption, position, is_card_pic, hide FROM images WHERE media_id = ? ORDER BY position ASC");
+    $stmt = $pdo->prepare("SELECT id, path, thumb_path, alt, position, is_card_pic, hide FROM images WHERE media_id = ? ORDER BY position ASC");
     $stmt->execute([$media_id]);
     $images = $stmt->fetchAll();
 
@@ -93,13 +105,13 @@ function get_property_media(PDO $pdo, $media_id) {
 }
 
 function get_property_labels(PDO $pdo, $property_id) {
-    $stmt = $pdo->prepare("SELECT pl.label_id, l.name, l.is_badge, l.badge_variant, l.is_filter FROM property_labels pl JOIN labels l ON pl.label_id = l.id WHERE pl.property_id = ? ORDER BY pl.position ASC");
+    $stmt = $pdo->prepare("SELECT pl.label_id, l.name, l.slug, l.is_badge, l.badge_variant, l.is_filter FROM property_labels pl JOIN labels l ON pl.label_id = l.id WHERE pl.property_id = ? ORDER BY pl.position ASC");
     $stmt->execute([$property_id]);
     return $stmt->fetchAll();
 }
 
 function get_property_related_properties(PDO $pdo, $property_id) {
-    $stmt = $pdo->prepare("SELECT prp.related_property_id, p.title FROM property_related_properties prp JOIN properties p ON prp.related_property_id = p.id WHERE prp.property_id = ? ORDER BY prp.position ASC");
+    $stmt = $pdo->prepare("SELECT prp.related_property_id, p.title, p.slug FROM property_related_properties prp JOIN properties p ON prp.related_property_id = p.id WHERE prp.property_id = ? ORDER BY prp.position ASC");
     $stmt->execute([$property_id]);
     return $stmt->fetchAll();
 }
@@ -112,10 +124,42 @@ function get_property_detail_description(PDO $pdo, $detail_description_id) {
     return $desc ? $desc['text'] : null;
 }
 
+/**
+ * Handles uploading a video file to the server.
+ *
+ * @param array $file The $_FILES entry for the uploaded file.
+ * @param string $entity_name A descriptive name for the entity (e.g., 'property').
+ * @param string $record_id The ID of the record associated with the video.
+ * @return string|false The relative path to the uploaded video on success, false on failure.
+ */
+function handleVideoUpload(array $file, string $entity_name, string $record_id) {
+    if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        error_log("No video file uploaded or invalid upload for entity: $entity_name, record: $record_id");
+        return false;
+    }
 
-function list_properties(PDO $pdo) {
+    $uploadDir = __DIR__ . '/../../public/videos/properties/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $uniqueName = uniqid($entity_name . '_' . $record_id . '_', true);
+    $fileName = $uniqueName . '.' . strtolower($extension);
+    $targetPath = $uploadDir . $fileName;
+
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return '/videos/properties/' . $fileName;
+    } else {
+        error_log("Failed to move uploaded video file for entity: $entity_name, record: $record_id");
+        return false;
+    }
+}
+
+
+function list_properties(PDO $pdo, $is_file_filter = null) {
     $sql = "SELECT
-                p.id, p.title, p.property_type, p.is_file, p.file_type, p.purchase_type, p.is_furnished, p.short_desc, p.address, p.features,
+                p.id, p.title, p.slug, p.property_type, p.is_file, p.file_type, p.purchase_type, p.is_furnished, p.short_desc, p.address, p.features,
                 p.beds, p.baths, p.area, p.unit, p.price_amount, p.is_discounted, p.price_original_amount, p.price_period_unit, p.price_period_value,
                 p.installment_advance_amount, p.installment_total_period_text, p.installment_amount, p.installment_display_mode,
                 p.media_id, p.category_id, p.city_id, p.society_id, p.phase_id, p.embed_link, p.hide, p.created_at, p.updated_at,
@@ -131,23 +175,124 @@ function list_properties(PDO $pdo) {
             LEFT JOIN societies s ON p.society_id = s.id
             LEFT JOIN phases ph ON p.phase_id = ph.id
             LEFT JOIN detail_descriptions dd ON p.detail_description_id = dd.id
-            ORDER BY p.id DESC";
+            WHERE 1=1
+            ";
+
+    $params = [];
     
-    $stmt = $pdo->query($sql);
+    // File Filter
+    if ($is_file_filter === null) {
+        $sql .= " AND p.is_file = ?";
+        $params[] = 0;
+    } else {
+        $sql .= " AND p.is_file = ?";
+        $params[] = (int)$is_file_filter;
+    }
+
+    // Hide filter (usually want only visible ones on frontend)
+    // If we are in dashboard context, we might want all, but generic list is usually public
+    if (!isset($_GET['all'])) {
+        $sql .= " AND p.hide = 0";
+    }
+
+    // Search Query (Expanded)
+    if (!empty($_GET['query'])) {
+        $q = '%' . $_GET['query'] . '%';
+        $sql .= " AND (
+            p.title LIKE ? 
+            OR p.short_desc LIKE ? 
+            OR p.address LIKE ? 
+            OR c.name LIKE ? 
+            OR ci.name LIKE ? 
+            OR s.name LIKE ? 
+            OR ph.name LIKE ?
+            OR EXISTS (SELECT 1 FROM property_labels pl JOIN labels l ON pl.label_id = l.id WHERE pl.property_id = p.id AND l.name LIKE ?)
+        )";
+        for ($i = 0; $i < 8; $i++) {
+            $params[] = $q;
+        }
+    }
+
+    // Category Filter
+    if (!empty($_GET['category'])) {
+        $sql .= " AND c.name = ?";
+        $params[] = $_GET['category'];
+    }
+
+    // City Filter
+    if (!empty($_GET['city'])) {
+        $sql .= " AND ci.name = ?";
+        $params[] = $_GET['city'];
+    }
+
+    // Society Filter
+    if (!empty($_GET['societyName'])) {
+        $sql .= " AND s.name = ?";
+        $params[] = $_GET['societyName'];
+    }
+
+    // Phase Filter
+    if (!empty($_GET['phase'])) {
+        $sql .= " AND ph.name = ?";
+        $params[] = $_GET['phase'];
+    }
+
+    // Property Type Filter
+    if (!empty($_GET['property_type'])) {
+        $sql .= " AND p.property_type = ?";
+        $params[] = $_GET['property_type'];
+    }
+
+    // Purchase Type Filter
+    if (!empty($_GET['priceType'])) {
+        $sql .= " AND p.purchase_type = ?";
+        $params[] = $_GET['priceType'];
+    }
+
+    // Label Filter
+    if (!empty($_GET['label'])) {
+        $sql .= " AND EXISTS (SELECT 1 FROM property_labels pl JOIN labels l ON pl.label_id = l.id WHERE pl.property_id = p.id AND l.name = ?)";
+        $params[] = $_GET['label'];
+    }
+
+    // Beds/Baths (Min value check)
+    if (!empty($_GET['beds'])) {
+        $sql .= " AND p.beds >= ?";
+        $params[] = (int)$_GET['beds'];
+    }
+    if (!empty($_GET['baths'])) {
+        $sql .= " AND p.baths >= ?";
+        $params[] = (int)$_GET['baths'];
+    }
+
+    // Area Size Filter
+    if (!empty($_GET['area'])) {
+        $sql .= " AND p.area >= ?";
+        $params[] = (int)$_GET['area'];
+    }
+    if (!empty($_GET['areaUnit'])) {
+        $sql .= " AND p.unit = ?";
+        $params[] = $_GET['areaUnit'];
+    }
+
+    $sql .= " ORDER BY p.id DESC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($properties as &$property) {
         $property['labels'] = get_property_labels($pdo, $property['id']);
         $property['related_properties'] = get_property_related_properties($pdo, $property['id']);
-        // If frontend needs all media for list, we can fetch here, but for now thumbnail_url is enough
-        // $property['media'] = get_property_media($pdo, $property['media_id']);
+        // Fetch all media for list as requested
+        $property['media'] = get_property_media($pdo, $property['media_id']);
     }
     send_json($properties);
 }
 
 function get_property(PDO $pdo, $id) {
     $sql = "SELECT
-                p.id, p.title, p.property_type, p.is_file, p.file_type, p.purchase_type, p.is_furnished, p.short_desc, p.address, p.features,
+                p.id, p.title, p.slug, p.property_type, p.is_file, p.file_type, p.purchase_type, p.is_furnished, p.short_desc, p.address, p.features,
                 p.beds, p.baths, p.area, p.unit, p.price_amount, p.is_discounted, p.price_original_amount, p.price_period_unit, p.price_period_value,
                 p.installment_advance_amount, p.installment_total_period_text, p.installment_amount, p.installment_display_mode,
                 p.media_id, p.category_id, p.city_id, p.society_id, p.phase_id, p.embed_link, p.hide, p.created_at, p.updated_at, p.detail_description_id,
@@ -185,8 +330,11 @@ function create_property(PDO $pdo) {
         return send_json(['error' => 'Title is required'], 400);
     }
 
-    $pdo->beginTransaction();
+    $slug = generate_unique_slug($pdo, 'properties', $input['title']);
+
     try {
+        $pdo->beginTransaction();
+
         // 1. Create medias entry (even if empty, will be updated)
         $stmt = $pdo->prepare("INSERT INTO medias (video, video_embed_link) VALUES (?, ?)");
         $stmt->execute([null, null]); // Placeholder values
@@ -202,14 +350,15 @@ function create_property(PDO $pdo) {
 
         // 3. Insert property
         $stmt = $pdo->prepare("INSERT INTO properties (
-            title, property_type, is_file, file_type, purchase_type, is_furnished, short_desc, address, features,
+            title, slug, property_type, is_file, file_type, purchase_type, is_furnished, short_desc, address, features,
             beds, baths, area, unit, price_amount, is_discounted, price_original_amount, price_period_unit, price_period_value,
             installment_advance_amount, installment_total_period_text, installment_amount, installment_display_mode,
             media_id, category_id, city_id, society_id, phase_id, embed_link, hide, detail_description_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         $stmt->execute([
             $input['title'],
+            $slug,
             $input['property_type'] ?? 'Residential',
             isset($input['is_file']) ? (int)(bool)$input['is_file'] : 0,
             $input['file_type'] ?? 'Affidavit',
@@ -261,68 +410,103 @@ function create_property(PDO $pdo) {
                 return send_json(['error' => 'Thumbnail image upload failed.'], 500);
             }
         } elseif (isset($input['thumbnail_image_url']) && $input['thumbnail_image_url']) {
-            $duplicated_images = ImageUpload::duplicateImageFile($input['thumbnail_image_url'], 'property_thumb', $property_id);
-            if ($duplicated_images) {
-                $stmt = $pdo->prepare("INSERT INTO images (media_id, path, thumb_path, alt, position, is_card_pic) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$media_id, $duplicated_images['full_path'], $duplicated_images['thumb_path'], $input['title'] . ' Thumbnail', $image_position++, 1]);
+            $original_thumb_path_relative = ltrim($input['thumbnail_image_url'], '/');
+            $original_thumb_file_path = __DIR__ . '/../../public/' . $original_thumb_path_relative;
+            if (file_exists($original_thumb_file_path)) {
+                $duplicated_images = ImageUpload::duplicateImageFile($input['thumbnail_image_url'], 'property_thumb', $property_id);
+                if ($duplicated_images) {
+                    $stmt = $pdo->prepare("INSERT INTO images (media_id, path, thumb_path, alt, position, is_card_pic) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$media_id, $duplicated_images['full_path'], $duplicated_images['thumb_path'], $input['title'] . ' Thumbnail', $image_position++, 1]);
+                } else {
+                    $pdo->rollBack();
+                    return send_json(['error' => 'Thumbnail image duplication failed.'], 500);
+                }
             } else {
-                $pdo->rollBack();
-                return send_json(['error' => 'Thumbnail image duplication failed.'], 500);
+                error_log("Warning: Original thumbnail file not found for duplication: " . $original_thumb_file_path);
+                // Continue without thumbnail, don't rollBack
             }
         }
 
 
         // Process gallery images (is_card_pic = false)
-        if (isset($_FILES['gallery_images']) && is_array($_FILES['gallery_images']['error'])) {
-            foreach ($_FILES['gallery_images']['error'] as $key => $error) {
-                if ($error === UPLOAD_ERR_OK) {
-                    $file_to_upload = [
-                        'name' => $_FILES['gallery_images']['name'][$key],
-                        'type' => $_FILES['gallery_images']['type'][$key],
-                        'tmp_name' => $_FILES['gallery_images']['tmp_name'][$key],
-                        'error' => $_FILES['gallery_images']['error'][$key],
-                        'size' => $_FILES['gallery_images']['size'][$key],
-                    ];
-                    $uploaded_images = ImageUpload::handleImageUpload($file_to_upload, 'property_gallery', $property_id . '_' . $key);
-                    if ($uploaded_images) {
+        // Image position starts after thumbnail (if uploaded)
+        $current_gallery_image_position = $image_position;
+        $incoming_gallery_images_data = isset($input['gallery_images_data']) && is_array($input['gallery_images_data']) ? $input['gallery_images_data'] : [];
+        
+        foreach ($incoming_gallery_images_data as $key => $image_data) {
+            // Handle new file upload (if it's a new item marked with is_new and has a file)
+            if (isset($image_data['is_new']) && $image_data['is_new'] === 'true' && isset($_FILES['gallery_images']['name'][$key]) && $_FILES['gallery_images']['error'][$key] === UPLOAD_ERR_OK) {
+                $file_to_upload = [
+                    'name' => $_FILES['gallery_images']['name'][$key],
+                    'type' => $_FILES['gallery_images']['type'][$key],
+                    'tmp_name' => $_FILES['gallery_images']['tmp_name'][$key],
+                    'error' => $_FILES['gallery_images']['error'][$key],
+                    'size' => $_FILES['gallery_images']['size'][$key],
+                ];
+                $uploaded_images = ImageUpload::handleImageUpload($file_to_upload, 'property_gallery', $property_id . '_' . $key);
+                if ($uploaded_images) {
+                    $stmt = $pdo->prepare("INSERT INTO images (media_id, path, thumb_path, alt, position, is_card_pic) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$media_id, $uploaded_images['full_path'], $uploaded_images['thumb_path'], $input['title'] . ' Gallery ' . $key, $current_gallery_image_position++, 0]);
+                } else {
+                    $pdo->rollBack();
+                    return send_json(['error' => 'Gallery image upload failed.'], 500);
+                }
+            } 
+            // Handle new image from existing URL (duplication)
+            elseif (isset($image_data['url']) && $image_data['url']) {
+                $original_gallery_path_relative = ltrim($image_data['url'], '/');
+                $original_gallery_file_path = __DIR__ . '/../../public/' . $original_gallery_path_relative;
+                if (file_exists($original_gallery_file_path)) {
+                    $duplicated_images = ImageUpload::duplicateImageFile($image_data['url'], 'property_gallery', $property_id . '_' . $key);
+                    if ($duplicated_images) {
                         $stmt = $pdo->prepare("INSERT INTO images (media_id, path, thumb_path, alt, position, is_card_pic) VALUES (?, ?, ?, ?, ?, ?)");
-                        $stmt->execute([$media_id, $uploaded_images['full_path'], $uploaded_images['thumb_path'], $input['title'] . ' Gallery ' . $key, $image_position++, 0]);
+                        $stmt->execute([$media_id, $duplicated_images['full_path'], $duplicated_images['thumb_path'], $input['title'] . ' Gallery ' . $key, $current_gallery_image_position++, 0]);
                     } else {
                         $pdo->rollBack();
-                        return send_json(['error' => 'Gallery image upload failed.'], 500);
+                        return send_json(['error' => 'Gallery image duplication failed.'], 500);
                     }
-                }
-            }
-        } elseif (isset($input['gallery_image_urls']) && is_array($input['gallery_image_urls'])) {
-            // This is for existing images that are sent as URLs (e.g., when editing and reordering)
-            foreach ($input['gallery_image_urls'] as $key => $image_data) {
-                if ($image_data['url']) {
-                    // Assuming image_data can contain 'id' for existing images or 'url' for new duplicates
-                    if (isset($image_data['id'])) {
-                        // This is an existing image being reordered, just update its position
-                        $stmt = $pdo->prepare("UPDATE images SET position = ? WHERE id = ? AND media_id = ?");
-                        $stmt->execute([$image_position++, $image_data['id'], $media_id]);
-                    } else {
-                        // This is a duplicated image
-                        $duplicated_images = ImageUpload::duplicateImageFile($image_data['url'], 'property_gallery', $property_id . '_' . $key);
-                        if ($duplicated_images) {
-                            $stmt = $pdo->prepare("INSERT INTO images (media_id, path, thumb_path, alt, position, is_card_pic) VALUES (?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$media_id, $duplicated_images['full_path'], $duplicated_images['thumb_path'], $input['title'] . ' Gallery ' . $key, $image_position++, 0]);
-                        } else {
-                            $pdo->rollBack();
-                            return send_json(['error' => 'Gallery image duplication failed.'], 500);
-                        }
-                    }
+                } else {
+                    error_log("Warning: Original gallery image file not found for duplication: " . $original_gallery_file_path);
+                    // Continue without duplicating this image, don't rollBack
                 }
             }
         }
 
         // Process video
         if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
-            // TODO: Implement video upload handling (similar to image but saves video path)
-            // For now, only embed link is supported via frontend
-            $pdo->rollBack();
-            return send_json(['error' => 'Direct video upload is not yet supported. Please use embed links.'], 500);
+            $uploaded_video_path = handleVideoUpload($_FILES['video'], 'property_video', $property_id);
+            if ($uploaded_video_path) {
+                $stmt = $pdo->prepare("UPDATE medias SET video = ?, video_embed_link = NULL WHERE id = ?");
+                $stmt->execute([$uploaded_video_path, $media_id]);
+            } else {
+                $pdo->rollBack();
+                return send_json(['error' => 'Video upload failed.'], 500);
+            }
+        } elseif (isset($input['video_url']) && $input['video_url']) {
+             // Duplicate existing video file
+             $original_video_path = __DIR__ . '/../../public' . $input['video_url'];
+             if (file_exists($original_video_path)) {
+                 $upload_dir = __DIR__ . '/../../public/videos/properties/';
+                 if (!is_dir($upload_dir)) {
+                     mkdir($upload_dir, 0777, true);
+                 }
+                 $file_extension = pathinfo($original_video_path, PATHINFO_EXTENSION);
+                 $new_file_name = uniqid('property_video_' . $property_id . '_', true) . '.' . $file_extension;
+                 $target_file = $upload_dir . $new_file_name;
+
+                 if (copy($original_video_path, $target_file)) {
+                     $new_video_path = '/videos/properties/' . $new_file_name;
+                     $stmt = $pdo->prepare("UPDATE medias SET video = ?, video_embed_link = NULL WHERE id = ?");
+                     $stmt->execute([$new_video_path, $media_id]);
+                 } else {
+                     $pdo->rollBack();
+                     return send_json(['error' => 'Video duplication failed.'], 500);
+                 }
+             } else {
+                 // Warning: Original video not found, proceeding without video
+                 error_log("Warning: Original video file not found for duplication: " . $original_video_path);
+                 // Don't rollBack, just skip this video.
+             }
         } elseif (!empty($input['video_embed_link'])) {
             $stmt = $pdo->prepare("UPDATE medias SET video = NULL, video_embed_link = ? WHERE id = ?");
             $stmt->execute([$input['video_embed_link'], $media_id]);
@@ -338,13 +522,38 @@ function create_property(PDO $pdo) {
         }
 
         // 6. Handle Labels
-        if (isset($input['labels']) && is_array($input['labels'])) {
-            $position = 0;
-            foreach ($input['labels'] as $label_data) {
-                $label_id = is_array($label_data) && isset($label_data['id']) ? $label_data['id'] : $label_data;
-                $stmt = $pdo->prepare("INSERT INTO property_labels (property_id, label_id, position) VALUES (?, ?, ?)");
-                $stmt->execute([$property_id, $label_id, $position++]);
+        $final_label_ids_for_property = [];
+
+        // Process new labels to create
+        if (isset($input['new_labels_to_create']) && !empty($input['new_labels_to_create'])) {
+            $new_labels_data = json_decode($input['new_labels_to_create'], true);
+            foreach ($new_labels_data as $new_label) {
+                $stmt = $pdo->prepare("INSERT INTO labels (name, is_badge, is_filter, badge_variant) VALUES (?, ?, ?, ?)");
+                $stmt->execute([
+                    $new_label['name'],
+                    $new_label['is_badge'],
+                    $new_label['is_filter'],
+                    $new_label['badge_variant']
+                ]);
+                $final_label_ids_for_property[] = $pdo->lastInsertId();
             }
+        }
+
+        // Add existing labels
+        if (isset($input['existing_labels']) && is_array($input['existing_labels'])) {
+            foreach ($input['existing_labels'] as $existing_label_id) {
+                // Ensure the existing_label_id is valid before adding to the list
+                if (!empty($existing_label_id)) {
+                    $final_label_ids_for_property[] = $existing_label_id;
+                }
+            }
+        }
+        
+        // Insert all final labels into property_labels
+        $position = 0;
+        foreach ($final_label_ids_for_property as $label_id) {
+            $stmt = $pdo->prepare("INSERT INTO property_labels (property_id, label_id, position) VALUES (?, ?, ?)");
+            $stmt->execute([$property_id, $label_id, $position++]);
         }
 
 
@@ -352,18 +561,22 @@ function create_property(PDO $pdo) {
         return get_property($pdo, $property_id);
 
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) { // Check if transaction is active
+            $pdo->rollBack();
+        }
         error_log("PDOException during property creation: " . $e->getMessage());
         return send_json(['error' => 'Insert failed', 'detail' => $e->getMessage()], 500);
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) { // Check if transaction is active
+            $pdo->rollBack();
+        }
         error_log("Exception during property creation: " . $e->getMessage());
         return send_json(['error' => 'Error during property creation', 'detail' => $e->getMessage()], 500);
     }
 }
 
-function update_property(PDO $pdo, $id) {
-    $input = get_request_data();
+function update_property(PDO $pdo, $id, $input_data = null) {
+    $input = $input_data ?? get_request_data();
     error_log("Input data for update_property (ID: $id): " . print_r($input, true));
     error_log("Files data for update_property (ID: $id): " . print_r($_FILES, true));
 
@@ -372,8 +585,13 @@ function update_property(PDO $pdo, $id) {
     $exists = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$exists) return send_json(['error' => 'Property not found'], 404);
 
-    $pdo->beginTransaction();
+    $slug = $exists['slug'];
+    if (isset($input['title']) && $input['title'] !== $exists['title']) {
+        $slug = generate_unique_slug($pdo, 'properties', $input['title'], $id);
+    }
+
     try {
+        $pdo->beginTransaction();
         // 1. Update detail_description entry
         $detail_description_id = $exists['detail_description_id'];
         if (isset($input['detailed_description_content'])) { // Check if the field was sent
@@ -418,6 +636,8 @@ function update_property(PDO $pdo, $id) {
                 $update_values[] = $value;
             }
         }
+        $update_fields[] = "slug = ?";
+        $update_values[] = $slug;
         $update_fields[] = "detail_description_id = ?";
         $update_values[] = $detail_description_id;
         $update_fields[] = "updated_at = CURRENT_TIMESTAMP"; // Ensure updated_at is touched
@@ -524,17 +744,54 @@ function update_property(PDO $pdo, $id) {
 
 
         // Video handling
-        $current_video_embed_link = $current_media['video'] ? $current_media['video']['video_embed_link'] : null;
-        if (isset($input['video_embed_link_removed']) && $input['video_embed_link_removed'] === 'true') {
-            $stmt = $pdo->prepare("UPDATE medias SET video = NULL, video_embed_link = NULL WHERE id = ?");
-            $stmt->execute([$media_id]);
-        } elseif (isset($input['video_embed_link'])) { // Only update if the field was sent
-            $stmt = $pdo->prepare("UPDATE medias SET video = NULL, video_embed_link = ? WHERE id = ?"); // Clear direct upload if embed link is provided
-            $stmt->execute([$input['video_embed_link'], $media_id]);
-        }
-        // If $_FILES['video'] is set, process uploaded video (not implemented yet for direct upload)
-        // If no video input, and there was a video, leave as is (don't clear it unless explicitly removed)
+        $current_video_path = $current_media['video']['path'] ?? null;
+        $current_video_embed_link = $current_media['video']['video_embed_link'] ?? null;
 
+        $update_video = false;
+        $new_video_path = $current_video_path;
+        $new_video_embed_link = $current_video_embed_link;
+
+        // Scenario 1: New video file uploaded
+        if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
+            // Delete old video file if it exists
+            if ($current_video_path) {
+                ImageUpload::deleteImageFiles($current_video_path);
+            }
+            $uploaded_video_path = handleVideoUpload($_FILES['video'], 'property_video', $id);
+            if ($uploaded_video_path) {
+                $new_video_path = $uploaded_video_path;
+                $new_video_embed_link = null; // Clear embed link if new video file is uploaded
+                $update_video = true;
+            } else {
+                $pdo->rollBack();
+                return send_json(['error' => 'Video upload failed during update.'], 500);
+            }
+        } 
+        // Scenario 2: Video embed link explicitly removed
+        elseif (isset($input['video_removed']) && $input['video_removed'] === 'true') {
+            // This flag is used to remove either an uploaded video or an embed link
+            if ($current_video_path) {
+                ImageUpload::deleteImageFiles($current_video_path);
+            }
+            $new_video_path = null;
+            $new_video_embed_link = null;
+            $update_video = true;
+        }
+        // Scenario 3: Video embed link updated/set (only if no direct video upload)
+        elseif (isset($input['video_embed_link'])) {
+            // If an embed link is provided, clear any existing direct video file
+            if ($current_video_path) {
+                ImageUpload::deleteImageFiles($current_video_path);
+            }
+            $new_video_path = null;
+            $new_video_embed_link = $input['video_embed_link'];
+            $update_video = true;
+        }
+
+        if ($update_video) {
+            $stmt = $pdo->prepare("UPDATE medias SET video = ?, video_embed_link = ? WHERE id = ?");
+            $stmt->execute([$new_video_path, $new_video_embed_link, $media_id]);
+        }
 
         // 4. Handle Related Properties
         $stmt = $pdo->prepare("DELETE FROM property_related_properties WHERE property_id = ?");
@@ -548,15 +805,42 @@ function update_property(PDO $pdo, $id) {
         }
 
         // 5. Handle Labels
+        // Delete all current label associations for this property
         $stmt = $pdo->prepare("DELETE FROM property_labels WHERE property_id = ?");
         $stmt->execute([$id]);
-        if (isset($input['labels']) && is_array($input['labels'])) {
-            $position = 0;
-            foreach ($input['labels'] as $label_data) {
-                $label_id = is_array($label_data) && isset($label_data['id']) ? $label_data['id'] : $label_data;
-                $stmt = $pdo->prepare("INSERT INTO property_labels (property_id, label_id, position) VALUES (?, ?, ?)");
-                $stmt->execute([$id, $label_id, $position++]);
+
+        $final_label_ids_for_property = [];
+
+        // Process new labels to create
+        if (isset($input['new_labels_to_create']) && !empty($input['new_labels_to_create'])) {
+            $new_labels_data = json_decode($input['new_labels_to_create'], true);
+            foreach ($new_labels_data as $new_label) {
+                $stmt = $pdo->prepare("INSERT INTO labels (name, is_badge, is_filter, badge_variant) VALUES (?, ?, ?, ?)");
+                $stmt->execute([
+                    $new_label['name'],
+                    $new_label['is_badge'],
+                    $new_label['is_filter'],
+                    $new_label['badge_variant']
+                ]);
+                $final_label_ids_for_property[] = $pdo->lastInsertId();
             }
+        }
+
+        // Add existing labels
+        if (isset($input['existing_labels']) && is_array($input['existing_labels'])) {
+            foreach ($input['existing_labels'] as $existing_label_id) {
+                // Ensure the existing_label_id is valid before adding to the list
+                if (!empty($existing_label_id)) {
+                    $final_label_ids_for_property[] = $existing_label_id;
+                }
+            }
+        }
+        
+        // Insert all final labels into property_labels
+        $position = 0;
+        foreach ($final_label_ids_for_property as $label_id) {
+            $stmt = $pdo->prepare("INSERT INTO property_labels (property_id, label_id, position) VALUES (?, ?, ?)");
+            $stmt->execute([$id, $label_id, $position++]);
         }
 
 
@@ -564,11 +848,15 @@ function update_property(PDO $pdo, $id) {
         return get_property($pdo, $id);
 
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) { // Check if transaction is active
+            $pdo->rollBack();
+        }
         error_log("PDOException during property update: " . $e->getMessage());
         return send_json(['error' => 'Update failed', 'detail' => $e->getMessage()], 500);
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) { // Check if transaction is active
+            $pdo->rollBack();
+        }
         error_log("Exception during property update: " . $e->getMessage());
         return send_json(['error' => 'Error during property update', 'detail' => $e->getMessage()], 500);
     }
@@ -602,7 +890,10 @@ function delete_property(PDO $pdo, $id) {
             foreach ($media_info['gallery_images'] as $img) {
                 ImageUpload::deleteImageFiles($img['path'], $img['thumb_path']);
             }
-            // TODO: Delete video file if directly uploaded
+            // Delete video file if directly uploaded
+            if ($media_info['video'] && $media_info['video']['path']) {
+                ImageUpload::deleteImageFiles($media_info['video']['path']);
+            }
 
             $stmt = $pdo->prepare("DELETE FROM medias WHERE id = ?");
             $stmt->execute([$property['media_id']]);

@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react"; // Import ArrowU
 import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner'; // Assuming a spinner component for loading
 import CityForm from '@/components/dashboard/city-form/CityForm'; // Import the new CityForm
+import { useAuthStore } from '@/store/authStore';
 
 export const Route = createFileRoute('/dashboard/cities')({
   component: DashboardCities,
@@ -82,12 +83,17 @@ function DashboardCities() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // State for submission loading
+  const { token } = useAuthStore();
 
   const fetchCities = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/cities');
+      const response = await fetch('/api/cities', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -118,6 +124,9 @@ function DashboardCities() {
 
       const response = await fetch('/api/cities', {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -155,6 +164,9 @@ function DashboardCities() {
 
       const response = await fetch(`/api/cities/${editedItem.id}`, {
         method: 'POST', // Use POST for FormData with method override
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -179,6 +191,9 @@ function DashboardCities() {
     try {
       const response = await fetch(`/api/cities/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
       });
 
       if (!response.ok) {
@@ -203,10 +218,14 @@ function DashboardCities() {
     setIsSubmitting(true);
     try {
       // Create an array of promises for all delete operations
-      const deletePromises = selectedRows.map(row => 
-        fetch(`/api/cities/${row.original.id}`, { method: 'DELETE' })
-      );
-
+            const deletePromises = selectedRows.map(row =>
+              fetch(`/api/cities/${row.original.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+              })
+            );
       const results = await Promise.allSettled(deletePromises);
       let allSucceeded = true;
       results.forEach((result, index) => {

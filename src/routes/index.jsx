@@ -29,8 +29,8 @@ export const Route = createFileRoute("/")({
 
 function LinkedCategoryCard({ id, ...category }) { // Destructure id
   return (
-    <Link to={`/properties?category=${id}&image=${encodeURIComponent(category.src)}&categoryName=${encodeURIComponent(category.title)}`}> {/* Use id for link */}
-      <CategoryCard {...category} />
+    <Link to={`/properties?category=${category.title}&image=${encodeURIComponent(category.src)}&categoryName=${encodeURIComponent(category.title)}`}> {/* Use title for filtering as per current search logic */}
+      <CategoryCard {...category} disableLink />
     </Link>
   );
 }
@@ -140,9 +140,11 @@ const whyChooseUsContent = {
 function RouteComponent() {
   const { properties, maps, categories, personalizedCards, reviews, fileProperties, videoSection } = Route.useLoaderData(); // Get data from loader
 
-  const videoToDisplay = videoSection?.videoInputMethod === 'upload' 
-    ? { path: videoSection.videoMedia[0]?.path } 
-    : { video_embed_link: videoSection.videoEmbedLink };
+  const videoToDisplay = videoSection 
+    ? (videoSection.videoInputMethod === 'upload' 
+        ? { path: videoSection.videoMedia?.[0]?.path } 
+        : { video_embed_link: videoSection.videoEmbedLink })
+    : null;
 
   return (
     <main className="flex flex-col items-center justify-center w-full text-center max-w-[1440px] mx-auto min-h-screen">
@@ -157,68 +159,76 @@ function RouteComponent() {
         </p>
       </div>
 
-      <div className="w-full py-8 ">
-        <CardSlider
-          items={categories} // Use fetched categories
-          CardComponent={LinkedCategoryCard}
-          autoScrollSpeed={0}
-          loop={false}
-          heading={null}
-          subheading={null}
-          breakpoints={{ default: 1, sm: 3, md: 4, lg: 5 }}
-          customWidths={[{ width: 425, cards: 2 }]}
-          showViewAll={false}
-          className={"my-8"}
-        />
-      </div>
+      {categories?.length > 0 && (
+        <div className="w-full py-8 ">
+          <CardSlider
+            items={categories} // Use fetched categories
+            CardComponent={LinkedCategoryCard}
+            autoScrollSpeed={0}
+            loop={false}
+            heading={null}
+            subheading={null}
+            breakpoints={{ default: 1, sm: 3, md: 4, lg: 5 }}
+            customWidths={[{ width: 425, cards: 2 }]}
+            showViewAll={false}
+            className={"my-8"}
+          />
+        </div>
+      )}
 
       <TextSection {...servicesOverviewContent} className={"my-8"} />
 
-      <div className="w-full py-8 bg-primary text-primary-foreground">
-        <CardSlider
-          items={properties} // Use fetched properties
-          CardComponent={LinkedPropertyCard}
-          showViewAll={true}
-          viewAllHref="/properties"
-          className={"md:px-6 py-4 px-4"}
-        />
-      </div>
+      {properties?.length > 0 && (
+        <div className="w-full py-8 bg-primary text-primary-foreground">
+          <CardSlider
+            items={properties} // Use fetched properties
+            CardComponent={LinkedPropertyCard}
+            showViewAll={true}
+            viewAllHref="/properties"
+            className={"md:px-6 py-4 px-4"}
+          />
+        </div>
+      )}
 
       <HowItWorksSection {...howItWorksSectionData} className={"my-8"} />
 
-      <div className="w-full py-8 bg-primary">
-        <CardGrid
-          items={fileProperties} // Use fetched file properties
-          CardComponent={PropertyCard} // Non-clickable
-          heading="Explore Land Files"
-          subheading="Files And Daily Updated Prices"
-          showViewAll={true}
-          viewAllHref="/files"
-          maxItems={3}
-          headingClassName="text-white text-4xl"
-          subheadingClassName="text-white text-lg"
-        />
-      </div>
+      {fileProperties?.length > 0 && (
+        <div className="w-full py-8 bg-primary">
+          <CardGrid
+            items={fileProperties} // Use fetched file properties
+            CardComponent={PropertyCard} // Non-clickable
+            heading="Explore Land Files"
+            subheading="Files And Daily Updated Prices"
+            showViewAll={true}
+            viewAllHref="/files"
+            maxItems={3}
+            headingClassName="text-white text-4xl"
+            subheadingClassName="text-white text-lg"
+          />
+        </div>
+      )}
 
-      <div className="w-full py-8 bg-primary">
-        <CardGrid
-          items={maps}
-          CardComponent={MapCard}
-          heading="Explore DHA Maps"
-          subheading="Find society maps and plot locations"
-          showViewAll={true}
-          viewAllHref="/maps"
-          maxItems={3}
-          headingClassName="text-white text-4xl"
-          subheadingClassName="text-white text-lg"
-        />
-      </div>
+      {maps?.length > 0 && (
+        <div className="w-full py-8 bg-primary">
+          <CardGrid
+            items={maps}
+            CardComponent={MapCard}
+            heading="Explore DHA Maps"
+            subheading="Find society maps and plot locations"
+            showViewAll={true}
+            viewAllHref="/maps"
+            maxItems={3}
+            headingClassName="text-white text-4xl"
+            subheadingClassName="text-white text-lg"
+          />
+        </div>
+      )}
 
       <TextSection {...investmentOpportunitiesContent} className={"my-8"} />
 
-      <ReviewsSection reviews={reviews} />
+      {reviews?.length > 0 && <ReviewsSection reviews={reviews} />}
 
-      {videoSection?.isVisible && (
+      {videoSection && videoToDisplay && (
         <div className="w-full px-4 mx-auto my-8">
             <h2 className="mb-4 text-3xl font-bold">{videoSection.heading}</h2>
             <p className="mb-8 text-lg text-muted-foreground">{videoSection.subheading}</p>

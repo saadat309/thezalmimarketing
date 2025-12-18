@@ -9,6 +9,7 @@ import { ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner'; // Import Spinner
 import MapForm from '@/components/dashboard/map-form/MapForm';
+import { useAuthStore } from '@/store/authStore';
 
 export const Route = createFileRoute('/dashboard/maps')({
   component: DashboardMaps,
@@ -134,12 +135,17 @@ function DashboardMaps() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [tableInstance, setTableInstance] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { token } = useAuthStore();
 
   const fetchMaps = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/maps');
+      const response = await fetch('/api/maps', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -188,6 +194,9 @@ function DashboardMaps() {
 
       const response = await fetch('/api/maps', {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -208,7 +217,7 @@ function DashboardMaps() {
   };
 
   const handleEditMap = async (editedItem) => {
-    console.log("Debugging handleEditMap - editedItem:", editedItem);
+  
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -250,6 +259,9 @@ function DashboardMaps() {
 
       const response = await fetch(`/api/maps/${editedItem.id}`, {
         method: 'POST', // Use POST for FormData with method override
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -258,9 +270,10 @@ function DashboardMaps() {
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
+      const data = await response.json();
       toast.success("Map updated successfully!");
       fetchMaps();
-      return data; // Return data from API for MapForm's onSubmit to process
+      return data; 
     } catch (e) {
       toast.error("Failed to update map: " + e.message);
       return false;
@@ -274,6 +287,9 @@ function DashboardMaps() {
     try {
       const response = await fetch(`/api/maps/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -295,10 +311,14 @@ function DashboardMaps() {
     }
     setIsSubmitting(true);
     try {
-      const deletePromises = selectedRows.map(row => 
-        fetch(`/api/maps/${row.original.id}`, { method: 'DELETE' })
-      );
-
+            const deletePromises = selectedRows.map(row =>
+              fetch(`/api/maps/${row.original.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+              })
+            );
       const results = await Promise.allSettled(deletePromises);
       
       const failedDeletes = [];

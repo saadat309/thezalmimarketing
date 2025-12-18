@@ -30,8 +30,10 @@ import { Route as DashboardLandingPageRouteImport } from './routes/dashboard/lan
 import { Route as DashboardFilesRouteImport } from './routes/dashboard/files'
 import { Route as DashboardCitiesRouteImport } from './routes/dashboard/cities'
 import { Route as DashboardCategoriesRouteImport } from './routes/dashboard/categories'
-import { Route as authSignupRouteImport } from './routes/(auth)/signup'
+import { Route as authResetPasswordRouteImport } from './routes/(auth)/reset-password'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authAcceptInviteRouteImport } from './routes/(auth)/accept-invite'
 import { Route as PropertiesIdIndexRouteImport } from './routes/properties/$id/index'
 
 const SearchRoute = SearchRouteImport.update({
@@ -139,14 +141,24 @@ const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => DashboardRoute,
 } as any)
-const authSignupRoute = authSignupRouteImport.update({
-  id: '/(auth)/signup',
-  path: '/signup',
+const authResetPasswordRoute = authResetPasswordRouteImport.update({
+  id: '/(auth)/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authLoginRoute = authLoginRouteImport.update({
   id: '/(auth)/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
+  id: '/(auth)/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authAcceptInviteRoute = authAcceptInviteRouteImport.update({
+  id: '/(auth)/accept-invite',
+  path: '/accept-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PropertiesIdIndexRoute = PropertiesIdIndexRouteImport.update({
@@ -162,8 +174,10 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/search': typeof SearchRoute
+  '/accept-invite': typeof authAcceptInviteRoute
+  '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
-  '/signup': typeof authSignupRoute
+  '/reset-password': typeof authResetPasswordRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/cities': typeof DashboardCitiesRoute
   '/dashboard/files': typeof DashboardFilesRoute
@@ -187,8 +201,10 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/search': typeof SearchRoute
+  '/accept-invite': typeof authAcceptInviteRoute
+  '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
-  '/signup': typeof authSignupRoute
+  '/reset-password': typeof authResetPasswordRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/cities': typeof DashboardCitiesRoute
   '/dashboard/files': typeof DashboardFilesRoute
@@ -214,8 +230,10 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/search': typeof SearchRoute
+  '/(auth)/accept-invite': typeof authAcceptInviteRoute
+  '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/login': typeof authLoginRoute
-  '/(auth)/signup': typeof authSignupRoute
+  '/(auth)/reset-password': typeof authResetPasswordRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/cities': typeof DashboardCitiesRoute
   '/dashboard/files': typeof DashboardFilesRoute
@@ -242,8 +260,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/privacy-policy'
     | '/search'
+    | '/accept-invite'
+    | '/forgot-password'
     | '/login'
-    | '/signup'
+    | '/reset-password'
     | '/dashboard/categories'
     | '/dashboard/cities'
     | '/dashboard/files'
@@ -267,8 +287,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/privacy-policy'
     | '/search'
+    | '/accept-invite'
+    | '/forgot-password'
     | '/login'
-    | '/signup'
+    | '/reset-password'
     | '/dashboard/categories'
     | '/dashboard/cities'
     | '/dashboard/files'
@@ -293,8 +315,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/privacy-policy'
     | '/search'
+    | '/(auth)/accept-invite'
+    | '/(auth)/forgot-password'
     | '/(auth)/login'
-    | '/(auth)/signup'
+    | '/(auth)/reset-password'
     | '/dashboard/categories'
     | '/dashboard/cities'
     | '/dashboard/files'
@@ -320,8 +344,10 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   SearchRoute: typeof SearchRoute
+  authAcceptInviteRoute: typeof authAcceptInviteRoute
+  authForgotPasswordRoute: typeof authForgotPasswordRoute
   authLoginRoute: typeof authLoginRoute
-  authSignupRoute: typeof authSignupRoute
+  authResetPasswordRoute: typeof authResetPasswordRoute
   FilesIndexRoute: typeof FilesIndexRoute
   MapsIndexRoute: typeof MapsIndexRoute
   PropertiesIndexRoute: typeof PropertiesIndexRoute
@@ -477,11 +503,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCategoriesRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/(auth)/signup': {
-      id: '/(auth)/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof authSignupRouteImport
+    '/(auth)/reset-password': {
+      id: '/(auth)/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof authResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/login': {
@@ -489,6 +515,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof authLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/forgot-password': {
+      id: '/(auth)/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof authForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/accept-invite': {
+      id: '/(auth)/accept-invite'
+      path: '/accept-invite'
+      fullPath: '/accept-invite'
+      preLoaderRoute: typeof authAcceptInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/properties/$id/': {
@@ -542,8 +582,10 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   SearchRoute: SearchRoute,
+  authAcceptInviteRoute: authAcceptInviteRoute,
+  authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,
-  authSignupRoute: authSignupRoute,
+  authResetPasswordRoute: authResetPasswordRoute,
   FilesIndexRoute: FilesIndexRoute,
   MapsIndexRoute: MapsIndexRoute,
   PropertiesIndexRoute: PropertiesIndexRoute,

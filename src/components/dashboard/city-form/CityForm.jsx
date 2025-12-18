@@ -152,7 +152,7 @@ export default function CityForm({ initialData, onSuccess, onCancel, isDuplicati
           </CardContent>
         </Card>
 
-        <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
+        <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
           <Button type="submit" size="lg">
             {initialData ? 'Save Changes' : `Add City`}
           </Button>

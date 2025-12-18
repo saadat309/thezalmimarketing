@@ -2,6 +2,7 @@
 // api/routes/maps.php
 
 require_once __DIR__ . '/../utils/ImageUpload.php';
+require_once __DIR__ . '/../utils/slug_util.php';   // Include slug utility
 
 function send_json($data, $status = 200) {
     http_response_code($status);
@@ -47,37 +48,69 @@ function handle_maps($method, PDO $pdo, $id = null) {
 
 function list_maps(PDO $pdo) {
     $sql = "SELECT
-                            md.id, md.title, md.description, md.map_pic, md.map_thumb, md.pdf, md.hide, md.created_at, md.updated_at,
+                            md.id, md.title, md.slug, md.description, md.map_pic, md.map_thumb, md.pdf, md.hide, md.created_at, md.updated_at,
                             c.id AS city_id, c.name AS city_name,
                             s.id AS society_id, s.name AS society_name,
                             p.id AS phase_id, p.name AS phase_name
                          FROM map_docs md
                          LEFT JOIN cities c ON md.city_id = c.id
                          LEFT JOIN societies s ON md.society_id = s.id
-                         LEFT JOIN phases p ON md.phase_id = p.id";
-    $where_clauses = [];
+                         LEFT JOIN phases p ON md.phase_id = p.id
+                         WHERE 1=1";
     $params = [];
 
+    // Hide filter
+    if (!isset($_GET['all'])) {
+        $sql .= " AND md.hide = 0";
+    }
+
+    // Available for filter (dashboard usage)
     if (isset($_GET['available_for'])) {
         $available_for = $_GET['available_for'];
         switch ($available_for) {
             case 'city':
-                $where_clauses[] = "md.city_id IS NULL";
+                $sql .= " AND md.city_id IS NULL";
                 break;
             case 'society':
-                $where_clauses[] = "md.society_id IS NULL";
+                $sql .= " AND md.society_id IS NULL";
                 break;
             case 'phase':
-                $where_clauses[] = "md.phase_id IS NULL";
-                break;
-            default:
-                // Invalid available_for, perhaps log or return error
+                $sql .= " AND md.phase_id IS NULL";
                 break;
         }
     }
 
-    if (!empty($where_clauses)) {
-        $sql .= " WHERE " . implode(' AND ', $where_clauses);
+    // Search Query (Expanded)
+    if (!empty($_GET['query'])) {
+        $q = '%' . $_GET['query'] . '%';
+        $sql .= " AND (
+            md.title LIKE ? 
+            OR md.description LIKE ? 
+            OR c.name LIKE ? 
+            OR s.name LIKE ? 
+            OR p.name LIKE ?
+        )";
+        for ($i = 0; $i < 5; $i++) {
+            $params[] = $q;
+        }
+    }
+
+    // City Filter
+    if (!empty($_GET['city'])) {
+        $sql .= " AND c.name = ?";
+        $params[] = $_GET['city'];
+    }
+
+    // Society Filter
+    if (!empty($_GET['societyName'])) {
+        $sql .= " AND s.name = ?";
+        $params[] = $_GET['societyName'];
+    }
+
+    // Phase Filter
+    if (!empty($_GET['phase'])) {
+        $sql .= " AND p.name = ?";
+        $params[] = $_GET['phase'];
     }
     
     $sql .= " ORDER BY md.id DESC";
@@ -90,7 +123,7 @@ function list_maps(PDO $pdo) {
 
 function get_map(PDO $pdo, $id) {
     $stmt = $pdo->prepare("SELECT
-                            md.id, md.title, md.description, md.map_pic, md.map_thumb, md.pdf, md.hide, md.created_at, md.updated_at,
+                            md.id, md.title, md.slug, md.description, md.map_pic, md.map_thumb, md.pdf, md.hide, md.created_at, md.updated_at,
                             md.city_id, c.name AS city_name,
                             md.society_id, s.name AS society_name,
                             md.phase_id, p.name AS phase_name
@@ -115,6 +148,7 @@ function create_map(PDO $pdo) {
         return send_json(['error' => 'Title is required'], 400);
     }
 
+    $slug = generate_unique_slug($pdo, 'map_docs', $input['title']);
     $map_pic = null;
     $map_thumb = null;
     $pdf = null;
@@ -127,8 +161,8 @@ function create_map(PDO $pdo) {
 
     $pdo->beginTransaction();
     try {
-        $stmt = $pdo->prepare("INSERT INTO map_docs (title, description, hide, city_id, society_id, phase_id) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$input['title'], $description, $hide, $city_id, $society_id, $phase_id]);
+        $stmt = $pdo->prepare("INSERT INTO map_docs (title, slug, description, hide, city_id, society_id, phase_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$input['title'], $slug, $description, $hide, $city_id, $society_id, $phase_id]);
         $new_map_id = $pdo->lastInsertId();
 
         if ($new_map_id) {
@@ -155,20 +189,25 @@ function create_map(PDO $pdo) {
             }
 
             // Handle map PDF
-            if (isset($_FILES['mapPdf']) && $_FILES['mapPdf']['error'] === UPLOAD_ERR_OK) {
-                $upload_dir = __DIR__ . '/../../public/files/maps/';
-                if (!is_dir($upload_dir)) {
-                    mkdir($upload_dir, 0777, true);
-                }
-                $file_extension = pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION);
-                $new_file_name = 'map_' . $new_map_id . '.' . $file_extension;
-                $target_file = $upload_dir . $new_file_name;
-                
-                if (move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
-                    $pdf = '/files/maps/' . $new_file_name;
-                } else {
+            if (isset($_FILES['mapPdf'])) {
+                if ($_FILES['mapPdf']['error'] === UPLOAD_ERR_OK) {
+                    $upload_dir = __DIR__ . '/../../public/files/maps/';
+                    if (!is_dir($upload_dir)) {
+                        mkdir($upload_dir, 0777, true);
+                    }
+                    $file_extension = pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION);
+                    $new_file_name = 'map_' . $new_map_id . '.' . $file_extension;
+                    $target_file = $upload_dir . $new_file_name;
+                    
+                    if (move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
+                        $pdf = '/files/maps/' . $new_file_name;
+                    } else {
+                        $pdo->rollBack();
+                        return send_json(['error' => 'PDF upload failed during map creation.'], 500);
+                    }
+                } elseif ($_FILES['mapPdf']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['mapPdf']['error'] === UPLOAD_ERR_FORM_SIZE) {
                     $pdo->rollBack();
-                    return send_json(['error' => 'PDF upload failed during map creation.'], 500);
+                    return send_json(['error' => 'PDF file is too large for server limits.'], 400);
                 }
             } elseif (isset($input['pdf_url']) && $input['pdf_url']) {
                 // If pdf_url is provided, duplicate the existing PDF
@@ -222,13 +261,19 @@ function update_map(PDO $pdo, $id) {
     error_log("Input data received: " . print_r($input, true));
     error_log("Files data received: " . print_r($_FILES, true));
 
-    $stmt = $pdo->prepare("SELECT id, title, description, map_pic, map_thumb, pdf, hide, city_id, society_id, phase_id FROM map_docs WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, title, slug, description, map_pic, map_thumb, pdf, hide, city_id, society_id, phase_id FROM map_docs WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch();
     if (!$exists) return send_json(['error' => 'Map not found'], 404);
     error_log("Existing map data (from DB): " . print_r($exists, true));
 
     $title = $input['title'] ?? $exists['title'];
+    $slug = $exists['slug'];
+
+    if (isset($input['title']) && $input['title'] !== $exists['title']) {
+        $slug = generate_unique_slug($pdo, 'map_docs', $input['title'], $id);
+    }
+
     $description = $input['description'] ?? $exists['description'];
     $hide = isset($input['hide']) ? (int)(bool)$input['hide'] : (int)(bool)$exists['hide'];
     $city_id = $input['city_id'] ?? $exists['city_id'];
@@ -265,43 +310,42 @@ function update_map(PDO $pdo, $id) {
             $new_map_thumb = null;
         }
 
-        if (isset($_FILES['mapPdf']) && $_FILES['mapPdf']['error'] === UPLOAD_ERR_OK) {
-            if ($current_pdf) {
-                $old_pdf_path = __DIR__ . '/../../public' . $current_pdf;
-                if (file_exists($old_pdf_path)) {
-                    unlink($old_pdf_path);
+        if (isset($_FILES['mapPdf'])) {
+            if ($_FILES['mapPdf']['error'] === UPLOAD_ERR_OK) {
+                if ($current_pdf) {
+                    ImageUpload::deleteImageFiles($current_pdf);
                 }
-            }
-            
-            $upload_dir = __DIR__ . '/../../public/files/maps/';
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            $file_extension = pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION);
-            $new_file_name = 'map_' . $id . '.' . $file_extension;
-            $target_file = $upload_dir . $new_file_name;
-            
-            if (move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
-                $new_pdf = '/files/maps/' . $new_file_name;
-            } else {
+                
+                $upload_dir = __DIR__ . '/../../public/files/maps/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                $file_extension = pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION);
+                $new_file_name = 'map_' . $id . '.' . $file_extension;
+                $target_file = $upload_dir . $new_file_name;
+                
+                if (move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
+                    $new_pdf = '/files/maps/' . $new_file_name;
+                } else {
+                    $pdo->rollBack();
+                    return send_json(['error' => 'PDF upload failed during map update.'], 500);
+                }
+            } elseif ($_FILES['mapPdf']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['mapPdf']['error'] === UPLOAD_ERR_FORM_SIZE) {
                 $pdo->rollBack();
-                return send_json(['error' => 'PDF upload failed during map update.'], 500);
+                return send_json(['error' => 'PDF file is too large for server limits.'], 400);
             }
         } elseif (isset($input['mapPdf_removed']) && $input['mapPdf_removed'] === 'true') {
             if ($current_pdf) {
-                $old_pdf_path = __DIR__ . '/../../public' . $current_pdf;
-                if (file_exists($old_pdf_path)) {
-                    unlink($old_pdf_path);
-                }
+                ImageUpload::deleteImageFiles($current_pdf);
             }
             $new_pdf = null;
         }
 
         $update_params = [
-            $title, $description, $new_map_pic, $new_map_thumb, $new_pdf, $hide, $city_id, $society_id, $phase_id, $id
+            $title, $slug, $description, $new_map_pic, $new_map_thumb, $new_pdf, $hide, $city_id, $society_id, $phase_id, $id
         ];
         error_log("Final params for UPDATE: " . print_r($update_params, true));
-        $stmt = $pdo->prepare("UPDATE map_docs SET title = ?, description = ?, map_pic = ?, map_thumb = ?, pdf = ?, hide = ?, city_id = ?, society_id = ?, phase_id = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE map_docs SET title = ?, slug = ?, description = ?, map_pic = ?, map_thumb = ?, pdf = ?, hide = ?, city_id = ?, society_id = ?, phase_id = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
         error_log("UPDATE affected rows: " . $affected_rows);
@@ -337,10 +381,7 @@ function delete_map(PDO $pdo, $id) {
                 ImageUpload::deleteImageFiles($map['map_pic'], $map['map_thumb']);
             }
             if ($map['pdf']) {
-                $pdf_full_path = __DIR__ . '/../../public' . $map['pdf'];
-                if (file_exists($pdf_full_path)) {
-                    unlink($pdf_full_path);
-                }
+                ImageUpload::deleteImageFiles($map['pdf']);
             }
         }
         $pdo->commit();

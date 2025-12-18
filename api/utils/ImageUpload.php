@@ -13,20 +13,14 @@ if (!function_exists('send_json')) {
 
 class ImageUpload {
     private static $uploadBaseDir = __DIR__ . '/../../public/images'; // Base directory for images
-    private static $uploadThumbDir = __DIR__ . '/../../public/images/thumbs'; // Base directory for thumbnails
 
     /**
      * Processes an uploaded image, saves it, and generates a thumbnail.
      *
      * @param array $file The $_FILES entry for the uploaded file.
-     * @param string $entity_name A descriptive name for the entity (e.g., 'category', 'product').
+     * @param string $entity_name A descriptive name for the entity (e.g., 'category', 'property').
      * @param string $record_id The ID of the record associated with the image.
-     * @param array $options Configuration options:
-     *   - 'max_width': Max width for the main image (default 1200).
-     *   - 'max_height': Max height for the main image (default 800).
-     *   - 'thumb_width': Max width for the thumbnail (default 150).
-     *   - 'thumb_height': Max height for the thumbnail (default 150).
-     *   - 'to_webp': Whether to convert to WebP (default true).
+     * @param array $options Configuration options
      * @return array|false An array containing 'full_path' and 'thumb_path' on success, false on failure.
      */
     public static function handleImageUpload(array $file, string $entity_name, string $record_id, array $options = []) {
@@ -44,12 +38,27 @@ class ImageUpload {
         ];
         $options = array_merge($defaultOptions, $options);
 
-        // Ensure directories exist
-        if (!is_dir(self::$uploadBaseDir)) {
-            mkdir(self::$uploadBaseDir, 0777, true);
+        // Map entity names to subdirectories
+        $subDir = 'others';
+        if (strpos($entity_name, 'property') !== false) {
+            $subDir = 'properties';
+        } elseif (strpos($entity_name, 'category') !== false) {
+            $subDir = 'categories';
+        } elseif (strpos($entity_name, 'map') !== false) {
+            $subDir = 'maps';
+        } elseif (strpos($entity_name, 'user') !== false) {
+            $subDir = 'users';
         }
-        if (!is_dir(self::$uploadThumbDir)) {
-            mkdir(self::$uploadThumbDir, 0777, true);
+
+        $entityBaseDir = self::$uploadBaseDir . '/' . $subDir;
+        $entityThumbDir = $entityBaseDir . '/thumbs';
+
+        // Ensure directories exist
+        if (!is_dir($entityBaseDir)) {
+            mkdir($entityBaseDir, 0777, true);
+        }
+        if (!is_dir($entityThumbDir)) {
+            mkdir($entityThumbDir, 0777, true);
         }
 
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -58,11 +67,11 @@ class ImageUpload {
         $targetExtension = $options['to_webp'] ? 'webp' : strtolower($extension);
 
         $baseFileName = $uniqueName;
-        $fullPath = '/images/' . $baseFileName . '.' . $targetExtension;
-        $fullFilePath = self::$uploadBaseDir . '/' . $baseFileName . '.' . $targetExtension;
+        $fullPath = '/images/' . $subDir . '/' . $baseFileName . '.' . $targetExtension;
+        $fullFilePath = $entityBaseDir . '/' . $baseFileName . '.' . $targetExtension;
 
-        $thumbPath = '/images/thumbs/' . $baseFileName . '_thumb.' . $targetExtension;
-        $thumbFilePath = self::$uploadThumbDir . '/' . $baseFileName . '_thumb.' . $targetExtension;
+        $thumbPath = '/images/' . $subDir . '/thumbs/' . $baseFileName . '_thumb.' . $targetExtension;
+        $thumbFilePath = $entityThumbDir . '/' . $baseFileName . '_thumb.' . $targetExtension;
 
         try {
             // Process and save main image
@@ -238,27 +247,39 @@ class ImageUpload {
     public static function deleteImageFiles(string $image_path, string $thumb_path = null): bool {
         $success = true;
         
-        $fullPathToDelete = self::$uploadBaseDir . '/' . ltrim(str_replace('/images/', '', $image_path), '/'); // Corrected path manipulation
-        if (file_exists($fullPathToDelete)) {
-            if (!unlink($fullPathToDelete)) {
-                error_log("Failed to delete main image file: " . $fullPathToDelete);
-                $success = false;
+        $publicDir = realpath(__DIR__ . '/../../public');
+        
+        // Helper to resolve and delete
+        $deleteFile = function($relPath) use ($publicDir) {
+            if (!$relPath) return true;
+            
+            // Standardize path: remove leading slash, remove /public/ if present
+            $cleanPath = ltrim($relPath, '/');
+            if (strpos($cleanPath, 'public/') === 0) {
+                $cleanPath = substr($cleanPath, 7);
             }
-        } else {
-            error_log("Main image file not found, skipping: " . $fullPathToDelete);
-        }
-
-        if ($thumb_path) {
-            $thumbPathToDelete = self::$uploadThumbDir . '/' . ltrim(str_replace('/images/thumbs/', '', $thumb_path), '/'); // Corrected path manipulation
-            if (file_exists($thumbPathToDelete)) {
-                if (!unlink($thumbPathToDelete)) {
-                    error_log("Failed to delete thumbnail file: " . $thumbPathToDelete);
-                    $success = false;
+            
+            $fullPath = $publicDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $cleanPath);
+            
+            error_log("Attempting to delete file: " . $fullPath);
+            
+            if (file_exists($fullPath)) {
+                if (unlink($fullPath)) {
+                    error_log("Successfully deleted: " . $fullPath);
+                    return true;
+                } else {
+                    error_log("Failed to unlink: " . $fullPath);
+                    return false;
                 }
             } else {
-                error_log("Thumbnail file not found, skipping: " . $thumbPathToDelete);
+                error_log("File not found for deletion: " . $fullPath);
+                return true; // Consider success if already gone
             }
-        }
+        };
+
+        if (!$deleteFile($image_path)) $success = false;
+        if ($thumb_path && !$deleteFile($thumb_path)) $success = false;
+        
         return $success;
     }
 
@@ -294,15 +315,38 @@ class ImageUpload {
         ];
         $options = array_merge($defaultOptions, $options);
 
+        // Map entity names to subdirectories
+        $subDir = 'others';
+        if (strpos($entity_name, 'property') !== false) {
+            $subDir = 'properties';
+        } elseif (strpos($entity_name, 'category') !== false) {
+            $subDir = 'categories';
+        } elseif (strpos($entity_name, 'map') !== false) {
+            $subDir = 'maps';
+        } elseif (strpos($entity_name, 'user') !== false) {
+            $subDir = 'users';
+        }
+
+        $entityBaseDir = self::$uploadBaseDir . '/' . $subDir;
+        $entityThumbDir = $entityBaseDir . '/thumbs';
+
+        // Ensure directories exist
+        if (!is_dir($entityBaseDir)) {
+            mkdir($entityBaseDir, 0777, true);
+        }
+        if (!is_dir($entityThumbDir)) {
+            mkdir($entityThumbDir, 0777, true);
+        }
+
         // Generate new unique filenames
         $uniqueName = uniqid($entity_name . '_' . $record_id . '_', true);
         $targetExtension = $options['to_webp'] ? 'webp' : pathinfo($original_full_file_path, PATHINFO_EXTENSION);
 
-        $new_fullPath = '/images/' . $uniqueName . '.' . $targetExtension;
-        $new_fullFilePath = self::$uploadBaseDir . '/' . $uniqueName . '.' . $targetExtension;
+        $new_fullPath = '/images/' . $subDir . '/' . $uniqueName . '.' . $targetExtension;
+        $new_fullFilePath = $entityBaseDir . '/' . $uniqueName . '.' . $targetExtension;
 
-        $new_thumbPath = '/images/thumbs/' . $uniqueName . '_thumb.' . $targetExtension;
-        $new_thumbFilePath = self::$uploadThumbDir . '/' . $uniqueName . '_thumb.' . $targetExtension;
+        $new_thumbPath = '/images/' . $subDir . '/thumbs/' . $uniqueName . '_thumb.' . $targetExtension;
+        $new_thumbFilePath = $entityThumbDir . '/' . $uniqueName . '_thumb.' . $targetExtension;
 
         try {
             // Duplicate and process main image

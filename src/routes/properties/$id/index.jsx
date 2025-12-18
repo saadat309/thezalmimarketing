@@ -23,11 +23,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import ImageSlider from '@/components/property/ImageSlider'; // Import ImageSlider
 import { VideoPlayer } from '@/components/global/VideoPlayer';
+import RichTextRenderer from '@/components/global/RichTextRenderer';
+import NotFound from '@/components/global/NotFound';
 
-import { Bed, Bath, AreaChart, MapPin } from 'lucide-react';
+import { Bed, Bath, AreaChart, MapPin, Loader2 } from 'lucide-react';
 
-import { queryOptions } from '@tanstack/react-query'
-import { fetchProperties, fetchProperty } from '@/lib/api'
+import { queryOptions, useMutation } from '@tanstack/react-query'
+import { fetchProperties, fetchProperty, submitQuery } from '@/lib/api'
+import { getEmbedUrl } from '@/lib/utils';
 
 const propertyQueryOptions = (id) =>
   queryOptions({
@@ -53,9 +56,7 @@ export const Route = createFileRoute('/properties/$id/')({
 
     return { property, properties }
   },
-  notFoundComponent: () => {
-    return <p>Property not found</p>;
-  },
+  notFoundComponent: NotFound,
 })
 
 function RouteComponent() {
@@ -63,7 +64,17 @@ function RouteComponent() {
   const { id } = Route.useParams();
 
   // Prepare images for ImageSlider
-  const propertyImages = Array.isArray(property.media) ? property.media.filter(m => m.type === 'image') : [];
+  const propertyImages = Array.isArray(property.media) 
+    ? property.media.filter(m => m.type === 'image' && !m.isPrimary) 
+    : [];
+  
+  // If no separate gallery images, we might want to include the primary one too, 
+  // but usually ImageSlider shows the gallery. 
+  // Let's pass all images to ImageSlider for a better experience.
+  const allImages = Array.isArray(property.media) 
+    ? property.media.filter(m => m.type === 'image').map(img => img.path)
+    : [];
+
   const propertyVideo = Array.isArray(property.media) ? property.media.find(m => m.type === 'video') : null;
 
   // Filter out the current property and take the first 4 for the sidebar
@@ -94,7 +105,7 @@ function RouteComponent() {
           {/* Main Content */}
           <main className="lg:col-span-3">
             
-            <ImageSlider images={propertyImages.map(img => img.path)} /> 
+            <ImageSlider key={property.id} images={allImages} /> 
             
             <div className="flex flex-wrap gap-2 mb-4">
               {property.badges?.map((badge, index) => (
@@ -102,12 +113,36 @@ function RouteComponent() {
                   {badge.label}
                 </Badge>
               ))}
+              {!!property.is_furnished && (
+                <Badge variant="default">Furnished</Badge>
+              )}
             </div>
             
             <div className="mb-6 text-3xl font-bold text-amber-500">
-              {property.currency} {property.price.toLocaleString()}
-              {property.priceType === 'rent' && ' / month'}
-              {property.priceType === 'installment' && ` / ${property.installmentPeriod}`}
+              {property.priceType === 'rent' ? (
+                <span>
+                  {property.currency} {property.price.toLocaleString()}
+                  <span className="text-xl font-normal text-muted-foreground">/{property.installmentPeriod || property.price_period_unit || 'month'}</span>
+                </span>
+              ) : property.priceType === 'installment' ? (
+                <div className="flex flex-col gap-1">
+                  <span>
+                    {property.currency} {(property.installment_display_mode === 'advance' ? property.installment_advance_amount : (property.installment_amount || property.price)).toLocaleString()}
+                    {property.installment_display_mode === 'advance' ? (
+                      <span className="ml-2 text-xl font-normal text-muted-foreground">(Advance)</span>
+                    ) : (
+                      <span className="text-xl font-normal text-muted-foreground">/{property.installmentPeriod || property.price_period_unit || 'month'}</span>
+                    )}
+                  </span>
+                  {(property.installment_total_period_text) && (
+                    <span className="text-sm font-normal text-muted-foreground">Total Period: {property.installment_total_period_text}</span>
+                  )}
+                </div>
+              ) : (
+                <span>
+                  {property.currency} {property.price.toLocaleString()}
+                </span>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
@@ -160,7 +195,7 @@ function RouteComponent() {
               <div className="mb-8">
                 <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Property Details</h2>
                 <div className="prose max-w-none text-foreground/90">
-                  <p>{property.detailedDescription}</p>
+                  <RichTextRenderer htmlContent={property.detailedDescription} />
                 </div>
               </div>
             )}
@@ -181,7 +216,7 @@ function RouteComponent() {
               <div className="p-4 border rounded-lg">
                 <div className="h-64 overflow-hidden rounded-lg">
                   <iframe
-                    src={property.locationMap}
+                    src={getEmbedUrl(property.locationMap)}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -194,7 +229,7 @@ function RouteComponent() {
 
             <div className="hidden p-4 mt-8 border rounded-lg lg:block">
               <h3 className="mb-4 text-2xl font-bold">Contact Agent</h3>
-              <ContactForm propertyTitle={property.title} />
+              <ContactForm propertyTitle={property.title} propertyId={property.id} />
             </div>
 
             <div className="p-4 mt-8 border rounded-lg">
@@ -246,7 +281,7 @@ function RouteComponent() {
                     <DrawerDescription>Fill out the form below to get in touch.</DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4">
-                    <ContactForm propertyTitle={property.title} />
+                    <ContactForm propertyTitle={property.title} propertyId={property.id} />
                 </div>
             </DrawerContent>
         </Drawer>
@@ -258,98 +293,212 @@ function RouteComponent() {
 
 
 
-function ContactForm({ propertyTitle, className }) {
+function ContactForm({ propertyTitle, propertyId, className }) {
+
+
+
+
   const formSchema = z.object({
-    name: z.string().min(2, {
-      message: "Name must be at least 2 characters.",
-    }),
-    email: z.string().email({
-      message: "Please enter a valid email address.",
-    }),
-    phone: z.string().min(10, {
-      message: "Phone number must be at least 10 digits.",
-    }),
-    message: z.string().min(10, {
-      message: "Message must be at least 10 characters.",
-    }),
+
+
+
+
+    name: z.string().min(2, "Name too short"),
+
+
+
+
+    email: z.string().email("Invalid email"),
+
+
+
+
+    phone: z.string().min(10, "Phone too short"),
+
+
+
+
+    message: z.string().min(10, "Message too short"),
+
+
+
+
   });
+
+
+
 
   const form = useForm({
+
+
+
+
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      message: `I'm interested in "${propertyTitle}"...`,
-    },
+
+
+
+
+    defaultValues: { name: "", email: "", phone: "", message: `I'm interested in "${propertyTitle}"...` },
+
+
+
+
   });
 
-  function onSubmit(values) {
-    console.log(values);
-    toast.success("Your message has been sent successfully!");
-    form.reset();
-  }
+
+
+
+  const mutation = useMutation({
+
+
+
+
+    mutationFn: submitQuery,
+
+
+
+
+    onSuccess: () => {
+
+
+
+
+      toast.success("Sent successfully!");
+
+
+
+
+      form.reset({ name: "", email: "", phone: "", message: `I'm interested in "${propertyTitle}"...` });
+
+
+
+
+    },
+
+
+
+
+    onError: (e) => toast.error(e.message || "Failed to send"),
+
+
+
+
+  });
+
+
+
+
+  const onSubmit = (v) => mutation.mutate({ ...v, property_id: propertyId });
+
+
+
 
   return (
+
+
+
+
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-4 ${className}`}>
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Your Name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="Your Email" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone</FormLabel>
-              <FormControl>
-                <Input type="tel" placeholder="Your Phone" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="message"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Message</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder={`I'm interested in "${propertyTitle}"...`}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full">Send Message</Button>
+
+
+
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-3 ${className}`}>
+
+
+
+
+        <FormField control={form.control} name="name" render={({ field }) => (
+
+
+
+
+          <FormItem><FormControl><Input placeholder="Name" {...field} disabled={mutation.isPending} /></FormControl><FormMessage /></FormItem>
+
+
+
+
+        )} />
+
+
+
+
+        <FormField control={form.control} name="email" render={({ field }) => (
+
+
+
+
+          <FormItem><FormControl><Input type="email" placeholder="Email" {...field} disabled={mutation.isPending} /></FormControl><FormMessage /></FormItem>
+
+
+
+
+        )} />
+
+
+
+
+        <FormField control={form.control} name="phone" render={({ field }) => (
+
+
+
+
+          <FormItem><FormControl><Input type="tel" placeholder="Phone" {...field} disabled={mutation.isPending} /></FormControl><FormMessage /></FormItem>
+
+
+
+
+        )} />
+
+
+
+
+        <FormField control={form.control} name="message" render={({ field }) => (
+
+
+
+
+          <FormItem><FormControl><Textarea placeholder="Message" {...field} disabled={mutation.isPending} /></FormControl><FormMessage /></FormItem>
+
+
+
+
+        )} />
+
+
+
+
+        <Button type="submit" className="w-full" disabled={mutation.isPending}>
+
+
+
+
+          {mutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : "Send Message"}
+
+
+
+
+        </Button>
+
+
+
+
       </form>
+
+
+
+
     </Form>
+
+
+
+
   );
+
+
+
+
 }
+
+
+

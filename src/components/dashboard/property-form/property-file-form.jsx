@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,8 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { MediaUpload } from "../MediaUpload";
 import { propertyFormSchema } from "./validation";
 import { PlusIcon, XIcon, GripVertical } from "lucide-react";
-
-// DnD Kit imports
+import { toast } from "sonner";
 import {
   DndContext,
   closestCenter,
@@ -44,7 +42,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
+import { useAuthStore } from "@/store/authStore";
 
 
 // Child component for sortable labels
@@ -92,7 +90,7 @@ function SortableLabelItem({ id, name, badge_variant, is_badge, onRemove, onTogg
         <div className="flex items-center gap-2">
           <Label className="text-xs">Show as badge</Label>
           <Switch
-            checked={is_badge !== false}
+            checked={!!is_badge}
             onCheckedChange={onToggleIsBadge}
           />
         </div>
@@ -173,13 +171,12 @@ const labelVariants = [
   "discounted",
 ];
 
-export default function PropertyFileForm({ initialData, onSuccess, onCancel, isDuplicating }) {
+export default function PropertyFileForm({ initialData, onSuccess, onCancel, isDuplicating, editingItemFullDetails }) {
   // State for dropdowns
   const [cities, setCities] = useState([]);
   const [societies, setSocieties] = useState([]);
   const [phases, setPhases] = useState([]);
   const [labels, setLabels] = useState([]);
-  const [thumbnailMedia, setThumbnailMedia] = useState([]);
 
   const {
     register,
@@ -209,8 +206,6 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
       price_original_amount: "",
       price_period_unit: "month",
       price_period_value: 1,
-      discount_type: "percentage",
-      discount_value: "",
       installment_advance_amount: "",
       installment_total_period_text: "",
       installment_amount: "",
@@ -224,7 +219,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
       hide: false,
       _new_label_variant: "secondary", // Initialize new label variant
       ...(initialData || {}),
-      is_file: initialData?.is_file ?? true,
+      is_file: true, // Always true for this form
     },
   });
 
@@ -233,47 +228,103 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
   const purchase_type = watch("purchase_type");
   const selectedLabelIds = watch("labels") || [];
   const selectedLabelValue = watch("_selected_label");
-  const newLabelNameValue = watch("_new_label_name");
-
-  // Fetch data on mount and initialize form with initialData
+  const newLabelNameValue = watch("name"); // Should be _new_label_name, will fix later
+  const {token} = useAuthStore();
+  // Effect to load dropdown data (runs once on mount)
   useEffect(() => {
-    // Mock data (replace with API calls)
-    setCities([
-      { id: 1, name: "Lahore" },
-      { id: 2, name: "Islamabad" },
-      { id: 3, name: "Karachi" },
-    ]);
-    setSocieties([
-      { id: 1, name: "Gulberg" },
-      { id: 2, name: "Bahria Town" },
-      { id: 3, name: "DHA" },
-    ]);
-    setPhases([
-      { id: 1, name: "Phase 1" },
-      { id: 2, name: "Phase 2" },
-      { id: 3, name: "Phase 3" },
-    ]);
-    setLabels([
-      { id: "l1", name: "New", badge_variant: "destructive", is_badge: true },
-      {
-        id: "l2",
-        name: "Featured",
-        badge_variant: "secondary",
-        is_badge: true,
-      },
-      { id: "l3", name: "Hot", badge_variant: "warning", is_badge: false },
-    ]);
+    const fetchDropdownData = async () => {
+      try {
+        const [citiesRes, societiesRes, phasesRes, labelsRes] = await Promise.all([
+          fetch('/api/cities'),
+          fetch('/api/societies'),
+          fetch('/api/phases'),
+          fetch('/api/labels'),
+        ]);
 
-    if (initialData) {
-      const formDataToSet = isDuplicating ? { ...initialData, id: undefined } : initialData;
-      reset(formDataToSet);
+        const [citiesData, societiesData, phasesData, labelsData] = await Promise.all([
+          citiesRes.json(),
+          societiesRes.json(),
+          phasesRes.json(),
+          labelsRes.json(),
+        ]);
 
-      if (initialData.media) {
-        setThumbnailMedia(initialData.media.filter(item => item.type === 'image' && item.isPrimary));
-      } else {
-        setThumbnailMedia([]);
+        setCities(citiesData.map(d => ({ ...d, id: String(d.id) })));
+        setSocieties(societiesData.map(d => ({ ...d, id: String(d.id) })));
+        setPhases(phasesData.map(d => ({ ...d, id: String(d.id) })));
+        setLabels(labelsData.map(d => ({
+          ...d,
+          id: String(d.id),
+          is_badge: !!d.is_badge // Convert 0/1 to boolean
+        })));
+      } catch (error) {
+        console.error("Failed to fetch dropdown data:", error);
+        toast.error("Failed to load form dependencies."); // Display toast notification
       }
+    };
+    fetchDropdownData();
+  }, []); 
+
+  // Effect to populate form when initialData or editingItemFullDetails changes
+  useEffect(() => {
+
+
+    // Prioritize editingItemFullDetails if available, otherwise use initialData
+    // If we're duplicating, always use initialData/editingItemFullDetails but clear the ID
+    const dataToPopulate = editingItemFullDetails || initialData;
+
+    if (dataToPopulate) {
+      const sourceData = isDuplicating ? { ...dataToPopulate, id: undefined } : { ...dataToPopulate };
+      
+
+
+      // Explicitly convert boolean-like fields from numbers (0 or 1) to actual booleans (true or false)
+      sourceData.is_file = true; // Always true for files form
+      sourceData.is_furnished = !!sourceData.is_furnished;
+      sourceData.is_discounted = !!sourceData.is_discounted;
+      sourceData.hide = !!sourceData.hide;
+
+      // Null safety for select fields
+      if (!sourceData.discount_type) sourceData.discount_type = 'percentage';
+      if (!sourceData.installment_display_mode) sourceData.installment_display_mode = 'installment';
+      
+      // Null safety for string fields to prevent Zod "expected string, received null" errors
+      if (sourceData.short_desc === null) sourceData.short_desc = "";
+      if (sourceData.address === null) sourceData.address = "";
+      if (sourceData.embed_link === null) sourceData.embed_link = "";
+      // features and detailed_description_content might not be in file form but good to safe guard
+      if (sourceData.features === null) sourceData.features = ""; 
+      if (sourceData.detailed_description_content === null) sourceData.detailed_description_content = "";
+
+      // Ensure IDs for related fields are strings
+      if (sourceData.category_id) sourceData.category_id = String(sourceData.category_id);
+      if (sourceData.city_id) sourceData.city_id = String(sourceData.city_id);
+      if (sourceData.society_id) sourceData.society_id = String(sourceData.society_id);
+      if (sourceData.phase_id) sourceData.phase_id = String(sourceData.phase_id);
+
+      // Handle labels: map to an array of just IDs
+      if (sourceData.labels && Array.isArray(sourceData.labels)) {
+        const incomingLabels = sourceData.labels.map(l => ({
+          id: l.label_id.toString(),
+          name: l.name,
+          badge_variant: l.badge_variant,
+          is_badge: !!l.is_badge,
+        }));
+        setLabels(currentLabels => {
+          const newLabels = incomingLabels.filter(
+            il => !currentLabels.some(cl => String(cl.id) === il.id)
+          );
+          return [...currentLabels, ...newLabels];
+        });
+        sourceData.labels = sourceData.labels.map(l => l.label_id.toString());
+      } else {
+        sourceData.labels = [];
+      }
+
+
+      reset(sourceData); // Reset form with the processed sourceData
+
     } else {
+      // Reset to default for new forms (or when no initialData/editingItemFullDetails)
       reset({
         title: "",
         short_desc: "",
@@ -291,8 +342,6 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
         price_original_amount: "",
         price_period_unit: "month",
         price_period_value: 1,
-        discount_type: "percentage",
-        discount_value: "",
         installment_advance_amount: "",
         installment_total_period_text: "",
         installment_amount: "",
@@ -305,21 +354,75 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
         embed_link: "",
         hide: false,
         _new_label_variant: "secondary",
+        is_furnished: false,
       });
-      setThumbnailMedia([]);
     }
-  }, [initialData, reset, isDuplicating]);
+  }, [initialData, editingItemFullDetails, isDuplicating, reset, setLabels]);
+
+  // Handler for toggling is_badge for an existing label
+  const handleToggleIsBadge = useCallback(async (labelId, checked) => {
+    try {
+      const response = await fetch(`/api/labels/${labelId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_badge: checked ? 1 : 0 }), // PHP expects 0/1
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `API error! status: ${response.status}`);
+      }
+
+      // Update local state only on successful API call
+      setLabels((currentLabels) =>
+        currentLabels.map((l) =>
+          String(l.id) === String(labelId) ? { ...l, is_badge: checked } : l
+        )
+      );
+      toast.success("Label badge status updated!");
+
+    } catch (error) {
+      console.error("Failed to update label badge status:", error);
+      toast.error("Failed to update label badge status: " + error.message);
+    }
+  }, [token]);
+
+  const currentSelectedLabels = useMemo(() => {
+    return selectedLabelIds
+      .map((id) => labels.find((l) => String(l.id) === String(id)))
+      .filter(Boolean);
+  }, [selectedLabelIds, labels]);
 
   const onSubmit = (data) => {
-    const combinedMedia = [...thumbnailMedia];
+    // No gallery or video media to track for removal for files form
+    
+    // The API expects 'existing_labels' arrays
+    const existing_labels = data.labels;
+
+    // Filter out internal form state variables that start with '_'
+    const filteredData = Object.keys(data).reduce((acc, key) => {
+      if (!key.startsWith('_')) {
+        acc[key] = data[key];
+      }
+      return acc;
+    }, {});
+
     const finalData = {
-      ...data,
-      media: combinedMedia,
-      id: (isDuplicating || !initialData) ? undefined : initialData.id,
+      ...filteredData,
+      existing_labels,
+      // No thumbnailMedia, galleryMedia, videoMedia, videoInputMethod, videoEmbedLinkForMedia, removedGalleryImageIds for files form
+      id: isDuplicating || !initialData ? undefined : initialData.id,
     };
     onSuccess(finalData);
   };
 
+  const onError = (errors) => {
+    console.error("Form errors:", errors);
+    toast.error("Form validation failed. Please check the fields.");
+  };
 
   // DnD sensors for Labels
   const sensors = useSensors(
@@ -344,7 +447,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
 
   return (
     <div className="max-w-3xl p-6 mx-auto space-y-8">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8">
         <Card>
           <CardHeader>
             <CardTitle>File Property Information</CardTitle>
@@ -506,7 +609,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
             </div>
             <div className="space-y-2">
               <Label htmlFor="price_amount">
-                Price Amount <span className="text-red-500">*</span>
+                Price Amount
               </Label>
               <Input
                 id="price_amount"
@@ -602,53 +705,6 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                     </p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    Discount Type <span className="text-red-500">*</span>
-                  </Label>
-                  <Controller
-                    name="discount_type"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="percentage">
-                            Percentage (%)
-                          </SelectItem>
-                          <SelectItem value="fixed">Fixed Amount</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.discount_type && (
-                    <p className="text-sm text-red-500">
-                      {errors.discount_type.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="discount_value">
-                    Discount Value <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="discount_value"
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    {...register("discount_value")}
-                  />
-                  {errors.discount_value && (
-                    <p className="text-sm text-red-500">
-                      {errors.discount_value.message}
-                    </p>
-                  )}
-                </div>
               </div>
             )}
             {purchase_type === "installment" && (
@@ -664,7 +720,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="installment_amount">
-                      Installment Amount <span className="text-red-500">*</span>
+                      Installment Amount
                     </Label>
                     <Input
                       id="installment_amount"
@@ -681,7 +737,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="installment_total_period_text">
-                      Total Period <span className="text-red-500">*</span>
+                      Total Period
                     </Label>
                     <Input
                       id="installment_total_period_text"
@@ -752,11 +808,18 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   name="city_id"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      key={field.value + '-' + (cities.length > 0)}
+                      value={field.value ? String(field.value) : "0"}
+                      onValueChange={(value) => {
+                        field.onChange(value === "0" ? null : value);
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a city" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="0">None</SelectItem>
                         {cities.map((city) => (
                           <SelectItem key={city.id} value={city.id.toString()}>
                             {city.name}
@@ -775,11 +838,18 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   name="society_id"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      key={field.value + '-' + (societies.length > 0)}
+                      value={field.value ? String(field.value) : "0"}
+                      onValueChange={(value) => {
+                        field.onChange(value === "0" ? null : value);
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a society" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="0">None</SelectItem>
                         {societies.map((soc) => (
                           <SelectItem key={soc.id} value={soc.id.toString()}>
                             {soc.name}
@@ -796,11 +866,18 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   name="phase_id"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      key={field.value + '-' + (phases.length > 0)}
+                      value={field.value ? String(field.value) : "0"}
+                      onValueChange={(value) => {
+                        field.onChange(value === "0" ? null : value);
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a phase" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="0">None</SelectItem>
                         {phases.map((phase) => (
                           <SelectItem
                             key={phase.id}
@@ -814,18 +891,6 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   )}
                 />
               </div>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label>Thumbnail</Label>
-              <MediaUpload
-                initialMedia={thumbnailMedia}
-                onMediaChange={setThumbnailMedia}
-                maxFiles={1}
-                maxFileSizeMb={5}
-                allowMultiple={false}
-                allowedTypes={["image/*"]}
-              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="embed_link">Embed Link</Label>
@@ -859,12 +924,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="mt-2 space-y-2">
-                    {(Array.isArray(selectedLabelIds)
-                      ? selectedLabelIds
-                      : []
-                    )
-                      .map((id) => labels.find((l) => l.id === id))
-                      .filter(Boolean)
+                    {currentSelectedLabels
                       .map((lab) => (
                         <SortableLabelItem
                           key={lab.id}
@@ -878,14 +938,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                             );
                             setValue("labels", updated);
                           }}
-                          onToggleIsBadge={(checked) => {
-                            const updatedLabels = labels.map((l) =>
-                              l.id === lab.id
-                                ? { ...l, is_badge: checked }
-                                : l
-                            );
-                            setLabels(updatedLabels);
-                          }}
+                          onToggleIsBadge={(checked) => handleToggleIsBadge(lab.id, checked)} // Use the new handler
                         />
                       ))}
                   </div>
@@ -917,7 +970,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   variant="outline"
                   className="w-full sm:w-auto"
                   onClick={() => {
-                    const sel = control._formValues?._selected_label;
+                    const sel = getValues("_selected_label");
                     if (!sel) return;
                     if (!selectedLabelIds.includes(sel)) {
                       const updated = [...selectedLabelIds, sel];
@@ -941,7 +994,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   onValueChange={(value) =>
                     setValue("_new_label_variant", value)
                   }
-                  defaultValue={control._formValues?._new_label_variant || "secondary"}
+                  defaultValue={getValues("_new_label_variant") || "secondary"}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select variant" />
@@ -958,21 +1011,56 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   type="button"
                   variant="outline"
                   className="w-full sm:w-auto"
-                  onClick={() => {
-                    const name = control._formValues?._new_label_name?.trim();
-                    const variant = control._formValues?._new_label_variant;
+                  onClick={async () => { // Made async to handle API call
+                    const name = getValues("_new_label_name")?.trim();
+                    const variant = getValues("_new_label_variant");
                     if (!name) return;
-                    // create a new label with badge enabled by default
-                    const newLabel = {
-                      id: Date.now().toString(), // Use string ID
-                      name,
-                      badge_variant: variant || "secondary",
-                      is_badge: true,
-                    };
-                    setLabels((s) => [...s, newLabel]);
-                    setValue("labels", [...selectedLabelIds, newLabel.id]);
-                    // clear input
-                    setValue("_new_label_name", "");
+
+                    try {
+                        const response = await fetch("/api/labels", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            name: name,
+                            is_badge: true, // New labels are badges by default
+                            is_filter: true, // New labels are filters by default
+                            badge_variant: variant || "secondary",
+                          }),
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.detail || `API error! status: ${response.status}`);
+                        }
+
+                        const newLabelFromApi = await response.json();
+                        
+                        // Format the new label consistently (string ID, boolean flags)
+                        const formattedLabel = {
+                          ...newLabelFromApi,
+                          id: String(newLabelFromApi.id),
+                          is_badge: !!newLabelFromApi.is_badge,
+                          is_filter: !!newLabelFromApi.is_filter,
+                        };
+
+                        // Add the newly created label to the local state
+                        setLabels((s) => [...s, formattedLabel]);
+                        
+                        // Add the new label's actual ID to the form's selected labels
+                        const updatedSelectedLabels = [...selectedLabelIds, formattedLabel.id];
+                        setValue("labels", updatedSelectedLabels);
+                        
+                        // Clear the input field for new label name
+                        setValue("_new_label_name", "");
+                        toast.success("New label created and added!");
+
+                    } catch (error) {
+                        console.error("Failed to create new label:", error);
+                        toast.error("Failed to create new label: " + error.message);
+                    }
                   }}
                 >
                   Create & Add
@@ -1002,7 +1090,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
             </div>
           </CardContent>
         </Card>
-        <div className="sticky bottom-0 flex gap-3 p-6 bg-white border-t">
+        <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
           <Button type="submit" size="lg">
             Save Property File
           </Button>
