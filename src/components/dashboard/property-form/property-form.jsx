@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuillRichText from "../QuillRichText";
 import { MediaUpload } from "../MediaUpload";
 import { propertyFormSchema } from "./validation";
-import { PlusIcon, XIcon, TrashIcon, GripVertical } from "lucide-react";
+import { PlusIcon, XIcon, TrashIcon, GripVertical, Loader2 } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -61,7 +61,7 @@ const labelVariants = [
   "discounted",
 ];
 
-export default function PropertyForm({ initialData, onSuccess, onCancel, isDuplicating }) {
+export default function PropertyForm({ initialData, onSuccess, onCancel, isDuplicating, isSubmitting }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -1516,10 +1516,11 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
         {/* Form Actions */}
         <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
-          <Button type="submit" size="lg">
-            Save Property
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {initialData ? "Save Property" : "Add Property"}
           </Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         </div>

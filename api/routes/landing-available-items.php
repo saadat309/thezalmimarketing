@@ -16,43 +16,39 @@ function get_available_items(PDO $pdo) {
             'maps' => [],
             'files' => [] // Actually properties with is_file = 1
         ];
+
+        $all = isset($_GET['all']);
         
         // Get properties
-        $stmt = $pdo->prepare("
-            SELECT id, title, hide
-            FROM properties
-            WHERE is_file = 0
-            ORDER BY created_at DESC
-        ");
+        $sqlProps = "SELECT id, title, hide FROM properties WHERE is_file = 0";
+        if (!$all) $sqlProps .= " AND hide = 0";
+        $sqlProps .= " ORDER BY created_at DESC";
+        $stmt = $pdo->prepare($sqlProps);
         $stmt->execute();
         $result['properties'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Get categories
-        $stmt = $pdo->prepare("
-            SELECT id, name, pic, thumb, hide
-            FROM categories
-            ORDER BY created_at DESC
-        ");
+        $sqlCats = "SELECT id, name, pic, thumb, hide FROM categories";
+        if (!$all) $sqlCats .= " WHERE hide = 0";
+        $sqlCats .= " ORDER BY created_at DESC";
+        $stmt = $pdo->prepare($sqlCats);
         $stmt->execute();
         $result['categories'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Get maps (map_docs)
-        $stmt = $pdo->prepare("
-            SELECT id, title, description, map_pic, map_thumb, pdf, hide
-            FROM map_docs
-            ORDER BY created_at DESC
-        ");
+        $sqlMaps = "SELECT id, title, description, map_pic, map_thumb, pdf, hide FROM map_docs";
+        if (!$all) $sqlMaps .= " WHERE hide = 0";
+        $sqlMaps .= " ORDER BY created_at DESC";
+        $stmt = $pdo->prepare($sqlMaps);
         $stmt->execute();
         $result['maps'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         
         // Get files (properties with is_file = 1)
-        $stmt = $pdo->prepare("
-            SELECT id, title, hide
-            FROM properties
-            WHERE is_file = 1
-            ORDER BY created_at DESC
-        ");
+        $sqlFiles = "SELECT id, title, hide FROM properties WHERE is_file = 1";
+        if (!$all) $sqlFiles .= " AND hide = 0";
+        $sqlFiles .= " ORDER BY created_at DESC";
+        $stmt = $pdo->prepare($sqlFiles);
         $stmt->execute();
         $result['files'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         

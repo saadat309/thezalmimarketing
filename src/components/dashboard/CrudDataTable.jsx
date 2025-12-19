@@ -33,7 +33,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, FilePenIcon, TrashIcon, MoreVerticalIcon, ColumnsIcon, ArrowUpDown, PlusIcon } from 'lucide-react';
+import { PlusCircle, FilePenIcon, TrashIcon, MoreVerticalIcon, ColumnsIcon, ArrowUpDown, PlusIcon, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { CopyIcon } from "lucide-react";
 import QuillRichText from './QuillRichText'; // Import the new rich text editor
@@ -66,6 +66,7 @@ export function CrudDataTable({
   handleExportCsv,
   handleExportPdf,
   onTablePreferencesLoadingChange, // New prop
+  isSubmitting, // Pass submitting state to disable form actions
   canEditItem,   // Function (item) => boolean, optional
   canDeleteItem, // Function (item) => boolean, optional
 }) {
@@ -266,6 +267,7 @@ export function CrudDataTable({
                 onSuccess={onFormSubmit}
                 onCancel={onFormCancel}
                 isDuplicating={isDuplicating}
+                isSubmitting={isSubmitting}
               />
             ) : (
               <form onSubmit={handleDefaultFormSubmit} className="grid grid-cols-1 gap-4 py-4">
@@ -305,9 +307,10 @@ export function CrudDataTable({
                   </div>
                 )}
                 <SheetFooter>
-                  <SheetClose asChild>
-                    <Button type="submit">{editingItem ? 'Save changes' : `Add ${entityName}`}</Button>
-                  </SheetClose>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      {editingItem ? 'Save changes' : `Add ${entityName}`}
+                    </Button>
                 </SheetFooter>
               </form>
             )}

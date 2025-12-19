@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { MediaUpload } from "../MediaUpload";
 import { propertyFormSchema } from "./validation";
-import { PlusIcon, XIcon, GripVertical } from "lucide-react";
+import { PlusIcon, XIcon, GripVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -171,7 +171,7 @@ const labelVariants = [
   "discounted",
 ];
 
-export default function PropertyFileForm({ initialData, onSuccess, onCancel, isDuplicating, editingItemFullDetails }) {
+export default function PropertyFileForm({ initialData, onSuccess, onCancel, isDuplicating, editingItemFullDetails, isSubmitting }) {
   // State for dropdowns
   const [cities, setCities] = useState([]);
   const [societies, setSocieties] = useState([]);
@@ -1091,10 +1091,11 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
           </CardContent>
         </Card>
         <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
-          <Button type="submit" size="lg">
-            Save Property File
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {initialData ? "Save Property File" : "Add Property File"}
           </Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         </div>

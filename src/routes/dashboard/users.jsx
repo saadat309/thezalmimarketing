@@ -31,10 +31,11 @@ function DashboardUsers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/users', {
-         headers: {
-            'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
-         }
+      const response = await fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${useAuthStore.getState().token}`,
+          "X-Auth-Token": useAuthStore.getState().token, // Send token
+        },
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -56,11 +57,12 @@ function DashboardUsers() {
   const handleAddUser = async (data) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${useAuthStore.getState().token}`
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${useAuthStore.getState().token}`,
+          "X-Auth-Token": useAuthStore.getState().token,
         },
         body: JSON.stringify(data),
       });
@@ -96,10 +98,11 @@ function DashboardUsers() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/users/${data.id}`, {
-        method: 'PUT',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${useAuthStore.getState().token}`
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${useAuthStore.getState().token}`,
+          "X-Auth-Token": useAuthStore.getState().token,
         },
         body: JSON.stringify(data),
       });
@@ -127,7 +130,8 @@ function DashboardUsers() {
       const response = await fetch(`/api/users/${id}`, {
         method: 'DELETE',
         headers: {
-            'Authorization': `Bearer ${useAuthStore.getState().token}`
+          'Authorization': `Bearer ${useAuthStore.getState().token}`,
+          'X-Auth-Token': useAuthStore.getState().token
         }
       });
       if (!response.ok) {
@@ -150,12 +154,13 @@ function DashboardUsers() {
     }
     setIsSubmitting(true);
     try {
-      const deletePromises = selectedRows.map(row =>
-        fetch(`/api/users/${row.original.id}`, { 
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${useAuthStore.getState().token}`
-            }
+      const deletePromises = selectedRows.map((row) =>
+        fetch(`/api/users/${row.original.id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${useAuthStore.getState().token}`,
+            "X-Auth-Token": useAuthStore.getState().token,
+          },
         })
       );
 
@@ -189,13 +194,17 @@ function DashboardUsers() {
     setIsSubmitting(true);
     try {
       toast.info(`Generating new invite link for ${userEmail}...`);
-      const response = await fetch(`/api/users/${userId}/generate-invite-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${useAuthStore.getState().token}`
-        },
-      });
+      const response = await fetch(
+        `/api/users/${userId}/generate-invite-token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${useAuthStore.getState().token}`,
+            "X-Auth-Token": token
+          },
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

@@ -43,25 +43,45 @@ function get_request_data() {
 }
 
 function get_authenticated_user_id(PDO $pdo): ?int {
-    $headers = getallheaders();
     $auth_header = null;
-    if (isset($headers['Authorization'])) {
-        $auth_header = $headers['Authorization'];
-    } else {
-        // Case-insensitive search
-        foreach ($headers as $key => $value) {
-            if (strtolower($key) === 'authorization') {
+    
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        foreach ($headers as $name => $value) {
+            if (strcasecmp($name, 'authorization') === 0) {
                 $auth_header = $value;
                 break;
             }
         }
     }
 
-    if (!$auth_header || !preg_match('/Bearer\s(\S+)/', $auth_header, $matches)) {
-        // Debugging: Log headers if auth fails (optional, remove in prod)
-        // error_log("Auth failed. Headers: " . print_r($headers, true));
-        send_json(['error' => 'Authentication required'], 401);
-        return null; // send_json exits, but for static analysis
+    if (!$auth_header) {
+        $server_keys = ['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION', 'AUTHORIZATION', 'REDIRECT_AUTHORIZATION', 'PHP_AUTH_AUTHORIZATION', 'REDIRECT_REDIRECT_HTTP_AUTHORIZATION'];
+        foreach ($server_keys as $key) {
+            if (isset($_SERVER[$key]) && !empty($_SERVER[$key])) {
+                $auth_header = $_SERVER[$key];
+                break;
+            }
+        }
+        
+        if (!$auth_header) {
+            foreach ($_SERVER as $key => $value) {
+                if (stripos($key, 'AUTHORIZATION') !== false && !empty($value)) {
+                    $auth_header = $value;
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3. Custom Header Bypass (X-Auth-Token)
+    if (!$auth_header && isset($_SERVER['HTTP_X_AUTH_TOKEN']) && !empty($_SERVER['HTTP_X_AUTH_TOKEN'])) {
+        $auth_header = 'Bearer ' . trim($_SERVER['HTTP_X_AUTH_TOKEN']);
+    }
+
+    if (!$auth_header || !preg_match('/Bearer\s(\S+)/i', $auth_header, $matches)) {
+        send_json(['error' => 'Authentication required', 'detail' => 'Authorization header missing or invalid format'], 401);
+        return null; 
     }
 
     $jwt_token = $matches[1];
@@ -121,12 +141,19 @@ function update_my_profile(PDO $pdo) {
 
     // Handle profile picture upload if a file is provided
     if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+        // Fetch old profile pic to delete it later
+        $stmt = $pdo->prepare("SELECT profile_pic FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $old_profile_pic = $stmt->fetchColumn();
+
         $uploaded_image = ImageUpload::handleImageUpload($_FILES['profile_pic'], 'user_profile', $user_id, ['to_webp' => true, 'max_width' => 400, 'max_height' => 400, 'thumb_width' => 100, 'thumb_height' => 100]);
         if ($uploaded_image) {
             $fields[] = 'profile_pic = ?';
             $values[] = $uploaded_image['full_path'];
-            // You might want to delete the old profile picture if it exists
-            // Need to fetch old profile_pic path first
+            
+            if ($old_profile_pic) {
+                ImageUpload::deleteImageFiles($old_profile_pic);
+            }
         } else {
             return send_json(['error' => 'Failed to upload profile picture'], 500);
         }
@@ -243,7 +270,9 @@ function login_user(PDO $pdo) {
             'user_id' => $user['id'],
             'email' => $user['email'],
             'role_id' => $user['role_id'],
-            'role_name' => get_role_name_by_id($pdo, $user['role_id']) // Helper to get role name
+            'role_name' => get_role_name_by_id($pdo, $user['role_id']),
+            'iat' => time(),
+            'exp' => time() + (60 * 60 * 24) // 24 hours
         ];
         $jwt_token = generate_jwt($jwt_payload);
 

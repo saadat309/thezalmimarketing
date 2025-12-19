@@ -134,10 +134,11 @@ function DashboardProperties() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/properties?is_file=0', {
+      const response = await fetch("/api/properties?is_file=0&all=1", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
+        },
       }); // Explicitly fetch properties where is_file is false
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -268,12 +269,13 @@ function DashboardProperties() {
     setIsSubmitting(true);
     try {
         const formData = prepareFormData(data);
-        const response = await fetch('/api/properties', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData,
+        const response = await fetch("/api/properties", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
+          },
+          body: formData,
         });
 
         if (!response.ok) {
@@ -300,11 +302,12 @@ function DashboardProperties() {
         formData.append('_method', 'PATCH');
 
         const response = await fetch(`/api/properties/${data.id}`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData,
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
+          },
+          body: formData,
         });
 
         if (!response.ok) {
@@ -328,9 +331,10 @@ function DashboardProperties() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/properties/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
       });
       if (!response.ok) {
@@ -353,11 +357,12 @@ function DashboardProperties() {
     }
     setIsSubmitting(true);
     try {
-            const deletePromises = selectedRows.map(row =>
+            const deletePromises = selectedRows.map((row) =>
               fetch(`/api/properties/${row.original.id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  Authorization: `Bearer ${token}`,
+                  "X-Auth-Token": token
                 },
               })
             );

@@ -6,6 +6,7 @@ import { toast } from "sonner"; // For notifications
 import { ItemSelector } from "@/components/dashboard/item-selector";
 import { useAuthStore } from '@/store/authStore';
 import { Spinner } from '@/components/ui/spinner';
+import { Loader2 } from 'lucide-react';
 
 import { LandingPageVideoSectionConfigurator } from '@/components/dashboard/LandingPageVideoSectionConfigurator';
 
@@ -59,6 +60,7 @@ function DashboardLandingPage() {
   const { token } = useAuthStore();
   const [sectionsConfig, setSectionsConfig] = useState(DEFAULT_SECTIONS_CONFIG);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableItems, setAvailableItems] = useState({
     properties: [],
     categories: [],
@@ -73,11 +75,15 @@ function DashboardLandingPage() {
         setIsLoading(true);
 
         // Fetch available items for all sections
-        const availableItemsResponse = await fetch('/api/landing-available-items', {
-          headers: {
-            'Authorization': `Bearer ${token}`
+        const availableItemsResponse = await fetch(
+          "/api/landing-available-items?all=1",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "X-Auth-Token": token
+            },
           }
-        });
+        );
         if (!availableItemsResponse.ok) {
           throw new Error(`Failed to fetch available items: ${availableItemsResponse.status}`);
         }
@@ -85,10 +91,11 @@ function DashboardLandingPage() {
         setAvailableItems(availableItemsData);
 
         // Fetch existing landing sections configuration
-        const sectionsResponse = await fetch('/api/landing-sections', {
+        const sectionsResponse = await fetch("/api/landing-sections", {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
+          },
         });
         if (!sectionsResponse.ok) {
           throw new Error(`Failed to fetch landing sections: ${sectionsResponse.status}`);
@@ -212,6 +219,7 @@ function DashboardLandingPage() {
   }, [handleSectionConfigChange]);
 
   const handleSave = async () => {
+    setIsSubmitting(true);
     try {
       // Prepare section data for API
       const sectionsToSave = [];
@@ -287,6 +295,7 @@ function DashboardLandingPage() {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
+          "X-Auth-Token": token, 
           'Content-Type': 'application/json'
         }
       });
@@ -307,7 +316,8 @@ function DashboardLandingPage() {
         
         let body;
         let headers = {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         };
         let method;
 
@@ -362,6 +372,8 @@ function DashboardLandingPage() {
     } catch (error) {
       console.error('Error saving landing page configuration:', error);
       toast.error(`Failed to save landing page configuration: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -400,8 +412,11 @@ function DashboardLandingPage() {
       <h1 className="mb-6 text-3xl font-bold">Configure Landing Page Listings</h1>
 
       <div className="flex justify-end gap-2 mb-6">
-        <Button variant="outline" onClick={handleReset}>Reset to Defaults</Button>
-        <Button onClick={handleSave}>Save Configuration</Button>
+        <Button variant="outline" onClick={handleReset} disabled={isSubmitting}>Reset to Defaults</Button>
+        <Button onClick={handleSave} disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Save Configuration
+        </Button>
       </div>
       <div className="grid gap-8">
         <LandingPageVideoSectionConfigurator

@@ -21,8 +21,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { queryFormSchema } from "./validation";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
-export default function QueryForm({ initialData, onSuccess, onCancel }) {
+export default function QueryForm({ initialData, onSuccess, onCancel, isSubmitting }) {
   const [properties, setProperties] = useState([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
 
@@ -158,8 +159,11 @@ export default function QueryForm({ initialData, onSuccess, onCancel }) {
         </Card>
 
         <div className="sticky bottom-0 flex gap-3 p-6 bg-background border-t">
-          <Button type="submit" size="lg">Save Query</Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Save Query
+          </Button>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
         </div>
       </form>
     </div>

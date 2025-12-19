@@ -12,7 +12,10 @@ export const useQueriesStore = create((set, get) => ({
     if (!token) return;
     try {
       const response = await fetch('/api/queries/unread-count', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'X-Auth-Token': token
+        }
       });
       if (response.ok) {
         const data = await response.json();

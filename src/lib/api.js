@@ -771,9 +771,14 @@ export const fetchFileFilterOptions = async () => {
   };
 }
 
-export const fetchLandingSections = async () => {
+export const fetchLandingSections = async (token) => {
     try {
-        const response = await fetch('/api/landing-sections');
+        const response = await fetch('/api/landing-sections', {
+            headers: token ? { 
+              'Authorization': `Bearer ${token}`,
+              'X-Auth-Token': token
+            } : {}
+        });
         if (!response.ok) throw new Error('Failed to fetch landing sections');
         return await response.json();
     } catch (error) {
@@ -782,41 +787,42 @@ export const fetchLandingSections = async () => {
     }
 };
 
+export const fetchLandingAvailableItems = async (token) => {
+    const response = await fetch('/api/landing-available-items', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'X-Auth-Token': token
+        }
+    });
+    if (!response.ok) throw new Error('Failed to fetch available items');
+    return await response.json();
+};
+
 export const fetchItemsByIds = async (collectionType, ids) => {
     if (!ids || ids.length === 0) return [];
     
-    // In a real scenario, we might have an endpoint like /api/${collectionType}?ids=${ids.join(',')}
-    // For now, we'll fetch all and filter, or use existing mock fetchers if they were real
     try {
-        let items = [];
+        let combined = [];
         if (collectionType === 'properties') {
-            // We'll use the existing mock fetcher but in reality it would be a real API call
             const all = await fetchProperties();
             const allFiles = await fetchFileProperties();
-            const combined = [...all, ...allFiles];
-            // Since mock IDs are strings like 'title-0', and backend IDs are ints, 
-            // we need to be careful. If IDs in landing_section_items are real DB IDs, 
-            // and our current fetchers return mock data with string IDs, they won't match.
-            // ASSUMPTION: For this task, we assume the backend returns real IDs that match 
-            // what the real API would return. Since we're still using mock data for items, 
-            // we'll just take a slice for now if it's mock, or filter if we had real IDs.
-            
-            // If the IDs are integers, it means they are real. 
-            // Let's try to fetch real data if available, otherwise filter mock.
-            items = combined.filter(p => ids.includes(parseInt(p.id)) || ids.includes(p.id));
-            
-            // Fallback if no matches (because of mock/real ID mismatch)
-            if (items.length === 0) items = combined.slice(0, ids.length);
-
+            combined = [...all, ...allFiles];
         } else if (collectionType === 'categories') {
-            const all = await fetchCategories();
-            items = all.filter(c => ids.includes(parseInt(c.id)) || ids.includes(c.id));
-            if (items.length === 0) items = all.slice(0, ids.length);
+            combined = await fetchCategories();
         } else if (collectionType === 'maps') {
-            const all = await fetchMaps();
-            items = all.filter(m => ids.includes(parseInt(m.id)) || ids.includes(m.id));
-            if (items.length === 0) items = all.slice(0, ids.length);
+            combined = await fetchMaps();
         }
+
+        // Create a map for O(1) lookup
+        const itemsMap = new Map();
+        combined.forEach(item => {
+            // Store by string ID for consistent matching
+            itemsMap.set(String(item.id), item);
+        });
+
+        // Map the IDs back to items in the SPECIFIC ORDER requested
+        let items = ids.map(id => itemsMap.get(String(id))).filter(Boolean);
+        
         return items;
     } catch (error) {
         console.error(`Error fetching items for ${collectionType}:`, error);

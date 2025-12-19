@@ -89,10 +89,11 @@ function DashboardPhases() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/phases', {
+      const response = await fetch("/api/phases", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
+        },
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -122,10 +123,11 @@ function DashboardPhases() {
         });
       }
 
-      const response = await fetch('/api/phases', {
-        method: 'POST',
+      const response = await fetch("/api/phases", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -162,9 +164,10 @@ function DashboardPhases() {
       formData.append('_method', 'PATCH'); // Method override
 
       const response = await fetch(`/api/phases/${editedItem.id}`, {
-        method: 'POST', // Use POST for FormData with method override
+        method: "POST", // Use POST for FormData with method override
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -188,9 +191,10 @@ function DashboardPhases() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/phases/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
       });
       if (!response.ok) {
@@ -213,11 +217,12 @@ function DashboardPhases() {
     }
     setIsSubmitting(true);
     try {
-            const deletePromises = selectedRows.map(row =>
+            const deletePromises = selectedRows.map((row) =>
               fetch(`/api/phases/${row.original.id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  Authorization: `Bearer ${token}`,
+                  "X-Auth-Token": token
                 },
               })
             );
@@ -299,7 +304,7 @@ function DashboardPhases() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex items-center justify-center h-full">
         <Spinner size="lg" />
         <p className="ml-2">Loading phases...</p>
       </div>
@@ -308,7 +313,7 @@ function DashboardPhases() {
 
   if (error) {
     return (
-      <div className="text-red-500 text-center p-4">
+      <div className="p-4 text-center text-red-500">
         Error: {error}
       </div>
     );

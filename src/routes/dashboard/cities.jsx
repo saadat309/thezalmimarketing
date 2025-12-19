@@ -89,10 +89,11 @@ function DashboardCities() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/cities', {
+      const response = await fetch("/api/cities", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
+        },
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -122,10 +123,11 @@ function DashboardCities() {
         });
       }
 
-      const response = await fetch('/api/cities', {
-        method: 'POST',
+      const response = await fetch("/api/cities", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -163,9 +165,10 @@ function DashboardCities() {
       formData.append('_method', 'PATCH'); // Method override
 
       const response = await fetch(`/api/cities/${editedItem.id}`, {
-        method: 'POST', // Use POST for FormData with method override
+        method: "POST", // Use POST for FormData with method override
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -190,9 +193,10 @@ function DashboardCities() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/cities/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token 
         },
       });
 
@@ -218,11 +222,12 @@ function DashboardCities() {
     setIsSubmitting(true);
     try {
       // Create an array of promises for all delete operations
-            const deletePromises = selectedRows.map(row =>
+            const deletePromises = selectedRows.map((row) =>
               fetch(`/api/cities/${row.original.id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  Authorization: `Bearer ${token}`,
+                  "X-Auth-Token": token
                 },
               })
             );
@@ -303,7 +308,7 @@ function DashboardCities() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex items-center justify-center h-full">
         <Spinner size="lg" />
         <p className="ml-2">Loading cities...</p>
       </div>
@@ -312,7 +317,7 @@ function DashboardCities() {
 
   if (error) {
     return (
-      <div className="text-red-500 text-center p-4">
+      <div className="p-4 text-center text-red-500">
         Error: {error}
       </div>
     );

@@ -126,34 +126,31 @@ function get_property_detail_description(PDO $pdo, $detail_description_id) {
 
 /**
  * Handles uploading a video file to the server.
- *
- * @param array $file The $_FILES entry for the uploaded file.
- * @param string $entity_name A descriptive name for the entity (e.g., 'property').
- * @param string $record_id The ID of the record associated with the video.
- * @return string|false The relative path to the uploaded video on success, false on failure.
  */
 function handleVideoUpload(array $file, string $entity_name, string $record_id) {
+    if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception("Video upload error code: " . ($file['error'] ?? 'unknown'));
+    }
+
     if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-        error_log("No video file uploaded or invalid upload for entity: $entity_name, record: $record_id");
-        return false;
+        throw new Exception("Invalid video upload attempt.");
     }
 
-    $uploadDir = __DIR__ . '/../../public/videos/properties/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+    $uploadDir = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . 'videos' . DIRECTORY_SEPARATOR . 'properties' . DIRECTORY_SEPARATOR;
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+        throw new Exception("Failed to create video directory.");
     }
 
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $uniqueName = uniqid($entity_name . '_' . $record_id . '_', true);
-    $fileName = $uniqueName . '.' . strtolower($extension);
+    $fileName = $uniqueName . '.' . $extension;
     $targetPath = $uploadDir . $fileName;
 
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        return '/videos/properties/' . $fileName;
-    } else {
-        error_log("Failed to move uploaded video file for entity: $entity_name, record: $record_id");
-        return false;
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        throw new Exception("Failed to move uploaded video file.");
     }
+
+    return '/videos/properties/' . $fileName;
 }
 
 
@@ -410,8 +407,8 @@ function create_property(PDO $pdo) {
                 return send_json(['error' => 'Thumbnail image upload failed.'], 500);
             }
         } elseif (isset($input['thumbnail_image_url']) && $input['thumbnail_image_url']) {
-            $original_thumb_path_relative = ltrim($input['thumbnail_image_url'], '/');
-            $original_thumb_file_path = __DIR__ . '/../../public/' . $original_thumb_path_relative;
+            $original_thumb_path_relative = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $input['thumbnail_image_url']), DIRECTORY_SEPARATOR);
+            $original_thumb_file_path = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . $original_thumb_path_relative;
             if (file_exists($original_thumb_file_path)) {
                 $duplicated_images = ImageUpload::duplicateImageFile($input['thumbnail_image_url'], 'property_thumb', $property_id);
                 if ($duplicated_images) {
@@ -454,8 +451,8 @@ function create_property(PDO $pdo) {
             } 
             // Handle new image from existing URL (duplication)
             elseif (isset($image_data['url']) && $image_data['url']) {
-                $original_gallery_path_relative = ltrim($image_data['url'], '/');
-                $original_gallery_file_path = __DIR__ . '/../../public/' . $original_gallery_path_relative;
+                $original_gallery_path_relative = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $image_data['url']), DIRECTORY_SEPARATOR);
+                $original_gallery_file_path = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . $original_gallery_path_relative;
                 if (file_exists($original_gallery_file_path)) {
                     $duplicated_images = ImageUpload::duplicateImageFile($image_data['url'], 'property_gallery', $property_id . '_' . $key);
                     if ($duplicated_images) {
@@ -475,20 +472,16 @@ function create_property(PDO $pdo) {
         // Process video
         if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
             $uploaded_video_path = handleVideoUpload($_FILES['video'], 'property_video', $property_id);
-            if ($uploaded_video_path) {
-                $stmt = $pdo->prepare("UPDATE medias SET video = ?, video_embed_link = NULL WHERE id = ?");
-                $stmt->execute([$uploaded_video_path, $media_id]);
-            } else {
-                $pdo->rollBack();
-                return send_json(['error' => 'Video upload failed.'], 500);
-            }
+            $stmt = $pdo->prepare("UPDATE medias SET video = ?, video_embed_link = NULL WHERE id = ?");
+            $stmt->execute([$uploaded_video_path, $media_id]);
         } elseif (isset($input['video_url']) && $input['video_url']) {
              // Duplicate existing video file
-             $original_video_path = __DIR__ . '/../../public' . $input['video_url'];
+             $original_video_path_relative = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $input['video_url']), DIRECTORY_SEPARATOR);
+             $original_video_path = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . $original_video_path_relative;
              if (file_exists($original_video_path)) {
-                 $upload_dir = __DIR__ . '/../../public/videos/properties/';
+                 $upload_dir = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . 'videos' . DIRECTORY_SEPARATOR . 'properties' . DIRECTORY_SEPARATOR;
                  if (!is_dir($upload_dir)) {
-                     mkdir($upload_dir, 0777, true);
+                     mkdir($upload_dir, 0755, true);
                  }
                  $file_extension = pathinfo($original_video_path, PATHINFO_EXTENSION);
                  $new_file_name = uniqid('property_video_' . $property_id . '_', true) . '.' . $file_extension;
@@ -758,14 +751,9 @@ function update_property(PDO $pdo, $id, $input_data = null) {
                 ImageUpload::deleteImageFiles($current_video_path);
             }
             $uploaded_video_path = handleVideoUpload($_FILES['video'], 'property_video', $id);
-            if ($uploaded_video_path) {
-                $new_video_path = $uploaded_video_path;
-                $new_video_embed_link = null; // Clear embed link if new video file is uploaded
-                $update_video = true;
-            } else {
-                $pdo->rollBack();
-                return send_json(['error' => 'Video upload failed during update.'], 500);
-            }
+            $new_video_path = $uploaded_video_path;
+            $new_video_embed_link = null; // Clear embed link if new video file is uploaded
+            $update_video = true;
         } 
         // Scenario 2: Video embed link explicitly removed
         elseif (isset($input['video_removed']) && $input['video_removed'] === 'true') {

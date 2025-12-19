@@ -102,7 +102,7 @@ function DashboardFiles() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/files?is_file=1', {
+      const response = await fetch('/api/files?is_file=1&all=1', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -205,12 +205,13 @@ function DashboardFiles() {
     setIsSubmitting(true);
     try {
         const formData = prepareFormData(data);
-        const response = await fetch('/api/files', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData,
+        const response = await fetch("/api/files", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
+          },
+          body: formData,
         });
 
         if (!response.ok) {
@@ -237,11 +238,12 @@ function DashboardFiles() {
         formData.append('_method', 'PATCH');
 
         const response = await fetch(`/api/files/${data.id}`, {
-            method: 'POST', // Use POST for PATCH simulation with FormData
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData,
+          method: "POST", // Use POST for PATCH simulation with FormData
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
+          },
+          body: formData,
         });
 
         if (!response.ok) {
@@ -265,9 +267,10 @@ function DashboardFiles() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/files/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
       });
       if (!response.ok) {
@@ -290,11 +293,12 @@ function DashboardFiles() {
     }
     setIsSubmitting(true);
     try {
-      const deletePromises = selectedRows.map(row =>
+      const deletePromises = selectedRows.map((row) =>
         fetch(`/api/files/${row.original.id}`, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
           },
         })
       );

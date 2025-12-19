@@ -27,25 +27,29 @@ function get_request_data() {
 }
 
 function handleVideoUpload(array $file) {
+    if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception("Landing video upload error code: " . ($file['error'] ?? 'unknown'));
+    }
+
     if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-        return false;
+        throw new Exception("Invalid landing video upload.");
     }
 
-    $uploadDir = __DIR__ . '/../../public/videos/landing/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+    $uploadDir = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . 'videos' . DIRECTORY_SEPARATOR . 'landing' . DIRECTORY_SEPARATOR;
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+        throw new Exception("Failed to create landing video directory.");
     }
 
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $uniqueName = uniqid('landing_video_', true);
-    $fileName = $uniqueName . '.' . strtolower($extension);
+    $fileName = $uniqueName . '.' . $extension;
     $targetPath = $uploadDir . $fileName;
 
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        return '/videos/landing/' . $fileName;
-    } else {
-        return false;
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        throw new Exception("Failed to move uploaded landing video.");
     }
+
+    return '/videos/landing/' . $fileName;
 }
 
 function handle_landing_sections($method, PDO $pdo, $id = null) {
@@ -132,10 +136,7 @@ function create_landing_section(PDO $pdo) {
 
         $video_path = $data['video_path'] ?? null;
         if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
-            $uploaded_path = handleVideoUpload($_FILES['video']);
-            if ($uploaded_path) {
-                $video_path = $uploaded_path;
-            }
+            $video_path = handleVideoUpload($_FILES['video']);
         }
         
         // Insert the landing section
@@ -214,13 +215,11 @@ function update_landing_section(PDO $pdo, $id) {
         // Handle video upload
         if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
             $uploaded_path = handleVideoUpload($_FILES['video']);
-            if ($uploaded_path) {
-                // Delete old video if exists
-                if (!empty($existing['video_path'])) {
-                    ImageUpload::deleteImageFiles($existing['video_path']);
-                }
-                $video_path = $uploaded_path;
+            // Delete old video if exists
+            if (!empty($existing['video_path'])) {
+                ImageUpload::deleteImageFiles($existing['video_path']);
             }
+            $video_path = $uploaded_path;
         } elseif (isset($data['video_removed']) && $data['video_removed'] === 'true') {
              if (!empty($existing['video_path'])) {
                 ImageUpload::deleteImageFiles($existing['video_path']);

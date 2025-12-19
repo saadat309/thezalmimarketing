@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { MultiSelect } from "@/components/ui/multi-select"; // Import MultiSelect
+import { Loader2 } from "lucide-react";
 
 // Define Zod schema for phase form validation
 const phaseFormSchema = z.object({
@@ -21,7 +22,7 @@ const phaseFormSchema = z.object({
   map_ids: z.array(z.string()).optional(), // Add map_ids to schema, expecting array of strings
 });
 
-export default function PhaseForm({ initialData, onSuccess, onCancel, isDuplicating }) {
+export default function PhaseForm({ initialData, onSuccess, onCancel, isDuplicating, isSubmitting }) {
   const [allMaps, setAllMaps] = useState([]); // State to store all available maps
 
   const {
@@ -151,10 +152,11 @@ export default function PhaseForm({ initialData, onSuccess, onCancel, isDuplicat
         </Card>
 
         <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
-          <Button type="submit" size="lg">
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {initialData ? "Save Changes" : `Add Phase`}
           </Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         </div>

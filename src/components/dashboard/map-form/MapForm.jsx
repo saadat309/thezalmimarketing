@@ -17,12 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export default function MapForm({
   initialData,
   onSuccess,
   onCancel,
   isDuplicating,
+  isSubmitting,
 }) {
   const [mapImage, setMapImage] = useState([]);
   const [mapPdf, setMapPdf] = useState([]);
@@ -88,6 +90,12 @@ export default function MapForm({
             hide: baseData.hide === 1 || baseData.hide === true, // Convert to strict boolean
           };
 
+          // Null safety for string fields to prevent Zod "expected string, received null" errors
+          if (formDataToSet.description === null) formDataToSet.description = "";
+          if (formDataToSet.map_pic === null) formDataToSet.map_pic = "";
+          if (formDataToSet.map_thumb === null) formDataToSet.map_thumb = "";
+          if (formDataToSet.pdf === null) formDataToSet.pdf = "";
+
           if (isDuplicating) {
             formDataToSet.id = undefined; // Ensure ID is removed for duplication
           }
@@ -133,10 +141,9 @@ export default function MapForm({
     fetchData();
   }, [initialData, reset, isDuplicating]);
 
-  const onSubmit = async () => {
-    const formDataFromHook = getValues(); // Get all form values directly
+  const onSubmit = (data) => {
     const finalData = {
-      ...formDataFromHook, // Use data from getValues
+      ...data, 
       mapImage,
       mapPdf,
       // Add explicit removal flags if arrays are empty and initial data had them
@@ -332,10 +339,11 @@ export default function MapForm({
         </Card>
 
         <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
-          <Button type="submit" size="lg">
-            Save Map
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {initialData ? "Save Map" : "Add Map"}
           </Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         </div>

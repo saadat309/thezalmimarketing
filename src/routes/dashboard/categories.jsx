@@ -90,10 +90,11 @@ function DashboardCategories() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch("/api/categories?all=1", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
+        },
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -123,10 +124,11 @@ function DashboardCategories() {
         formData.append('image_url', newItem.image_url);
       }
 
-      const response = await fetch('/api/categories', {
-        method: 'POST',
+      const response = await fetch("/api/categories", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -170,9 +172,10 @@ function DashboardCategories() {
         formData.append('_method', 'PATCH');
 
         response = await fetch(`/api/categories/${editedItem.id}`, {
-          method: 'POST', // Use POST for multipart forms
+          method: "POST", // Use POST for multipart forms
           headers: {
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
           },
           body: formData,
         });
@@ -183,10 +186,11 @@ function DashboardCategories() {
         };
 
         response = await fetch(`/api/categories/${editedItem.id}`, {
-          method: 'PATCH',
+          method: "PATCH",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
           },
           body: JSON.stringify(jsonData),
         });
@@ -213,9 +217,10 @@ function DashboardCategories() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/categories/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
       });
 
@@ -241,11 +246,12 @@ function DashboardCategories() {
     setIsSubmitting(true);
     try {
       // Create an array of promises for all delete operations
-            const deletePromises = selectedRows.map(row =>
+            const deletePromises = selectedRows.map((row) =>
               fetch(`/api/categories/${row.original.id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  Authorization: `Bearer ${token}`,
+                  "X-Auth-Token": token
                 },
               })
             );

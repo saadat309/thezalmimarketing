@@ -47,10 +47,11 @@ function DashboardProfile() {
     const fetchProfile = async () => {
       try {
         if (!token) return;
-        const res = await fetch('/api/auth/me', {
-             headers: {
-                'Authorization': `Bearer ${token}`
-             }
+        const res = await fetch("/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Auth-Token": token
+          },
         });
         if (res.ok) {
             const data = await res.json();
@@ -108,10 +109,11 @@ function DashboardProfile() {
         formData.append("profile_pic", selectedFile);
       }
       
-      const res = await fetch('/api/auth/me', {
-        method: 'POST',
+      const res = await fetch("/api/auth/me", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -124,11 +126,12 @@ function DashboardProfile() {
       toast.success("Profile updated successfully");
       
       // Fetch updated profile to update store and local state
-       const profileRes = await fetch('/api/auth/me', {
-             headers: {
-                'Authorization': `Bearer ${token}`
-             }
-        });
+       const profileRes = await fetch("/api/auth/me", {
+         headers: {
+           Authorization: `Bearer ${token}`,
+           "X-Auth-Token": token
+         },
+       });
         if (profileRes.ok) {
             const newData = await profileRes.json();
             const newProfileData = {
@@ -192,7 +195,7 @@ function DashboardProfile() {
               )}
               {isEditing && (
                 <div
-                  className="absolute inset-0 flex items-center justify-center bg-black rounded-full cursor-pointer bg-opacity-50"
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer"
                   onClick={handleAvatarClick}
                 >
                   <UploadCloud className="w-8 h-8 text-white" />

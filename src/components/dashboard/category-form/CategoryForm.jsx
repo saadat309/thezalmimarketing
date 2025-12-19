@@ -13,13 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MediaUpload } from "../MediaUpload"; // Correct path to MediaUpload
+import { Loader2 } from "lucide-react";
 
 // Define Zod schema for category form validation
 const categoryFormSchema = z.object({
   name: z.string().min(1, "Category name is required"),
 });
 
-export default function CategoryForm({ initialData, onSuccess, onCancel, isDuplicating }) {
+export default function CategoryForm({ initialData, onSuccess, onCancel, isDuplicating, isSubmitting }) {
   const [categoryPic, setCategoryPic] = useState([]); // For the main category image
 
   const {
@@ -115,10 +116,11 @@ export default function CategoryForm({ initialData, onSuccess, onCancel, isDupli
         </Card>
 
         <div className="sticky bottom-0 flex gap-3 p-6 bg-background border-t">
-          <Button type="submit" size="lg">
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {initialData ? "Save Changes" : `Add Category`}
           </Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
         </div>

@@ -97,7 +97,8 @@ function DashboardQueries() {
     try {
       const queriesResponse = await fetch('/api/queries', {
         headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+          'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
         }
       });
       if (!queriesResponse.ok) {
@@ -108,7 +109,8 @@ function DashboardQueries() {
 
       const unreadCountResponse = await fetch('/api/queries/unread-count', {
         headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+          'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
         }
       });
       if (!unreadCountResponse.ok) {
@@ -135,7 +137,8 @@ function DashboardQueries() {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+                'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
             },
             body: JSON.stringify(data),
         });
@@ -169,7 +172,8 @@ function DashboardQueries() {
             method: 'PUT', // or PATCH
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+                'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
             },
             body: JSON.stringify(data),
         });
@@ -200,7 +204,8 @@ function DashboardQueries() {
       const response = await fetch(`/api/queries/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+          'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
         }
       });
       if (!response.ok) {
@@ -232,7 +237,8 @@ function DashboardQueries() {
         fetch(`/api/queries/${row.original.id}`, { 
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+            'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
           }
         })
       );
@@ -318,7 +324,8 @@ function DashboardQueries() {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${useAuthStore.getState().token}` // Send token
+            'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
+          'X-Auth-Token': useAuthStore.getState().token
           },
           body: JSON.stringify({ is_read: true }),
         });

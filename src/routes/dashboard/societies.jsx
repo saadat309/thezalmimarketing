@@ -90,7 +90,8 @@ function DashboardSocieties() {
     try {
       const response = await fetch('/api/societies', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Auth-Token': token
         }
       });
       if (!response.ok) {
@@ -121,10 +122,11 @@ function DashboardSocieties() {
         });
       }
 
-      const response = await fetch('/api/societies', {
-        method: 'POST',
+      const response = await fetch("/api/societies", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -161,9 +163,10 @@ function DashboardSocieties() {
       formData.append('_method', 'PATCH'); // Method override
 
       const response = await fetch(`/api/societies/${editedItem.id}`, {
-        method: 'POST', // Use POST for FormData with method override
+        method: "POST", // Use POST for FormData with method override
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -187,9 +190,10 @@ function DashboardSocieties() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/societies/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
       });
       if (!response.ok) {
@@ -212,11 +216,12 @@ function DashboardSocieties() {
     }
     setIsSubmitting(true);
     try {
-            const deletePromises = selectedRows.map(row =>
+            const deletePromises = selectedRows.map((row) =>
               fetch(`/api/societies/${row.original.id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  Authorization: `Bearer ${token}`,
+                  "X-Auth-Token": token
                 },
               })
             );      
@@ -297,7 +302,7 @@ function DashboardSocieties() {
   
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex items-center justify-center h-full">
         <Spinner size="lg" />
         <p className="ml-2">Loading societies...</p>
       </div>
@@ -306,7 +311,7 @@ function DashboardSocieties() {
 
   if (error) {
     return (
-      <div className="text-red-500 text-center p-4">
+      <div className="p-4 text-center text-red-500">
         Error: {error}
       </div>
     );

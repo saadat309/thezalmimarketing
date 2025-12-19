@@ -12,21 +12,39 @@ if (!function_exists('send_json')) {
 }
 
 class ImageUpload {
-    private static $uploadBaseDir = __DIR__ . '/../../public/images'; // Base directory for images
+    /**
+     * Resolves the filesystem path to the public directory.
+     * Handles both local env (with /public folder) and cPanel (flattened root).
+     */
+    public static function getPublicPath() {
+        // DOCUMENT_ROOT is the authoritative web root on cPanel/Apache.
+        // Fallback to dirname logic only if DOCUMENT_ROOT isn't available (e.g. CLI).
+        $webRoot = rtrim($_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__, 2), '/\\');
+        
+        // Local dev fix: If the server is started inside the /api folder, 
+        // move up one level to reach the project root.
+        if (basename($webRoot) === 'api') {
+            $webRoot = dirname($webRoot);
+        }
+
+        // Local dev support: if project root has a 'public' folder, use it.
+        $publicDir = $webRoot . DIRECTORY_SEPARATOR . 'public';
+        return is_dir($publicDir) ? $publicDir : $webRoot;
+    }
 
     /**
      * Processes an uploaded image, saves it, and generates a thumbnail.
      *
-     * @param array $file The $_FILES entry for the uploaded file.
-     * @param string $entity_name A descriptive name for the entity (e.g., 'category', 'property').
-     * @param string $record_id The ID of the record associated with the image.
-     * @param array $options Configuration options
-     * @return array|false An array containing 'full_path' and 'thumb_path' on success, false on failure.
+     * @return array An array containing 'full_path' and 'thumb_path' on success.
+     * @throws Exception if upload or processing fails.
      */
     public static function handleImageUpload(array $file, string $entity_name, string $record_id, array $options = []) {
+        if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Upload error code: " . ($file['error'] ?? 'unknown'));
+        }
+
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            error_log("No file uploaded or invalid upload for entity: $entity_name, record: $record_id");
-            return false;
+            throw new Exception("Invalid file upload attempt.");
         }
 
         $defaultOptions = [
@@ -38,74 +56,47 @@ class ImageUpload {
         ];
         $options = array_merge($defaultOptions, $options);
 
-        // Map entity names to subdirectories
+        // Map subdirectories
         $subDir = 'others';
-        if (strpos($entity_name, 'property') !== false) {
-            $subDir = 'properties';
-        } elseif (strpos($entity_name, 'category') !== false) {
-            $subDir = 'categories';
-        } elseif (strpos($entity_name, 'map') !== false) {
-            $subDir = 'maps';
-        } elseif (strpos($entity_name, 'user') !== false) {
-            $subDir = 'users';
-        }
+        if (strpos($entity_name, 'property') !== false) $subDir = 'properties';
+        elseif (strpos($entity_name, 'category') !== false) $subDir = 'categories';
+        elseif (strpos($entity_name, 'map') !== false) $subDir = 'maps';
+        elseif (strpos($entity_name, 'user') !== false) $subDir = 'users';
 
-        $entityBaseDir = self::$uploadBaseDir . '/' . $subDir;
-        $entityThumbDir = $entityBaseDir . '/thumbs';
+        $publicPath = self::getPublicPath();
+        $entityBaseDir = $publicPath . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . $subDir;
+        $entityThumbDir = $entityBaseDir . DIRECTORY_SEPARATOR . 'thumbs';
 
-        // Ensure directories exist
-        if (!is_dir($entityBaseDir)) {
-            mkdir($entityBaseDir, 0777, true);
+        // Ensure directories exist with secure permissions
+        if (!is_dir($entityBaseDir) && !mkdir($entityBaseDir, 0755, true)) {
+            throw new Exception("Failed to create directory: $entityBaseDir");
         }
-        if (!is_dir($entityThumbDir)) {
-            mkdir($entityThumbDir, 0777, true);
+        if (!is_dir($entityThumbDir) && !mkdir($entityThumbDir, 0755, true)) {
+            throw new Exception("Failed to create directory: $entityThumbDir");
         }
 
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $uniqueName = uniqid($entity_name . '_' . $record_id . '_', true);
-        
-        $targetExtension = $options['to_webp'] ? 'webp' : strtolower($extension);
+        $targetExt = $options['to_webp'] ? 'webp' : strtolower($extension);
 
-        $baseFileName = $uniqueName;
-        $fullPath = '/images/' . $subDir . '/' . $baseFileName . '.' . $targetExtension;
-        $fullFilePath = $entityBaseDir . '/' . $baseFileName . '.' . $targetExtension;
+        $fullPath = "/images/$subDir/$uniqueName.$targetExt";
+        $fullFilePath = $entityBaseDir . DIRECTORY_SEPARATOR . "$uniqueName.$targetExt";
 
-        $thumbPath = '/images/' . $subDir . '/thumbs/' . $baseFileName . '_thumb.' . $targetExtension;
-        $thumbFilePath = $entityThumbDir . '/' . $baseFileName . '_thumb.' . $targetExtension;
+        $thumbPath = "/images/$subDir/thumbs/{$uniqueName}_thumb.$targetExt";
+        $thumbFilePath = $entityThumbDir . DIRECTORY_SEPARATOR . "{$uniqueName}_thumb.$targetExt";
 
-        try {
-            // Process and save main image
-            if (!self::processImage($file['tmp_name'], $fullFilePath, $options['max_width'], $options['max_height'], $options['to_webp'])) {
-                error_log("Failed to process main image for entity: $entity_name, record: $record_id");
-                return false;
-            }
-
-            // Generate and save thumbnail
-            if (!self::generateThumbnail($file['tmp_name'], $thumbFilePath, $options['thumb_width'], $options['thumb_height'], $options['to_webp'])) {
-                error_log("Failed to generate thumbnail for entity: $entity_name, record: $record_id");
-                // Attempt to clean up the main image if thumbnail generation fails
-                if (file_exists($fullFilePath)) {
-                    unlink($fullFilePath);
-                }
-                return false;
-            }
-
-            return [
-                'full_path' => $fullPath,
-                'thumb_path' => $thumbPath,
-            ];
-
-        } catch (Exception $e) {
-            error_log("Image upload exception for entity: $entity_name, record: $record_id - " . $e->getMessage());
-            // Clean up any partially created files
-            if (file_exists($fullFilePath)) {
-                unlink($fullFilePath);
-            }
-            if (file_exists($thumbFilePath)) {
-                unlink($thumbFilePath);
-            }
-            return false;
+        // Process and save main image
+        if (!self::processImage($file['tmp_name'], $fullFilePath, $options['max_width'], $options['max_height'], $options['to_webp'])) {
+            throw new Exception("Failed to process main image.");
         }
+
+        // Generate and save thumbnail
+        if (!self::generateThumbnail($file['tmp_name'], $thumbFilePath, $options['thumb_width'], $options['thumb_height'], $options['to_webp'])) {
+            @unlink($fullFilePath); // Clean up main image
+            throw new Exception("Failed to generate thumbnail.");
+        }
+
+        return ['full_path' => $fullPath, 'thumb_path' => $thumbPath];
     }
 
     /**
@@ -247,7 +238,7 @@ class ImageUpload {
     public static function deleteImageFiles(string $image_path, string $thumb_path = null): bool {
         $success = true;
         
-        $publicDir = realpath(__DIR__ . '/../../public');
+        $publicDir = self::getPublicPath();
         
         // Helper to resolve and delete
         $deleteFile = function($relPath) use ($publicDir) {
@@ -284,102 +275,54 @@ class ImageUpload {
     }
 
     /**
-     * Duplicates an existing image and its thumbnail by path, generating new unique filenames.
+     * Duplicates an existing image and its thumbnail by path.
      *
-     * @param string $image_url The URL of the existing image (e.g., '/images/entity_id_unique.webp').
-     * @param string $entity_name A descriptive name for the entity (e.g., 'category', 'product').
-     * @param string $record_id The ID of the record associated with the new image.
-     * @param array $options Configuration options (same as handleImageUpload).
-     * @return array|false An array containing 'full_path' and 'thumb_path' on success, false on failure.
+     * @throws Exception if duplication fails.
      */
     public static function duplicateImageFile(string $image_url, string $entity_name, string $record_id, array $options = []) {
-        if (empty($image_url)) {
-            return false;
+        if (empty($image_url)) throw new Exception("Image URL is empty.");
+
+        $original_rel_path = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $image_url), DIRECTORY_SEPARATOR); 
+        $original_file_path = self::getPublicPath() . DIRECTORY_SEPARATOR . $original_rel_path;
+
+        if (!file_exists($original_file_path)) {
+            throw new Exception("Source image not found: $original_file_path");
         }
 
-        // Construct the absolute path to the original image file
-        $original_full_path_relative = ltrim($image_url, '/'); // Remove leading slash
-        $original_full_file_path = __DIR__ . '/../../public/' . $original_full_path_relative;
-
-        if (!file_exists($original_full_file_path)) {
-            error_log("Original image file not found for duplication: " . $original_full_file_path);
-            return false;
-        }
-
-        $defaultOptions = [
-            'max_width' => 1200,
-            'max_height' => 800,
-            'thumb_width' => 150,
-            'thumb_height' => 150,
-            'to_webp' => true,
-        ];
+        $defaultOptions = ['max_width' => 1200, 'max_height' => 800, 'thumb_width' => 150, 'thumb_height' => 150, 'to_webp' => true];
         $options = array_merge($defaultOptions, $options);
 
-        // Map entity names to subdirectories
         $subDir = 'others';
-        if (strpos($entity_name, 'property') !== false) {
-            $subDir = 'properties';
-        } elseif (strpos($entity_name, 'category') !== false) {
-            $subDir = 'categories';
-        } elseif (strpos($entity_name, 'map') !== false) {
-            $subDir = 'maps';
-        } elseif (strpos($entity_name, 'user') !== false) {
-            $subDir = 'users';
-        }
+        if (strpos($entity_name, 'property') !== false) $subDir = 'properties';
+        elseif (strpos($entity_name, 'category') !== false) $subDir = 'categories';
+        elseif (strpos($entity_name, 'map') !== false) $subDir = 'maps';
+        elseif (strpos($entity_name, 'user') !== false) $subDir = 'users';
 
-        $entityBaseDir = self::$uploadBaseDir . '/' . $subDir;
-        $entityThumbDir = $entityBaseDir . '/thumbs';
+        $publicPath = self::getPublicPath();
+        $entityBaseDir = $publicPath . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . $subDir;
+        $entityThumbDir = $entityBaseDir . DIRECTORY_SEPARATOR . 'thumbs';
 
-        // Ensure directories exist
-        if (!is_dir($entityBaseDir)) {
-            mkdir($entityBaseDir, 0777, true);
-        }
-        if (!is_dir($entityThumbDir)) {
-            mkdir($entityThumbDir, 0777, true);
-        }
+        if (!is_dir($entityBaseDir) && !mkdir($entityBaseDir, 0755, true)) throw new Exception("Failed to create directory: $entityBaseDir");
+        if (!is_dir($entityThumbDir) && !mkdir($entityThumbDir, 0755, true)) throw new Exception("Failed to create directory: $entityThumbDir");
 
-        // Generate new unique filenames
         $uniqueName = uniqid($entity_name . '_' . $record_id . '_', true);
-        $targetExtension = $options['to_webp'] ? 'webp' : pathinfo($original_full_file_path, PATHINFO_EXTENSION);
+        $targetExt = $options['to_webp'] ? 'webp' : pathinfo($original_file_path, PATHINFO_EXTENSION);
 
-        $new_fullPath = '/images/' . $subDir . '/' . $uniqueName . '.' . $targetExtension;
-        $new_fullFilePath = $entityBaseDir . '/' . $uniqueName . '.' . $targetExtension;
+        $newFullPath = "/images/$subDir/$uniqueName.$targetExt";
+        $newFullFilePath = $entityBaseDir . DIRECTORY_SEPARATOR . "$uniqueName.$targetExt";
 
-        $new_thumbPath = '/images/' . $subDir . '/thumbs/' . $uniqueName . '_thumb.' . $targetExtension;
-        $new_thumbFilePath = $entityThumbDir . '/' . $uniqueName . '_thumb.' . $targetExtension;
+        $newThumbPath = "/images/$subDir/thumbs/{$uniqueName}_thumb.$targetExt";
+        $newThumbFilePath = $entityThumbDir . DIRECTORY_SEPARATOR . "{$uniqueName}_thumb.$targetExt";
 
-        try {
-            // Duplicate and process main image
-            if (!self::processImage($original_full_file_path, $new_fullFilePath, $options['max_width'], $options['max_height'], $options['to_webp'])) {
-                error_log("Failed to duplicate and process main image from URL: " . $image_url);
-                return false;
-            }
-
-            // Duplicate and generate thumbnail
-            if (!self::generateThumbnail($original_full_file_path, $new_thumbFilePath, $options['thumb_width'], $options['thumb_height'], $options['to_webp'])) {
-                error_log("Failed to generate thumbnail for duplicated image: " . $image_url);
-                // Clean up the main duplicated image if thumbnail generation fails
-                if (file_exists($new_fullFilePath)) {
-                    unlink($new_fullFilePath);
-                }
-                return false;
-            }
-
-            return [
-                'full_path' => $new_fullPath,
-                'thumb_path' => $new_thumbPath,
-            ];
-
-        } catch (Exception $e) {
-            error_log("Image duplication exception for URL: $image_url - " . $e->getMessage());
-            // Clean up any partially created files
-            if (file_exists($new_fullFilePath)) {
-                unlink($new_fullFilePath);
-            }
-            if (file_exists($new_thumbFilePath)) {
-                unlink($new_thumbFilePath);
-            }
-            return false;
+        if (!self::processImage($original_file_path, $newFullFilePath, $options['max_width'], $options['max_height'], $options['to_webp'])) {
+            throw new Exception("Failed to duplicate main image.");
         }
+
+        if (!self::generateThumbnail($original_file_path, $newThumbFilePath, $options['thumb_width'], $options['thumb_height'], $options['to_webp'])) {
+            @unlink($newFullFilePath);
+            throw new Exception("Failed to duplicate thumbnail.");
+        }
+
+        return ['full_path' => $newFullPath, 'thumb_path' => $newThumbPath];
     }
 }

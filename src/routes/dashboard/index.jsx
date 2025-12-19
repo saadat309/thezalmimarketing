@@ -36,12 +36,18 @@ function DashboardIndex() {
             setError(null);
             try {
                 const [availableItemsRes, queriesRes] = await Promise.all([
-                    fetch('/api/landing-available-items', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }),
-                    fetch('/api/queries', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
+                  fetch("/api/landing-available-items", {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      "X-Auth-Token": token,
+                    },
+                  }),
+                  fetch("/api/queries", {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      "X-Auth-Token": token
+                    },
+                  }),
                 ]);
 
                 if (!availableItemsRes.ok || !queriesRes.ok) {
@@ -115,7 +121,7 @@ function DashboardIndex() {
     }
 
     return (
-        <div className="flex flex-col flex-1 gap-8 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col flex-1 gap-8 px-4 py-8 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold">Welcome to your Dashboard!</h1>
             <SectionCards
                 propertiesCount={counts.properties}

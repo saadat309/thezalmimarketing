@@ -21,8 +21,9 @@ import {
 import { toast } from "sonner";
 import { userFormSchema } from "./validation"; // Update to import the function
 import { useAuthStore } from "@/store/authStore"; // Added import
+import { Loader2 } from "lucide-react";
 
-export default function UserForm({ initialData, onSuccess, onCancel }) {
+export default function UserForm({ initialData, onSuccess, onCancel, isSubmitting }) {
   const { user: currentUser } = useAuthStore(); // Get current user directly
   const [roles, setRoles] = useState([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
@@ -65,10 +66,11 @@ export default function UserForm({ initialData, onSuccess, onCancel }) {
     const fetchRoles = async () => {
       setIsLoadingRoles(true);
       try {
-        const response = await fetch('/api/roles', {
-             headers: {
-                'Authorization': `Bearer ${useAuthStore.getState().token}`
-             }
+        const response = await fetch("/api/roles", {
+          headers: {
+            Authorization: `Bearer ${useAuthStore.getState().token}`,
+            "X-Auth-Token": useAuthStore.getState().token
+          },
         }); 
         if (!response.ok) throw new Error('Failed to fetch roles');
         const data = await response.json();
@@ -215,8 +217,11 @@ export default function UserForm({ initialData, onSuccess, onCancel }) {
         </Card>
 
         <div className="sticky bottom-0 flex gap-3 p-6 border-t bg-background">
-          <Button type="submit" size="lg">Save User</Button>
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Save User
+          </Button>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
         </div>
       </form>
     </div>

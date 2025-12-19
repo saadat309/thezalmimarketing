@@ -73,16 +73,23 @@ function get_category_with_stats(PDO $pdo, $id) {
 }
 
 function list_categories(PDO $pdo) {
-    $stmt = $pdo->query("
+    $sql = "
         SELECT 
-            c.id, c.name, c.slug, c.pic, c.thumb, c.created_at, c.updated_at,
+            c.id, c.name, c.slug, c.pic, c.thumb, c.hide, c.created_at, c.updated_at,
             COUNT(p.id) AS properties_count,
             GROUP_CONCAT(p.id) AS property_ids
         FROM categories c
         LEFT JOIN properties p ON c.id = p.category_id AND p.is_file = 0
-        GROUP BY c.id
-        ORDER BY c.id DESC
-    ");
+        WHERE 1=1
+    ";
+
+    if (!isset($_GET['all'])) {
+        $sql .= " AND c.hide = 0";
+    }
+
+    $sql .= " GROUP BY c.id ORDER BY c.id DESC";
+
+    $stmt = $pdo->query($sql);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rows as &$row) {
@@ -123,36 +130,24 @@ function create_category(PDO $pdo) {
             // Handle image upload if a file is provided
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $uploaded_images = ImageUpload::handleImageUpload($_FILES['image'], 'category', $new_category_id);
-                if ($uploaded_images) {
-                    $pic = $uploaded_images['full_path'];
-                    $thumb = $uploaded_images['thumb_path'];
+                $pic = $uploaded_images['full_path'];
+                $thumb = $uploaded_images['thumb_path'];
 
-                    // Update the category with image paths
-                    $update_stmt = $pdo->prepare("UPDATE categories SET pic = ?, thumb = ? WHERE id = ?");
-                    $update_stmt->execute([$pic, $thumb, $new_category_id]);
-                } else {
-                    // If image upload failed, rollback and report error
-                    $pdo->rollBack();
-                    return send_json(['error' => 'Image upload failed during category creation.'], 500);
-                }
+                // Update the category with image paths
+                $update_stmt = $pdo->prepare("UPDATE categories SET pic = ?, thumb = ? WHERE id = ?");
+                $update_stmt->execute([$pic, $thumb, $new_category_id]);
             } elseif (isset($input['image_url']) && $input['image_url']) {
                 // If image_url is provided, duplicate the existing image
                 $duplicated_images = ImageUpload::duplicateImageFile($input['image_url'], 'category', $new_category_id);
-                if ($duplicated_images) {
-                    $pic = $duplicated_images['full_path'];
-                    $thumb = $duplicated_images['thumb_path'];
+                $pic = $duplicated_images['full_path'];
+                $thumb = $duplicated_images['thumb_path'];
 
-                    // Update the category with image paths
-                    $update_stmt = $pdo->prepare("UPDATE categories SET pic = ?, thumb = ? WHERE id = ?");
-                    $update_stmt->execute([$pic, $thumb, $new_category_id]);
-                } else {
-                    $pdo->rollBack();
-                    return send_json(['error' => 'Image duplication failed during category creation.'], 500);
-                }
+                // Update the category with image paths
+                $update_stmt = $pdo->prepare("UPDATE categories SET pic = ?, thumb = ? WHERE id = ?");
+                $update_stmt->execute([$pic, $thumb, $new_category_id]);
             }
         } else {
-            $pdo->rollBack();
-            return send_json(['error' => 'Failed to create category record.'], 500);
+            throw new Exception("Failed to create category record.");
         }
 
         $pdo->commit();
@@ -207,12 +202,8 @@ function update_category(PDO $pdo, $id) {
             ImageUpload::deleteImageFiles($current_pic, $current_thumb);
         }
         $uploaded_images = ImageUpload::handleImageUpload($_FILES['image'], 'category', $id);
-        if ($uploaded_images) {
-            $new_pic = $uploaded_images['full_path'];
-            $new_thumb = $uploaded_images['thumb_path'];
-        } else {
-            return send_json(['error' => 'Image upload failed during category update.'], 500);
-        }
+        $new_pic = $uploaded_images['full_path'];
+        $new_thumb = $uploaded_images['thumb_path'];
     } else {
         // No new image uploaded, check if client wants to remove existing image
         // The frontend should send 'pic_removed' flag

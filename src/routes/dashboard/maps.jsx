@@ -141,9 +141,10 @@ function DashboardMaps() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/maps', {
+      const response = await fetch('/api/maps?all=1', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          "X-Auth-Token": token 
         }
       });
       if (!response.ok) {
@@ -192,10 +193,11 @@ function DashboardMaps() {
         }
       }
 
-      const response = await fetch('/api/maps', {
-        method: 'POST',
+      const response = await fetch("/api/maps", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -258,9 +260,10 @@ function DashboardMaps() {
       }
 
       const response = await fetch(`/api/maps/${editedItem.id}`, {
-        method: 'POST', // Use POST for FormData with method override
+        method: "POST", // Use POST for FormData with method override
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
         body: formData,
       });
@@ -286,9 +289,10 @@ function DashboardMaps() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/maps/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          "X-Auth-Token": token
         },
       });
       if (!response.ok) {
@@ -311,11 +315,12 @@ function DashboardMaps() {
     }
     setIsSubmitting(true);
     try {
-            const deletePromises = selectedRows.map(row =>
+            const deletePromises = selectedRows.map((row) =>
               fetch(`/api/maps/${row.original.id}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                  'Authorization': `Bearer ${token}`
+                  Authorization: `Bearer ${token}`,
+                  "X-Auth-Token": token
                 },
               })
             );

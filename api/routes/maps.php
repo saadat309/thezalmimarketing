@@ -155,9 +155,10 @@ function create_map(PDO $pdo) {
 
     $description = $input['description'] ?? null;
     $hide = isset($input['hide']) ? (int)(bool)$input['hide'] : 0;
-    $city_id = $input['city_id'] ?? null;
-    $society_id = $input['society_id'] ?? null;
-    $phase_id = $input['phase_id'] ?? null;
+    
+    $city_id = !empty($input['city_id']) && $input['city_id'] !== '0' ? $input['city_id'] : null;
+    $society_id = !empty($input['society_id']) && $input['society_id'] !== '0' ? $input['society_id'] : null;
+    $phase_id = !empty($input['phase_id']) && $input['phase_id'] !== '0' ? $input['phase_id'] : null;
 
     $pdo->beginTransaction();
     try {
@@ -169,67 +170,56 @@ function create_map(PDO $pdo) {
             // Handle map image
             if (isset($_FILES['mapImage']) && $_FILES['mapImage']['error'] === UPLOAD_ERR_OK) {
                 $uploaded_images = ImageUpload::handleImageUpload($_FILES['mapImage'], 'map', $new_map_id);
-                if ($uploaded_images) {
-                    $map_pic = $uploaded_images['full_path'];
-                    $map_thumb = $uploaded_images['thumb_path'];
-                } else {
-                    $pdo->rollBack();
-                    return send_json(['error' => 'Map image upload failed during map creation.'], 500);
-                }
+                $map_pic = $uploaded_images['full_path'];
+                $map_thumb = $uploaded_images['thumb_path'];
             } elseif (isset($input['map_pic_url']) && $input['map_pic_url']) {
                 // If map_pic_url is provided, duplicate the existing image
                 $duplicated_images = ImageUpload::duplicateImageFile($input['map_pic_url'], 'map', $new_map_id);
-                if ($duplicated_images) {
-                    $map_pic = $duplicated_images['full_path'];
-                    $map_thumb = $duplicated_images['thumb_path'];
-                } else {
-                    $pdo->rollBack();
-                    return send_json(['error' => 'Map image duplication failed during map creation.'], 500);
-                }
+                $map_pic = $duplicated_images['full_path'];
+                $map_thumb = $duplicated_images['thumb_path'];
             }
 
             // Handle map PDF
             if (isset($_FILES['mapPdf'])) {
                 if ($_FILES['mapPdf']['error'] === UPLOAD_ERR_OK) {
-                    $upload_dir = __DIR__ . '/../../public/files/maps/';
+                    $upload_dir = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . 'pdf_docs' . DIRECTORY_SEPARATOR . 'maps' . DIRECTORY_SEPARATOR;
                     if (!is_dir($upload_dir)) {
-                        mkdir($upload_dir, 0777, true);
+                        if (!mkdir($upload_dir, 0755, true)) {
+                            throw new Exception("Failed to create PDF upload directory.");
+                        }
                     }
-                    $file_extension = pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION);
+                    $file_extension = strtolower(pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION));
                     $new_file_name = 'map_' . $new_map_id . '.' . $file_extension;
                     $target_file = $upload_dir . $new_file_name;
                     
-                    if (move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
-                        $pdf = '/files/maps/' . $new_file_name;
-                    } else {
-                        $pdo->rollBack();
-                        return send_json(['error' => 'PDF upload failed during map creation.'], 500);
+                    if (!move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
+                        throw new Exception("PDF upload failed: unable to move file.");
                     }
+                    $pdf = '/pdf_docs/maps/' . $new_file_name;
                 } elseif ($_FILES['mapPdf']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['mapPdf']['error'] === UPLOAD_ERR_FORM_SIZE) {
-                    $pdo->rollBack();
-                    return send_json(['error' => 'PDF file is too large for server limits.'], 400);
+                    throw new Exception("PDF file is too large for server limits.");
                 }
             } elseif (isset($input['pdf_url']) && $input['pdf_url']) {
                 // If pdf_url is provided, duplicate the existing PDF
-                $original_pdf_path = __DIR__ . '/../../public' . $input['pdf_url'];
+                $original_pdf_path_relative = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $input['pdf_url']), DIRECTORY_SEPARATOR);
+                $original_pdf_path = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . $original_pdf_path_relative;
                 if (file_exists($original_pdf_path)) {
-                    $upload_dir = __DIR__ . '/../../public/files/maps/';
+                    $upload_dir = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . 'pdf_docs' . DIRECTORY_SEPARATOR . 'maps' . DIRECTORY_SEPARATOR;
                     if (!is_dir($upload_dir)) {
-                        mkdir($upload_dir, 0777, true);
+                        if (!mkdir($upload_dir, 0755, true)) {
+                            throw new Exception("Failed to create PDF upload directory.");
+                        }
                     }
-                    $file_extension = pathinfo($original_pdf_path, PATHINFO_EXTENSION);
+                    $file_extension = strtolower(pathinfo($original_pdf_path, PATHINFO_EXTENSION));
                     $new_file_name = 'map_' . $new_map_id . '.' . $file_extension;
                     $target_file = $upload_dir . $new_file_name;
 
-                    if (copy($original_pdf_path, $target_file)) {
-                        $pdf = '/files/maps/' . $new_file_name;
-                    } else {
-                        $pdo->rollBack();
-                        return send_json(['error' => 'PDF duplication failed during map creation.'], 500);
+                    if (!copy($original_pdf_path, $target_file)) {
+                        throw new Exception("PDF duplication failed.");
                     }
+                    $pdf = '/pdf_docs/maps/' . $new_file_name;
                 } else {
-                    $pdo->rollBack();
-                    return send_json(['error' => 'Original PDF file not found for duplication.'], 500);
+                    throw new Exception("Original PDF file not found for duplication: " . $original_pdf_path);
                 }
             }
 
@@ -276,9 +266,10 @@ function update_map(PDO $pdo, $id) {
 
     $description = $input['description'] ?? $exists['description'];
     $hide = isset($input['hide']) ? (int)(bool)$input['hide'] : (int)(bool)$exists['hide'];
-    $city_id = $input['city_id'] ?? $exists['city_id'];
-    $society_id = $input['society_id'] ?? $exists['society_id'];
-    $phase_id = $input['phase_id'] ?? $exists['phase_id'];
+    
+    $city_id = isset($input['city_id']) ? (!empty($input['city_id']) && $input['city_id'] !== '0' ? $input['city_id'] : null) : $exists['city_id'];
+    $society_id = isset($input['society_id']) ? (!empty($input['society_id']) && $input['society_id'] !== '0' ? $input['society_id'] : null) : $exists['society_id'];
+    $phase_id = isset($input['phase_id']) ? (!empty($input['phase_id']) && $input['phase_id'] !== '0' ? $input['phase_id'] : null) : $exists['phase_id'];
 
     $current_map_pic = $exists['map_pic'];
     $current_map_thumb = $exists['map_thumb'];
@@ -295,13 +286,8 @@ function update_map(PDO $pdo, $id) {
                 ImageUpload::deleteImageFiles($current_map_pic, $current_map_thumb);
             }
             $uploaded_images = ImageUpload::handleImageUpload($_FILES['mapImage'], 'map', $id);
-            if ($uploaded_images) {
-                $new_map_pic = $uploaded_images['full_path'];
-                $new_map_thumb = $uploaded_images['thumb_path'];
-            } else {
-                $pdo->rollBack();
-                return send_json(['error' => 'Map image upload failed during map update.'], 500);
-            }
+            $new_map_pic = $uploaded_images['full_path'];
+            $new_map_thumb = $uploaded_images['thumb_path'];
         } elseif (isset($input['mapImage_removed']) && $input['mapImage_removed'] === 'true') {
             if ($current_map_pic) {
                 ImageUpload::deleteImageFiles($current_map_pic, $current_map_thumb);
@@ -316,23 +302,22 @@ function update_map(PDO $pdo, $id) {
                     ImageUpload::deleteImageFiles($current_pdf);
                 }
                 
-                $upload_dir = __DIR__ . '/../../public/files/maps/';
+                $upload_dir = ImageUpload::getPublicPath() . DIRECTORY_SEPARATOR . 'pdf_docs' . DIRECTORY_SEPARATOR . 'maps' . DIRECTORY_SEPARATOR;
                 if (!is_dir($upload_dir)) {
-                    mkdir($upload_dir, 0777, true);
+                    if (!mkdir($upload_dir, 0755, true)) {
+                        throw new Exception("Failed to create PDF upload directory.");
+                    }
                 }
-                $file_extension = pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION);
+                $file_extension = strtolower(pathinfo($_FILES['mapPdf']['name'], PATHINFO_EXTENSION));
                 $new_file_name = 'map_' . $id . '.' . $file_extension;
                 $target_file = $upload_dir . $new_file_name;
                 
-                if (move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
-                    $new_pdf = '/files/maps/' . $new_file_name;
-                } else {
-                    $pdo->rollBack();
-                    return send_json(['error' => 'PDF upload failed during map update.'], 500);
+                if (!move_uploaded_file($_FILES['mapPdf']['tmp_name'], $target_file)) {
+                    throw new Exception("PDF upload failed: unable to move file.");
                 }
+                $new_pdf = '/pdf_docs/maps/' . $new_file_name;
             } elseif ($_FILES['mapPdf']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['mapPdf']['error'] === UPLOAD_ERR_FORM_SIZE) {
-                $pdo->rollBack();
-                return send_json(['error' => 'PDF file is too large for server limits.'], 400);
+                throw new Exception("PDF file is too large for server limits.");
             }
         } elseif (isset($input['mapPdf_removed']) && $input['mapPdf_removed'] === 'true') {
             if ($current_pdf) {
