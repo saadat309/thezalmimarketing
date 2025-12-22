@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions } from '@tanstack/react-query'; // Import queryOptions
 import { fetchHomeData } from "@/lib/api"; // Import fetchHomeData from your API
 import HeroSection from "@/components/home/HeroSection";
+import FileMarquee from "@/components/home/FileMarquee";
 import CardSlider from "@/components/home/CardSlider";
 import PersonalizedExperience from "@/components/home/PersonalizedExperience";
 import CategoryCard from "@/components/home/CategoryCard";
@@ -13,6 +14,7 @@ import HowItWorksSection from "@/components/home/HowItWorksSection"; // Import H
 import TextSection from "@/components/global/TextSection"; // Import TextSection
 import WhyUs from "@/components/global/WhyUs";
 import { VideoPlayer } from "@/components/global/VideoPlayer";
+import { motion } from "framer-motion";
 
 // Define query options for homepage data
 const homeQueryOptions = () =>
@@ -20,6 +22,18 @@ const homeQueryOptions = () =>
     queryKey: ['homeData'],
     queryFn: () => fetchHomeData(),
   });
+
+const Reveal = ({ children, className = "" }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-100px" }}
+    transition={{ duration: 0.6, ease: "easeOut" }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
 
 export const Route = createFileRoute("/")({
   loader: ({ context: { queryClient } }) =>
@@ -138,7 +152,16 @@ const whyChooseUsContent = {
 
 
 function RouteComponent() {
-  const { properties, maps, categories, personalizedCards, reviews, fileProperties, videoSection } = Route.useLoaderData(); // Get data from loader
+  const { 
+    propertiesSection, 
+    mapsSection, 
+    categoriesSection, 
+    personalizedCards, 
+    reviews, 
+    filePropertiesSection, 
+    videoSection,
+    allFileProperties
+  } = Route.useLoaderData(); // Get data from loader
 
   const videoToDisplay = videoSection 
     ? (videoSection.videoInputMethod === 'upload' 
@@ -149,7 +172,9 @@ function RouteComponent() {
   return (
     <main className="flex flex-col items-center justify-center w-full text-center max-w-[1440px] mx-auto min-h-screen">
       <HeroSection />
-      <div className="max-w-3xl pt-8">
+      <FileMarquee items={allFileProperties} />
+      
+      <Reveal className="max-w-3xl pt-8">
         <h2 className="text-4xl font-extrabold text-primary sm:text-5xl md:text-6xl">
           Your Trusted Partner in Real Estate
         </h2>
@@ -157,95 +182,114 @@ function RouteComponent() {
           We specialize in marketing land files, housing society projects, and
           much more.
         </p>
-      </div>
+      </Reveal>
 
-      {categories?.length > 0 && (
-        <div className="w-full py-8 ">
+      {categoriesSection?.items?.length > 0 && (
+        <Reveal className="w-full py-8">
           <CardSlider
-            items={categories} // Use fetched categories
+            items={categoriesSection.items} // Use fetched categories
             CardComponent={LinkedCategoryCard}
             autoScrollSpeed={0}
             loop={false}
-            heading={null}
-            subheading={null}
+            heading={categoriesSection.heading}
+            subheading={categoriesSection.subheading}
             breakpoints={{ default: 1, sm: 3, md: 4, lg: 5 }}
             customWidths={[{ width: 425, cards: 2 }]}
             showViewAll={false}
             className={"my-8"}
           />
-        </div>
+        </Reveal>
       )}
 
-      <TextSection {...servicesOverviewContent} className={"my-8"} />
+      <Reveal>
+        <TextSection {...servicesOverviewContent} className={"my-8"} />
+      </Reveal>
 
-      {properties?.length > 0 && (
-        <div className="w-full py-8 bg-primary text-primary-foreground">
+      {propertiesSection?.items?.length > 0 && (
+        <Reveal className="w-full py-8 bg-primary text-primary-foreground">
           <CardSlider
-            items={properties} // Use fetched properties
+            items={propertiesSection.items} // Use fetched properties
             CardComponent={LinkedPropertyCard}
+            heading={propertiesSection.heading}
+            subheading={propertiesSection.subheading}
             showViewAll={true}
             viewAllHref="/properties"
             className={"md:px-6 py-4 px-4"}
+            subheadingClassName="text-white/80"
           />
-        </div>
+        </Reveal>
       )}
 
-      <HowItWorksSection {...howItWorksSectionData} className={"my-8"} />
+      <Reveal>
+        <HowItWorksSection {...howItWorksSectionData} className={"my-8"} />
+      </Reveal>
 
-      {fileProperties?.length > 0 && (
-        <div className="w-full py-8 bg-primary">
+      {filePropertiesSection?.items?.length > 0 && (
+        <Reveal className="w-full py-8 bg-primary">
           <CardGrid
-            items={fileProperties} // Use fetched file properties
+            items={filePropertiesSection.items} // Use fetched file properties
             CardComponent={PropertyCard} // Non-clickable
-            heading="Explore Land Files"
-            subheading="Files And Daily Updated Prices"
+            heading={filePropertiesSection.heading}
+            subheading={filePropertiesSection.subheading}
             showViewAll={true}
             viewAllHref="/files"
-            maxItems={3}
+            maxItems={filePropertiesSection.items.length}
             headingClassName="text-white text-4xl"
             subheadingClassName="text-white text-lg"
           />
-        </div>
+        </Reveal>
       )}
 
-      {maps?.length > 0 && (
-        <div className="w-full py-8 bg-primary">
+      {mapsSection?.items?.length > 0 && (
+        <Reveal className="w-full py-8 bg-primary">
           <CardGrid
-            items={maps}
+            items={mapsSection.items}
             CardComponent={MapCard}
-            heading="Explore DHA Maps"
-            subheading="Find society maps and plot locations"
+            heading={mapsSection.heading}
+            subheading={mapsSection.subheading}
             showViewAll={true}
             viewAllHref="/maps"
-            maxItems={3}
+            maxItems={mapsSection.items.length}
             headingClassName="text-white text-4xl"
             subheadingClassName="text-white text-lg"
           />
-        </div>
+        </Reveal>
       )}
 
-      <TextSection {...investmentOpportunitiesContent} className={"my-8"} />
+      <Reveal>
+        <TextSection {...investmentOpportunitiesContent} className={"my-8"} />
+      </Reveal>
 
-      {reviews?.length > 0 && <ReviewsSection reviews={reviews} />}
+      {reviews?.length > 0 && (
+        <Reveal>
+          <ReviewsSection reviews={reviews} />
+        </Reveal>
+      )}
 
       {videoSection && videoToDisplay && (
-        <div className="w-full px-4 mx-auto my-8">
+        <Reveal className="w-full px-4 mx-auto my-8">
             <h2 className="mb-4 text-3xl font-bold">{videoSection.heading}</h2>
             <p className="mb-8 text-lg text-muted-foreground">{videoSection.subheading}</p>
             <VideoPlayer video={videoToDisplay} />
-        </div>
+        </Reveal>
       )}
 
       {/* DHA Services Section - */}
-      <TextSection {...dhaServicesContent} className={"my-8"} />
+      <Reveal>
+        <TextSection {...dhaServicesContent} className={"my-8"} />
+      </Reveal>
 
       {/* Why Choose Us Section - New Variant 2 */}
-      <TextSection {...whyChooseUsContent} className={"my-8"} />
+      <Reveal>
+        <TextSection {...whyChooseUsContent} className={"my-8"} />
+      </Reveal>
 
-      <PersonalizedExperience
-        cards={personalizedCards}
-        className={"px-4 md:px-6 mx-auto"}
-      />
+      <Reveal>
+        <PersonalizedExperience
+          cards={personalizedCards}
+          className={"px-4 md:px-6 mx-auto"}
+        />
+      </Reveal>
     </main>
   );
 }

@@ -25,8 +25,21 @@ import ImageSlider from '@/components/property/ImageSlider'; // Import ImageSlid
 import { VideoPlayer } from '@/components/global/VideoPlayer';
 import RichTextRenderer from '@/components/global/RichTextRenderer';
 import NotFound from '@/components/global/NotFound';
+import { motion } from 'framer-motion';
 
 import { Bed, Bath, AreaChart, MapPin, Loader2 } from 'lucide-react';
+
+const Reveal = ({ children, className = "", delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-100px" }}
+    transition={{ duration: 0.6, delay, ease: "easeOut" }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
 
 import { queryOptions, useMutation } from '@tanstack/react-query'
 import { fetchProperties, fetchProperty, submitQuery } from '@/lib/api'
@@ -83,13 +96,13 @@ function RouteComponent() {
     .slice(0, 4);
 
   return (
-    <div className="max-w-[1440px] mx-auto">
+    <div>
       <GlobalHero
         image={property.image}
         overlay={true}
         height='60vh'
         contentWrapperClass="relative z-10 w-full h-full flex items-end"
-        contentInnerClass="w-full max-w-7xl pt-6 px-4 text-white text-left mb-8"
+        contentInnerClass="w-full max-w-[1440px] pt-6 px-4 md:px-10 text-white text-left mb-8"
       >
         <div>
           <h1 className="mb-2 text-5xl font-bold">{property.title}</h1>
@@ -100,14 +113,16 @@ function RouteComponent() {
         </div>
         
       </GlobalHero>
-      <div className="px-4 py-8 mx-auto">
+      <div className="px-4 md:px-10 py-8 mx-auto max-w-[1440px]">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Main Content */}
           <main className="lg:col-span-3">
             
-            <ImageSlider key={property.id} images={allImages} /> 
+            <Reveal>
+              <ImageSlider key={property.id} images={allImages} /> 
+            </Reveal>
             
-            <div className="flex flex-wrap gap-2 mb-4">
+            <Reveal className="flex flex-wrap gap-2 mt-4 mb-4">
               {property.badges?.map((badge, index) => (
                 <Badge key={index} variant={badge.variant}>
                   {badge.label}
@@ -116,9 +131,9 @@ function RouteComponent() {
               {!!property.is_furnished && (
                 <Badge variant="default">Furnished</Badge>
               )}
-            </div>
+            </Reveal>
             
-            <div className="mb-6 text-3xl font-bold text-amber-500">
+            <Reveal className="mb-6 text-3xl font-bold text-amber-500">
               {property.priceType === 'rent' ? (
                 <span>
                   {property.currency} {property.price.toLocaleString()}
@@ -143,9 +158,9 @@ function RouteComponent() {
                   {property.currency} {property.price.toLocaleString()}
                 </span>
               )}
-            </div>
+            </Reveal>
             
-            <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
+            <Reveal className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
               {property.beds && (
                 <div className="flex items-center gap-2">
                   <Bed className="text-primary" />
@@ -164,18 +179,18 @@ function RouteComponent() {
                   <span>{property.area.toLocaleString()} {property.areaUnit}</span>
                 </div>
               )}
-            </div>
+            </Reveal>
 
             {/* Short Description */}
             {property.shortDescription && (
-              <div className="p-6 mb-6 border-l-4 rounded-r-lg bg-muted border-primary">
+              <Reveal className="p-6 mb-6 border-l-4 rounded-r-lg bg-muted border-primary">
                 <p className="text-lg italic text-foreground/80">{property.shortDescription}</p>
-              </div>
+              </Reveal>
             )}
 
             {/* Features Section */}
             {property.features && property.features.length > 0 && (
-              <div className="mb-8">
+              <Reveal className="mb-8">
                 <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Features</h2>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                   {property.features.map((feature, index) => (
@@ -187,25 +202,25 @@ function RouteComponent() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Reveal>
             )}
 
             {/* Detailed Description */}
             {property.detailedDescription && (
-              <div className="mb-8">
+              <Reveal className="mb-8">
                 <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Property Details</h2>
                 <div className="prose max-w-none text-foreground/90">
                   <RichTextRenderer htmlContent={property.detailedDescription} />
                 </div>
-              </div>
+              </Reveal>
             )}
             
             {/* Video Section */}
             {propertyVideo && (
-              <div className="mb-8">
+              <Reveal className="mb-8">
                 <h2 className="pb-2 mb-4 text-3xl font-bold border-b">Video Tour</h2>
                 <VideoPlayer video={propertyVideo} />
-              </div>
+              </Reveal>
             )}
             
           </main>
@@ -213,7 +228,7 @@ function RouteComponent() {
           {/* Right Sidebar */}
           <aside className="lg:col-span-1">
             {property.locationMap && ( 
-              <div className="p-4 border rounded-lg">
+              <Reveal className="p-4 border rounded-lg">
                 <div className="h-64 overflow-hidden rounded-lg">
                   <iframe
                     src={getEmbedUrl(property.locationMap)}
@@ -225,14 +240,14 @@ function RouteComponent() {
                     referrerPolicy="no-referrer-when-downgrade"
                   ></iframe>
                 </div>
-            </div> )}
+            </Reveal> )}
 
-            <div className="hidden p-4 mt-8 border rounded-lg lg:block">
+            <Reveal className="hidden p-4 mt-8 border rounded-lg lg:block">
               <h3 className="mb-4 text-2xl font-bold">Contact Agent</h3>
               <ContactForm propertyTitle={property.title} propertyId={property.id} />
-            </div>
+            </Reveal>
 
-            <div className="p-4 mt-8 border rounded-lg">
+            <Reveal className="p-4 mt-8 border rounded-lg">
               <h3 className="mb-4 text-2xl font-bold">Featured Properties</h3>
               <div>
                 {featuredProperties.map((featured) => {
@@ -264,7 +279,7 @@ function RouteComponent() {
                   )
                 })}
               </div>
-            </div>
+            </Reveal>
           </aside>
         </div>
       </div>
@@ -473,7 +488,7 @@ function ContactForm({ propertyTitle, propertyId, className }) {
 
 
 
-          {mutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : "Send Message"}
+          {mutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</> : "Send Message"}
 
 
 

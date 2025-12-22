@@ -1,8 +1,8 @@
 .env
 .tanstack
 MISC
-# GEMINI.md
-public/files/**
+GEMINI.md
+public/pdf_docs/**
 public/images/**
 public/mapsMedia/**
 public/videos/**

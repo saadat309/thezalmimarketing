@@ -354,7 +354,7 @@ function DashboardMaps() {
     }
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const selectedData = selectedRows.map(row => row.original);
     if (selectedData.length === 0) {
         toast.warning("No rows selected for export.");
@@ -365,39 +365,48 @@ function DashboardMaps() {
         return;
     }
 
-    const visibleColumns = tableInstance.getAllColumns().filter(
-        column => column.getIsVisible() && column.columnDef.accessorKey
-    );
-    
-    // Create header row
-    const headers = visibleColumns.map(col => typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id);
-    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+    setIsSubmitting(true);
+    try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const visibleColumns = tableInstance.getAllColumns().filter(
+            column => column.getIsVisible() && column.columnDef.accessorKey
+        );
+        
+        // Create header row
+        const headers = visibleColumns.map(col => typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id);
+        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
 
-    // Create data rows
-    selectedData.forEach(item => {
-        const row = visibleColumns.map(col => {
-            let value = item[col.columnDef.accessorKey];
-            value = value === null || value === undefined ? "" : String(value);
-            if (/[",\n]/.test(value)) {
-                value = `"${value.replace(/"/g, '""')}"`;
-            }
-            return value;
+        // Create data rows
+        selectedData.forEach(item => {
+            const row = visibleColumns.map(col => {
+                let value = item[col.columnDef.accessorKey];
+                value = value === null || value === undefined ? "" : String(value);
+                if (/[",\n]/.test(value)) {
+                    value = `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            });
+            csvContent += row.join(",") + "\n";
         });
-        csvContent += row.join(",") + "\n";
-    });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "maps.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Maps exported as CSV.");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "maps.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Maps exported as CSV.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
+    setIsSubmitting(true);
     toast.info("Exporting as PDF...");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
   };
 
   if (isLoading) {

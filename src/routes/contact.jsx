@@ -14,6 +14,19 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { submitQuery } from "@/lib/api";
+import { motion } from "framer-motion";
+
+const Reveal = ({ children, className = "", delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-100px" }}
+    transition={{ duration: 0.6, delay, ease: "easeOut" }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
 
 import {
   Form,
@@ -102,7 +115,7 @@ function Contact() {
       <div className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="grid items-start gap-16 lg:grid-cols-2">
           {/* Right Column - Owner Image (now first in source order for mobile-first) */}
-          <div className="relative order-1 lg:order-2">
+          <Reveal className="relative order-1 lg:order-2">
             <div className="overflow-hidden shadow-lg rounded-2xl">
               <img
                 src="/owner pic.jpg"
@@ -110,10 +123,10 @@ function Contact() {
                 className="h-[600px] w-full object-cover"
               />
             </div>
-          </div>
+          </Reveal>
 
           {/* Left Column - Form (now second in source order for mobile-first) */}
-          <div className="order-2 space-y-8 lg:order-1">
+          <Reveal className="order-2 space-y-8 lg:order-1">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold leading-tight text-foreground lg:text-4xl">
                 Get In Touch About
@@ -270,11 +283,11 @@ function Contact() {
                 </Button>
               </form>
             </Form>
-          </div>
+          </Reveal>
         </div>
-        <div className="mt-16">
+        <Reveal className="mt-16">
           <ContactInformation />
-        </div>
+        </Reveal>
       </div>
     </div>
   );

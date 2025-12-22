@@ -623,6 +623,11 @@ const transformProperty = (p) => {
     shortDescription: p.short_desc,
     detailedDescription: p.detailed_description_content,
     locationMap: p.embed_link ? getEmbedUrl(p.embed_link) : null,
+    installment_advance_amount: p.installment_advance_amount,
+    installment_amount: p.installment_amount,
+    installment_total_period_text: p.installment_total_period_text,
+    installment_display_mode: p.installment_display_mode,
+    price_period_unit: p.price_period_unit,
     badges: (p.labels || []).map(l => ({
       label: l.name,
       variant: l.badge_variant || "secondary",
@@ -835,9 +840,10 @@ export const fetchHomeData = async () => {
     const sections = await fetchLandingSections();
     
     // Fetch other static mock data for now
-    const [personalizedCards, reviews] = await Promise.all([
+    const [personalizedCards, reviews, allFileProperties] = await Promise.all([
         fetchPersonalizedCards(),
         fetchReviews(),
+        fetchFileProperties(),
     ]);
 
     // Process each section to fetch its specific items
@@ -875,12 +881,13 @@ export const fetchHomeData = async () => {
     const getSectionBySlug = (slug) => activeSections.find(s => s.slug === slug);
 
     return {
-        // Fallback to old keys for compatibility if sections are missing
-        properties: getSectionBySlug('featured-properties')?.items || [],
-        maps: getSectionBySlug('maps')?.items || [],
-        categories: getSectionBySlug('categories')?.items || [],
-        fileProperties: getSectionBySlug('files')?.items || [],
+        // Full section objects for dynamic headings/subheadings
+        propertiesSection: getSectionBySlug('featured-properties'),
+        mapsSection: getSectionBySlug('maps'),
+        categoriesSection: getSectionBySlug('categories'),
+        filePropertiesSection: getSectionBySlug('files'),
         videoSection: getSectionBySlug('video-section') || null,
+        allFileProperties,
         
         // Static sections
         personalizedCards,

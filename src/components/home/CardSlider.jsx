@@ -29,10 +29,10 @@ export default function CardSlider({
   loop = true,
 
   /* === NEW/CHANGED PROPS === */
-  heading = "Featured Listings",
+  heading = null,
   subheading = null,
   showViewAll = true,
-  viewAllText = "View all properties",
+  viewAllText = "View all",
   CardComponent = PropertyCard,
   breakpoints = {
     default: 1,
@@ -45,6 +45,9 @@ export default function CardSlider({
   // customWidths MUST be array of objects: { width: number, cards: number }
   // They are treated as min-width rules and combined with breakpoints.
   customWidths = [{ width: 1441, cards: 4 }],
+  className = "",
+  headingClassName = "",
+  subheadingClassName = "",
 }) {
   // Create pluginRef but only mount AutoScroll plugin when autoScrollSpeed > 0
   const pluginRef = useRef(null);
@@ -341,15 +344,15 @@ export default function CardSlider({
   const slideWidthPercent = 100 / Math.max(1, cardsPerSlide);
 
   return (
-    <div className="w-full ">
+    <div className={`w-full ${className}`}>
       <div className="max-w-[1440px] mx-auto px-4 md:px-10">
         <div className="flex items-end justify-between mb-2">
           <div className="flex flex-col items-start mb-2 md:px-8">
             {heading && (
-              <h3 className="text-2xl font-semibold sm:font-bold">{heading}</h3>
+              <h3 className={`text-2xl font-semibold sm:font-bold ${headingClassName}`}>{heading}</h3>
             )}
             {subheading && (
-              <div className="mt-1 text-sm text-muted-foreground">
+              <div className={`mt-1 text-sm text-muted-foreground ${subheadingClassName}`}>
                 {subheading}
               </div>
             )}

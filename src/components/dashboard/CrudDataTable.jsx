@@ -215,7 +215,7 @@ export function CrudDataTable({
                   Duplicate
                 </DropdownMenuItem>
               )}
-              {renderCustomActions && renderCustomActions(item, openEditSheet, actualHandleDeleteItem)}
+              {renderCustomActions && renderCustomActions(item, openEditSheet, actualHandleDeleteItem, isSubmitting)}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   {(!canDeleteItem || canDeleteItem(item)) && (
@@ -234,7 +234,8 @@ export function CrudDataTable({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={(e) => { e.stopPropagation(); actualHandleDeleteItem(item.id); }}>
+                    <AlertDialogAction onClick={(e) => { e.stopPropagation(); actualHandleDeleteItem(item.id); }} disabled={isSubmitting}>
+                      {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -250,7 +251,15 @@ export function CrudDataTable({
   const allColumns = [...columns, actionColumn];
 
   return (
-    <div className="container px-4 py-8 mx-auto lg:px-6">
+    <div className="container relative px-4 py-8 mx-auto lg:px-6">
+      {isSubmitting && !isSheetOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-white/50 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2 p-4 bg-white border rounded-lg shadow-lg">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm font-medium">Processing...</p>
+            </div>
+        </div>
+      )}
       {!disableAdd && (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetContent className={cn("sm:max-w-[600px]", sheetClassName)} onPointerDownOutside={(event) => event.preventDefault()}>
@@ -309,7 +318,7 @@ export function CrudDataTable({
                 <SheetFooter>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      {editingItem ? 'Save changes' : `Add ${entityName}`}
+                      {editingItem && !isDuplicating ? 'Save changes' : `Add ${entityName}`}
                     </Button>
                 </SheetFooter>
               </form>
@@ -339,12 +348,16 @@ export function CrudDataTable({
               <div className="flex items-center gap-2">
                 {table.getFilteredSelectedRowModel().rows.length >= 2 ? (
                   <>
-                    <Button variant="destructive" size="sm" className="h-8" onClick={handleDeleteSelected}>
+                    <Button variant="destructive" size="sm" className="h-8" onClick={handleDeleteSelected} disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                       Delete Selected ({table.getFilteredSelectedRowModel().rows.length})
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8">Export Selected</Button>
+                        <Button variant="outline" size="sm" className="h-8" disabled={isSubmitting}>
+                          {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                          Export Selected
+                        </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem onSelect={handleExportCsv}>As CSV</DropdownMenuItem>

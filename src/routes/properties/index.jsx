@@ -136,7 +136,7 @@ function RouteComponent() {
       <GlobalHero
         image={initialSearch.image || "/images/apartments-1845884_1280.jpg"}
         overlay
-        height="60vh"
+        height="65vh"
         contentWrapperClass="relative z-10 w-full h-full flex items-end"
         contentInnerClass="w-full max-w-7xl pt-6 px-4 text-white text-left mb-8"
       >
@@ -151,11 +151,11 @@ function RouteComponent() {
           )}
 
           <div className="relative w-full max-w-4xl px-4 mt-8">
-            <Search className="absolute text-muted-foreground -translate-y-1/2 left-7 top-1/2" />
+            <Search className="absolute -translate-y-1/2 text-muted-foreground left-7 top-1/2" />
             <Input
               type="text"
               placeholder="Search properties, cities, categories..."
-              className="w-full py-6 pl-14 pr-4 rounded-full shadow-lg bg-background text-black"
+              className="w-full py-6 pr-4 text-black rounded-full shadow-lg pl-14 bg-background"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -163,7 +163,7 @@ function RouteComponent() {
 
           {/* Filter Popovers / Sheet */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-            <div className="hidden lg:flex flex-wrap items-center justify-center gap-2">
+            <div className="flex-wrap items-center justify-center hidden gap-2 lg:flex">
               <DropdownMenu
                 modal={false}
                 open={isCategoryDropdownOpen}
@@ -175,7 +175,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedCategory || "Category"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -212,7 +212,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedCity || "City"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -249,7 +249,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedSociety || "Society"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -286,7 +286,7 @@ function RouteComponent() {
                     className="w-[150px] justify-between bg-background text-black"
                   >
                     {selectedPhase || "Phase"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -323,7 +323,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedPropertyType || "Property Type"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -360,7 +360,7 @@ function RouteComponent() {
                     className="w-[150px] justify-between bg-background text-black"
                   >
                     {selectedPriceType || "Price Type"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -410,7 +410,7 @@ function RouteComponent() {
                     className="w-[120px] justify-between bg-background text-black"
                   >
                     {selectedBeds ? `${selectedBeds}+ Beds` : "Beds"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -447,7 +447,7 @@ function RouteComponent() {
                     className="w-[120px] justify-between bg-background text-black"
                   >
                     {selectedBaths ? `${selectedBaths}+ Baths` : "Baths"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -491,7 +491,7 @@ function RouteComponent() {
                     className="w-[100px] justify-between bg-background text-black"
                   >
                     {selectedAreaUnit || "Unit"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -555,19 +555,19 @@ function RouteComponent() {
 
             {/* Mobile Filter Sheet */}
 
-            <div className="lg:hidden flex gap-2">
+            <div className="flex gap-2 lg:hidden">
               {" "}
               {/* Added flex and gap-2 */}
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center gap-2 bg-background text-black"
+                    className="flex items-center gap-2 text-black bg-background"
                   >
                     <Filter className="w-4 h-4" />
                     Filters
                     {isFilterActive && (
-                      <Badge className="ml-1 px-2">Active</Badge>
+                      <Badge className="px-2 ml-1">Active</Badge>
                     )}
                   </Button>
                 </SheetTrigger>
@@ -861,7 +861,7 @@ function RouteComponent() {
           </div>
         </div>
       </GlobalHero>
-      <div className="container py-8 px-4 mx-auto">
+      <div className="container px-4 py-8 mx-auto">
         {isLoading || isFetching ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (

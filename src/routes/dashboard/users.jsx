@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CrudDataTable } from '@/components/dashboard/CrudDataTable';
 import { Checkbox } from "@/components/ui/checkbox";
 import { createFileRoute } from '@tanstack/react-router';
-import { ArrowUpDown, CopyIcon, ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowUpDown, CopyIcon, ArrowDown, ArrowUp, Loader2 } from 'lucide-react';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner"; 
@@ -228,7 +228,7 @@ function DashboardUsers() {
     }
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const selectedData = selectedRows.map(row => row.original);
     if (selectedData.length === 0) {
         toast.warning("No rows selected for export.");
@@ -239,37 +239,47 @@ function DashboardUsers() {
         return;
     }
 
-    const visibleColumns = tableInstance.getAllColumns().filter(
-        column => column.getIsVisible() && column.columnDef.accessorKey
-    );
+    setIsSubmitting(true);
+    try {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UX feedback
 
-    const headers = visibleColumns.map(col => typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id);
-    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+        const visibleColumns = tableInstance.getAllColumns().filter(
+            column => column.getIsVisible() && column.columnDef.accessorKey
+        );
 
-    selectedData.forEach(item => {
-        const row = visibleColumns.map(col => {
-            let value = item[col.columnDef.accessorKey];
-            value = value === null || value === undefined ? "" : String(value);
-            if (/[",\n]/.test(value)) {
-                value = `"${value.replace(/"/g, '""')}"`;
-            }
-            return value;
+        const headers = visibleColumns.map(col => typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id);
+        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+
+        selectedData.forEach(item => {
+            const row = visibleColumns.map(col => {
+                let value = item[col.columnDef.accessorKey];
+                value = value === null || value === undefined ? "" : String(value);
+                if (/[",\n]/.test(value)) {
+                    value = `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            });
+            csvContent += row.join(",") + "\n";
         });
-        csvContent += row.join(",") + "\n";
-    });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "users.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Users exported as CSV.");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "users.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Users exported as CSV.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
+    setIsSubmitting(true);
     toast.info("Exporting as PDF...");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
   };
 
   const handleCopyInviteLink = (userEmail, inviteToken) => {
@@ -278,12 +288,15 @@ function DashboardUsers() {
     toast.success(`Invite link copied for ${userEmail}`);
   };
 
-  const renderUserCustomActions = (rowUser, openEditSheet, actualHandleDeleteItem) => {
+  const renderUserCustomActions = (rowUser, openEditSheet, actualHandleDeleteItem, isSubmitting) => {
     return (
         <>
         {rowUser.status === 'inActive' && ( 
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleGenerateAndCopyInviteLink(rowUser.email, rowUser.id); }}>
-                <CopyIcon className="w-4 h-4 mr-2" />
+            <DropdownMenuItem 
+                disabled={isSubmitting}
+                onClick={(e) => { e.stopPropagation(); handleGenerateAndCopyInviteLink(rowUser.email, rowUser.id); }}
+            >
+                {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CopyIcon className="w-4 h-4 mr-2" />}
                 Generate & Copy Invite Link
             </DropdownMenuItem>
         )}

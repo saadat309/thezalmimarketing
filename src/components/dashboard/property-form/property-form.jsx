@@ -520,24 +520,25 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                   <Label>
                     Property Type <span className="text-red-500">*</span>
                   </Label>
-                  <RadioGroup defaultValue="Residential">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="Residential"
-                        id="residential"
-                        {...register("property_type")}
-                      />
-                      <Label htmlFor="residential">Residential</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem
-                        value="Commercial"
-                        id="commercial"
-                        {...register("property_type")}
-                      />
-                      <Label htmlFor="commercial">Commercial</Label>
-                    </div>
-                  </RadioGroup>
+                  <Controller
+                    name="property_type"
+                    control={control}
+                    render={({ field }) => (
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Residential" id="residential" />
+                          <Label htmlFor="residential">Residential</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Commercial" id="commercial" />
+                          <Label htmlFor="commercial">Commercial</Label>
+                        </div>
+                      </RadioGroup>
+                    )}
+                  />
                   {errors.property_type && (
                     <p className="text-sm text-red-500">
                       {errors.property_type.message}
@@ -792,26 +793,30 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
 
                   <div className="space-y-2">
                     <Label>Display Mode</Label>
-                    <RadioGroup defaultValue="installment">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value="advance"
-                          id="advance"
-                          {...register("installment_display_mode")}
-                        />
-                        <Label htmlFor="advance">Show Advance Amount</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value="installment"
-                          id="installment_mode"
-                          {...register("installment_display_mode")}
-                        />
-                        <Label htmlFor="installment_mode">
-                          Show Installment Amount
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                    <Controller
+                      name="installment_display_mode"
+                      control={control}
+                      render={({ field }) => (
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="advance" id="advance" />
+                            <Label htmlFor="advance">Show Advance Amount</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem
+                              value="installment"
+                              id="installment_mode"
+                            />
+                            <Label htmlFor="installment_mode">
+                              Show Installment Amount
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                      )}
+                    />
                     {errors.installment_display_mode && (
                       <p className="text-sm text-red-500">
                         {errors.installment_display_mode.message}

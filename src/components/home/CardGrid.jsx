@@ -5,7 +5,7 @@ import PropertyCard from "../global/PropertyCard";
 
 export default function CardGrid({
   items = [],
-  heading = "Featured Listings",
+  heading = null,
   subheading = null,
   showViewAll = true,
   viewAllText = "View all",
