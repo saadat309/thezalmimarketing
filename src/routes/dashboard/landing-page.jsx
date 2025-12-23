@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Loader2 } from 'lucide-react';
 
 import { LandingPageVideoSectionConfigurator } from '@/components/dashboard/LandingPageVideoSectionConfigurator';
+import { LandingPagePopupConfigurator } from '@/components/dashboard/LandingPagePopupConfigurator';
 
 export const Route = createFileRoute('/dashboard/landing-page')({
   component: DashboardLandingPage,
@@ -18,6 +19,15 @@ export const Route = createFileRoute('/dashboard/landing-page')({
 });
 
 const DEFAULT_SECTIONS_CONFIG = {
+  popup: {
+    isVisible: false,
+    heading: '',
+    subheading: '',
+    delayMs: 5000,
+    mediaType: 'image',
+    mediaEmbedLink: '',
+    mediaItems: [],
+  },
   videoSection: {
     isVisible: true,
     heading: 'Featured Video',
@@ -168,6 +178,18 @@ function DashboardLandingPage() {
                 videoMedia: section.video_path ? [{ url: section.video_path, type: 'video' }] : []
               };
               break;
+            case 'popup':
+              updatedConfig.popup = {
+                ...updatedConfig.popup,
+                isVisible: isVisible,
+                heading: section.title || '',
+                subheading: section.subtitle || '',
+                delayMs: section.delay_ms || 5000,
+                mediaType: section.media_type || 'image',
+                mediaEmbedLink: section.video_embed_link || '',
+                mediaItems: section.media_path ? [{ url: section.media_path, type: section.media_type === 'image' ? 'image' : 'video' }] : []
+              };
+              break;
           }
         });
 
@@ -200,6 +222,10 @@ function DashboardLandingPage() {
 
   const handleVideoSectionChange = useCallback((newConfig) => {
     handleSectionConfigChange('videoSection', newConfig);
+  }, [handleSectionConfigChange]);
+
+  const handlePopupChange = useCallback((newConfig) => {
+    handleSectionConfigChange('popup', newConfig);
   }, [handleSectionConfigChange]);
 
   const handleFeaturedPropertiesChange = useCallback((newConfig) => {
@@ -249,6 +275,30 @@ function DashboardLandingPage() {
       }
 
       sectionsToSave.push(videoSectionData);
+
+      // Popup section logic
+      const popupData = {
+        slug: 'landing-popup',
+        title: sectionsConfig.popup.heading,
+        subtitle: sectionsConfig.popup.subheading,
+        collection_type: 'popup',
+        visibility: sectionsConfig.popup.isVisible ? 1 : 0,
+        delay_ms: sectionsConfig.popup.delayMs,
+        media_type: sectionsConfig.popup.mediaType,
+        video_embed_link: sectionsConfig.popup.mediaEmbedLink,
+        media_path: sectionsConfig.popup.mediaItems && sectionsConfig.popup.mediaItems.length > 0 && !sectionsConfig.popup.mediaItems[0].file
+          ? sectionsConfig.popup.mediaItems[0].url
+          : null
+      };
+
+      if (sectionsConfig.popup.mediaItems && sectionsConfig.popup.mediaItems.length > 0 && sectionsConfig.popup.mediaItems[0].file) {
+        popupData._mediaFile = sectionsConfig.popup.mediaItems[0].file;
+      }
+      if (sectionsConfig.popup.mediaType !== 'embed' && (!sectionsConfig.popup.mediaItems || sectionsConfig.popup.mediaItems.length === 0)) {
+        popupData._mediaRemoved = true;
+      }
+
+      sectionsToSave.push(popupData);
 
       // Featured properties section
       sectionsToSave.push({
@@ -321,8 +371,9 @@ function DashboardLandingPage() {
         };
         let method;
 
-        if (section.slug === 'video-section' && (section._videoFile || section._videoRemoved)) {
-             // Use FormData for video section if file involved
+        if ((section.slug === 'video-section' && (section._videoFile || section._videoRemoved)) || 
+            (section.slug === 'landing-popup' && (section._mediaFile || section._mediaRemoved))) {
+             // Use FormData for sections if file involved
              const formData = new FormData();
              for (const key in section) {
                  if (key.startsWith('_')) continue;
@@ -331,11 +382,12 @@ function DashboardLandingPage() {
                  }
              }
              
-             if (section._videoFile) {
-                 formData.append('video', section._videoFile);
-             }
-             if (section._videoRemoved) {
-                 formData.append('video_removed', 'true');
+             if (section.slug === 'video-section') {
+               if (section._videoFile) formData.append('video', section._videoFile);
+               if (section._videoRemoved) formData.append('video_removed', 'true');
+             } else if (section.slug === 'landing-popup') {
+               if (section._mediaFile) formData.append('media', section._mediaFile);
+               if (section._mediaRemoved) formData.append('media_removed', 'true');
              }
 
              if (existing) {
@@ -419,6 +471,10 @@ function DashboardLandingPage() {
         </Button>
       </div>
       <div className="grid gap-8">
+        <LandingPagePopupConfigurator
+          initialConfig={sectionsConfig.popup}
+          onConfigChange={handlePopupChange}
+        />
         <LandingPageVideoSectionConfigurator
           initialConfig={sectionsConfig.videoSection}
           onConfigChange={handleVideoSectionChange}

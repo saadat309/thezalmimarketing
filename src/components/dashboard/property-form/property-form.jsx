@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuillRichText from "../QuillRichText";
 import { MediaUpload } from "../MediaUpload";
+import { LabelSelector } from "../LabelSelector";
 import { propertyFormSchema } from "./validation";
 import { PlusIcon, XIcon, TrashIcon, GripVertical, Loader2 } from "lucide-react";
 import {
@@ -1108,51 +1109,21 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                     </SortableContext>
                   </DndContext>
 
-                  <div className="flex flex-col gap-2 mt-3 sm:flex-row">
-                    <Controller
-                      name="_selected_label"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          key={labels.length} // Changed key to avoid remount on value change
-                          onValueChange={(value) => {
-                            field.onChange(value === "" ? null : value); // Convert empty string to null
-                          }}
-                          value={field.value || ""} // Ensure controlled component has a value
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select an existing label" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={null}>Select a label</SelectItem>
-                            {labels.map((label) => (
-                              <SelectItem
-                                key={label.id}
-                                value={String(label.id)}
-                              >
-                                {label.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      onClick={() => {
-                        const sel = getValues("_selected_label");
-                        if (!sel) return;
-                        if (!selectedLabelIds.includes(sel)) {
-                          const updated = [...selectedLabelIds, sel];
-                          setValue("labels", updated);
-                          setValue("_selected_label", ""); // Clear selection after adding
+                  <div className="flex flex-col gap-2 mt-3">
+                    <LabelSelector
+                      availableLabels={labels}
+                      selectedLabelIds={selectedLabelIds}
+                      onSelect={(id) => {
+                        if (!selectedLabelIds.includes(String(id))) {
+                          setValue("labels", [...selectedLabelIds, String(id)]);
                         }
                       }}
-                    >
-                      <PlusIcon className="w-4 h-4 mr-2" /> Add Label
-                    </Button>
+                      onLabelDeleted={(id) => {
+                        const stringId = String(id);
+                        setLabels(prev => prev.filter(l => String(l.id) !== stringId));
+                        setValue("labels", selectedLabelIds.filter(lid => lid !== stringId));
+                      }}
+                    />
                   </div>
 
                   <div className="flex flex-col gap-2 mt-2 sm:flex-row">

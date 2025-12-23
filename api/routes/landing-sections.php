@@ -52,6 +52,15 @@ function handleVideoUpload(array $file) {
     return '/videos/landing/' . $fileName;
 }
 
+function handleLandingMediaUpload(array $file, $type = 'image') {
+    if ($type === 'image') {
+        $result = ImageUpload::handleImageUpload($file, 'landing_popup', uniqid(), ['to_webp' => true]);
+        return $result['full_path'];
+    } else {
+        return handleVideoUpload($file);
+    }
+}
+
 function handle_landing_sections($method, PDO $pdo, $id = null) {
     switch ($method) {
         case 'GET':
@@ -138,12 +147,17 @@ function create_landing_section(PDO $pdo) {
         if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
             $video_path = handleVideoUpload($_FILES['video']);
         }
+
+        $media_path = $data['media_path'] ?? null;
+        if (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
+            $media_path = handleLandingMediaUpload($_FILES['media'], $data['media_type'] ?? 'image');
+        }
         
         // Insert the landing section
         $stmt = $pdo->prepare("
             INSERT INTO landing_sections 
-            (slug, title, subtitle, collection_type, visibility, video_input_method, video_path, video_embed_link) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (slug, title, subtitle, collection_type, visibility, video_input_method, video_path, video_embed_link, media_path, media_type, delay_ms) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
@@ -154,7 +168,10 @@ function create_landing_section(PDO $pdo) {
             $data['visibility'] ?? 1,
             $data['video_input_method'] ?? null,
             $video_path,
-            $data['video_embed_link'] ?? null
+            $data['video_embed_link'] ?? null,
+            $media_path,
+            $data['media_type'] ?? null,
+            $data['delay_ms'] ?? 5000
         ]);
         
         $section_id = $pdo->lastInsertId();
@@ -203,8 +220,8 @@ function update_landing_section(PDO $pdo, $id) {
     try {
         $pdo->beginTransaction();
 
-        // Fetch existing data to handle old video deletion
-        $stmt = $pdo->prepare("SELECT video_path FROM landing_sections WHERE id = ?");
+        // Fetch existing data to handle old media deletion
+        $stmt = $pdo->prepare("SELECT video_path, media_path FROM landing_sections WHERE id = ?");
         $stmt->execute([$id]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -212,10 +229,19 @@ function update_landing_section(PDO $pdo, $id) {
         $video_embed_link = $data['video_embed_link'] ?? null;
         $video_input_method = $data['video_input_method'] ?? null;
 
+        $media_path = $data['media_path'] ?? $existing['media_path'];
+        $media_type = $data['media_type'] ?? $existing['media_type'];
+        $delay_ms = $data['delay_ms'] ?? 5000;
+
+        // If media_type changed to embed, we must delete the old file if it existed
+        if ($media_type === 'embed' && !empty($existing['media_path']) && $existing['media_type'] !== 'embed') {
+            ImageUpload::deleteImageFiles($existing['media_path']);
+            $media_path = null;
+        }
+
         // Handle video upload
         if (isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
             $uploaded_path = handleVideoUpload($_FILES['video']);
-            // Delete old video if exists
             if (!empty($existing['video_path'])) {
                 ImageUpload::deleteImageFiles($existing['video_path']);
             }
@@ -227,16 +253,34 @@ function update_landing_section(PDO $pdo, $id) {
             $video_path = null;
         }
 
-        // Logic for input method: if embedding, clear path? 
-        // Or trust frontend to send video_removed=true when switching to embed.
-        // Let's enforce consistency: if method is embed, we might want to ensure video_path is ignored or cleared, 
-        // but user might want to keep the file. Let's rely on what's passed.
+        // Handle popup media upload
+        if (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
+            $uploaded_media_path = handleLandingMediaUpload($_FILES['media'], $media_type);
+            // Delete old media if it was a file
+            if (!empty($existing['media_path']) && $existing['media_type'] !== 'embed') {
+                ImageUpload::deleteImageFiles($existing['media_path']);
+            }
+            $media_path = $uploaded_media_path;
+        } elseif (isset($data['media_removed']) && $data['media_removed'] === 'true') {
+             if (!empty($existing['media_path']) && $existing['media_type'] !== 'embed') {
+                ImageUpload::deleteImageFiles($existing['media_path']);
+            }
+            $media_path = null;
+        }
+        
+        // Final safety check: if we switched from a file type to another file type but didn't upload a new one, 
+        // and the paths are different (which they shouldn't be unless explicitly set), delete the old one.
+        // More importantly, if media_type is now 'embed', media_path must be null.
+        if ($media_type === 'embed') {
+            $media_path = null;
+        }
         
         // Update the landing section
         $stmt = $pdo->prepare("
             UPDATE landing_sections 
             SET slug = ?, title = ?, subtitle = ?, collection_type = ?, 
                 visibility = ?, video_input_method = ?, video_path = ?, video_embed_link = ?, 
+                media_path = ?, media_type = ?, delay_ms = ?,
                 updated_at = CURRENT_TIMESTAMP 
             WHERE id = ?
         ");
@@ -250,6 +294,9 @@ function update_landing_section(PDO $pdo, $id) {
             $video_input_method,
             $video_path,
             $video_embed_link,
+            $media_path,
+            $media_type,
+            $delay_ms,
             $id
         ]);
         

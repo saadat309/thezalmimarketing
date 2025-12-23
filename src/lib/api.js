@@ -863,6 +863,19 @@ export const fetchHomeData = async () => {
             };
         }
 
+        if (section.collection_type === 'popup') {
+            return {
+                type: 'popup',
+                slug: section.slug,
+                isVisible: true,
+                heading: section.title,
+                subheading: section.subtitle,
+                delayMs: section.delay_ms,
+                mediaType: section.media_type,
+                mediaPath: section.media_path || section.video_embed_link,
+            };
+        }
+
         const items = await fetchItemsByIds(section.collection_type, section.selected_items);
         return {
             type: 'collection',
@@ -887,6 +900,7 @@ export const fetchHomeData = async () => {
         categoriesSection: getSectionBySlug('categories'),
         filePropertiesSection: getSectionBySlug('files'),
         videoSection: getSectionBySlug('video-section') || null,
+        popupSection: getSectionBySlug('landing-popup') || null,
         allFileProperties,
         
         // Static sections

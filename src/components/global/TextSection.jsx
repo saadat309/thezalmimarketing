@@ -21,6 +21,7 @@ export default function TextSection({
   columns = 1,
   variant = "light", // New variant prop
   borderPosition = "none", // New borderPosition prop
+  className = "",
 }) {
   const alignClass =
     align === "center" ? "items-center text-center" : align === "right" ? "items-end text-right" : "items-start text-left";
@@ -49,30 +50,34 @@ export default function TextSection({
 
 
   return (
-    <section className={`w-full py-12 ${sectionBgClass}`}>
-      <div className={`mx-auto px-4 ${maxWidth} flex flex-col gap-4 ${alignClass}`}>
-        {title && <h2 className={`text-3xl font-bold md:text-4xl ${titleTextColorClass}`}>{title}</h2>}
-        {/* Updated subtitle text color */}
-        {subtitle && <p className={`text-lg max-w-prose ${subtitleTextColorClass}`}>{subtitle}</p>}
+    <section className={`w-full py-12 ${sectionBgClass} ${className}`}>
+      <div className={`mx-auto px-4 w-full flex flex-col gap-6 ${alignClass}`}>
+        <div className="w-full flex flex-col gap-4 max-w-7xl mx-auto items-center">
+            {title && <h2 className={`text-3xl font-bold md:text-4xl ${titleTextColorClass}`}>{title}</h2>}
+            {/* Updated subtitle text color */}
+            {subtitle && <p className={`text-lg max-w-prose ${subtitleTextColorClass}`}>{subtitle}</p>}
+        </div>
 
         {/* If content is an array, render cards in a responsive grid (1 or 2 columns). If single, render one card */}
-        {isArray ? (
-          <div className={gridClass}>
-            {content.map((c, i) => (
-              <Card key={i} className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
-                <CardContent className="px-3 leading-relaxed text-left text-md text-card-foreground">
-                  {typeof c === "string" ? <p>{c}</p> : c}
+        <div className={`w-full mx-auto ${maxWidth}`}>
+            {isArray ? (
+            <div className={gridClass}>
+                {content.map((c, i) => (
+                <Card key={i} className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
+                    <CardContent className="px-3 leading-relaxed text-left text-md text-card-foreground">
+                    {typeof c === "string" ? <p>{c}</p> : c}
+                    </CardContent>
+                </Card>
+                ))}
+            </div>
+            ) : (
+            <Card className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
+                <CardContent className="p-6 text-sm leading-relaxed text-left text-card-foreground">
+                {typeof content === "string" ? <p>{content}</p> : content}
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className={`w-full py-3 rounded-sm shadow-sm bg-card border-0 ${borderClasses}`}>
-            <CardContent className="p-6 text-sm leading-relaxed text-left text-card-foreground">
-              {typeof content === "string" ? <p>{content}</p> : content}
-            </CardContent>
-          </Card>
-        )}
+            </Card>
+            )}
+        </div>
       </div>
     </section>
   );

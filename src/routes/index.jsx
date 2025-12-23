@@ -14,6 +14,7 @@ import HowItWorksSection from "@/components/home/HowItWorksSection"; // Import H
 import TextSection from "@/components/global/TextSection"; // Import TextSection
 import WhyUs from "@/components/global/WhyUs";
 import { VideoPlayer } from "@/components/global/VideoPlayer";
+import Popup from "@/components/global/popup";
 import { motion } from "framer-motion";
 
 // Define query options for homepage data
@@ -160,6 +161,7 @@ function RouteComponent() {
     reviews, 
     filePropertiesSection, 
     videoSection,
+    popupSection,
     allFileProperties
   } = Route.useLoaderData(); // Get data from loader
 
@@ -173,7 +175,7 @@ function RouteComponent() {
     <main className="flex flex-col items-center justify-center w-full text-center max-w-[1440px] mx-auto min-h-screen">
       <HeroSection />
       <FileMarquee items={allFileProperties} />
-      
+
       <Reveal className="max-w-3xl pt-8">
         <h2 className="text-4xl font-extrabold text-primary sm:text-5xl md:text-6xl">
           Your Trusted Partner in Real Estate
@@ -261,16 +263,18 @@ function RouteComponent() {
       </Reveal>
 
       {reviews?.length > 0 && (
-        <Reveal>
-          <ReviewsSection reviews={reviews} />
+        <Reveal className="w-full">
+          <ReviewsSection reviews={reviews} className={"my-8"} />
         </Reveal>
       )}
 
       {videoSection && videoToDisplay && (
         <Reveal className="w-full px-4 mx-auto my-8">
-            <h2 className="mb-4 text-3xl font-bold">{videoSection.heading}</h2>
-            <p className="mb-8 text-lg text-muted-foreground">{videoSection.subheading}</p>
-            <VideoPlayer video={videoToDisplay} />
+          <h2 className="mb-4 text-3xl font-bold">{videoSection.heading}</h2>
+          <p className="mb-8 text-lg text-muted-foreground">
+            {videoSection.subheading}
+          </p>
+          <VideoPlayer video={videoToDisplay} />
         </Reveal>
       )}
 
@@ -280,7 +284,7 @@ function RouteComponent() {
       </Reveal>
 
       {/* Why Choose Us Section - New Variant 2 */}
-      <Reveal>
+      <Reveal className="w-full">
         <TextSection {...whyChooseUsContent} className={"my-8"} />
       </Reveal>
 
@@ -290,6 +294,17 @@ function RouteComponent() {
           className={"px-4 md:px-6 mx-auto"}
         />
       </Reveal>
+
+      {popupSection && (
+        <Popup
+          isVisible={popupSection.isVisible}
+          title={popupSection.heading}
+          description={popupSection.subheading}
+          delayMs={popupSection.delayMs}
+          mediaType={popupSection.mediaType}
+          mediaPath={popupSection.mediaPath}
+        />
+      )}
     </main>
   );
 }

@@ -23,6 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { MediaUpload } from "../MediaUpload";
+import { LabelSelector } from "../LabelSelector";
 import { propertyFormSchema } from "./validation";
 import { PlusIcon, XIcon, GripVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -177,6 +178,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
   const [societies, setSocieties] = useState([]);
   const [phases, setPhases] = useState([]);
   const [labels, setLabels] = useState([]);
+  const [thumbnailMedia, setThumbnailMedia] = useState([]);
 
   const {
     register,
@@ -320,6 +322,19 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
         sourceData.labels = [];
       }
 
+      // Initialize thumbnail media state
+      if (sourceData.media) {
+        setThumbnailMedia(sourceData.media.thumbnail_image ? [{
+          id: isDuplicating ? undefined : sourceData.media.thumbnail_image.id,
+          url: sourceData.media.thumbnail_image.path,
+          thumb_path: sourceData.media.thumbnail_image.thumb_path,
+          type: 'image',
+          file: null,
+        }] : []);
+      } else {
+        setThumbnailMedia([]);
+      }
+
 
       reset(sourceData); // Reset form with the processed sourceData
 
@@ -356,6 +371,7 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
         _new_label_variant: "secondary",
         is_furnished: false,
       });
+      setThumbnailMedia([]);
     }
   }, [initialData, editingItemFullDetails, isDuplicating, reset, setLabels]);
 
@@ -413,7 +429,8 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
     const finalData = {
       ...filteredData,
       existing_labels,
-      // No thumbnailMedia, galleryMedia, videoMedia, videoInputMethod, videoEmbedLinkForMedia, removedGalleryImageIds for files form
+      thumbnailMedia,
+      // No galleryMedia, videoMedia, videoInputMethod, videoEmbedLinkForMedia, removedGalleryImageIds for files form
       id: isDuplicating || !initialData ? undefined : initialData.id,
     };
     onSuccess(finalData);
@@ -448,6 +465,24 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
   return (
     <div className="max-w-3xl p-6 mx-auto space-y-8">
       <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Thumbnail</CardTitle>
+            <CardDescription>
+              Main image for the property file card
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MediaUpload
+              initialMedia={thumbnailMedia}
+              onMediaChange={setThumbnailMedia}
+              maxFiles={1}
+              maxFileSizeMb={5}
+              allowMultiple={false}
+              allowedTypes={["image/*"]}
+            />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>File Property Information</CardTitle>
@@ -945,41 +980,22 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                 </SortableContext>
               </DndContext>
 
-              <div className="flex flex-col gap-2 mt-3 sm:flex-row">
-                <Select
-                  onValueChange={(value) =>
-                    setValue("_selected_label", value)
-                  }
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select an existing label" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {labels.map((label) => (
-                      <SelectItem
-                        key={label.id}
-                        value={label.id.toString()}
-                      >
-                        {label.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => {
-                    const sel = getValues("_selected_label");
-                    if (!sel) return;
-                    if (!selectedLabelIds.includes(sel)) {
-                      const updated = [...selectedLabelIds, sel];
-                      setValue("labels", updated);
+              <div className="flex flex-col gap-2 mt-3">
+                <LabelSelector
+                  availableLabels={labels}
+                  selectedLabelIds={selectedLabelIds}
+                  onSelect={(id) => {
+                    const stringId = String(id);
+                    if (!selectedLabelIds.includes(stringId)) {
+                      setValue("labels", [...selectedLabelIds, stringId]);
                     }
                   }}
-                >
-                  Add Label
-                </Button>
+                  onLabelDeleted={(id) => {
+                    const stringId = String(id);
+                    setLabels(prev => prev.filter(l => String(l.id) !== stringId));
+                    setValue("labels", selectedLabelIds.filter(lid => lid !== stringId));
+                  }}
+                />
               </div>
 
               <div className="flex flex-col gap-2 mt-2 sm:flex-row">

@@ -38,9 +38,28 @@ function RouteComponent() {
   const router = useRouter();
   const navigate = useNavigate();
   const initialSearch = Route.useSearch();
+  const scrollToId = initialSearch.scrollTo;
 
   const { data: fileProperties, isLoading, isFetching } = useQuery(filesQueryOptions(initialSearch));
   const { data: filterOptions } = useQuery(fileFilterOptionsQueryOptions);
+
+  useEffect(() => {
+    if (!isLoading && !isFetching && scrollToId && fileProperties) {
+      // Small delay to ensure the DOM is rendered
+      const timer = setTimeout(() => {
+        const element = document.getElementById(scrollToId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight effect
+          element.classList.add('ring-4', 'ring-amber-500', 'ring-offset-4');
+          setTimeout(() => {
+            element.classList.remove('ring-4', 'ring-amber-500', 'ring-offset-4');
+          }, 2000);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isFetching, scrollToId, fileProperties]);
 
   const [searchQuery, setSearchQuery] = useState(initialSearch.query || "");
   const [selectedCity, setSelectedCity] = useState(initialSearch.city || "");

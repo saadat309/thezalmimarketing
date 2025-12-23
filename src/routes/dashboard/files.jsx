@@ -54,6 +54,17 @@ const columns = [
       enableHiding: false,
     },
     { accessorKey: 'title', header: 'Title' },
+    { 
+      accessorKey: 'thumbnail_url', // Display thumbnail image if available
+      header: 'Image',
+      cell: ({ row }) => row.original.thumbnail_url ? (
+        <img src={row.original.thumbnail_url} alt={row.original.title} className="object-cover w-10 h-10 rounded-md" />
+      ) : (
+        <span className="text-muted-foreground">No Image</span>
+      ),
+      enableSorting: false,
+      enableHiding: true,
+    },
     { accessorKey: 'file_type', header: 'File Type' },
     { accessorKey: 'price_amount', header: 'Price' },
     {
@@ -186,6 +197,17 @@ function DashboardFiles() {
 
     // Explicitly ensure is_file is true for this form
     formData.set('is_file', '1');
+
+    // Handle thumbnail media
+    const { thumbnailMedia } = data;
+    if (thumbnailMedia && thumbnailMedia.length > 0 && thumbnailMedia[0].file) {
+      formData.append('thumbnail_image', thumbnailMedia[0].file);
+    } else if (thumbnailMedia && thumbnailMedia.length > 0 && thumbnailMedia[0].url) {
+       // Check if it's a new URL selection (duplication)
+       formData.append('thumbnail_image_url', thumbnailMedia[0].url);
+    } else if (thumbnailMedia && thumbnailMedia.length === 0) {
+      formData.append('thumbnail_image_removed', 'true');
+    }
 
     // Handle labels
     const existingLabels = data.existing_labels || data.labels || [];

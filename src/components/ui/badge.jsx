@@ -19,9 +19,9 @@ const badgeVariants = cva(
         sale: "border-transparent bg-green-500 text-white shadow",
         rent: "border-transparent bg-orange-500 text-white shadow",
         featured: "border-transparent bg-yellow-500 text-black shadow",
-        new: "border-transparent bg-blue-500 text-white shadow",
-        hot: "border-transparent bg-red-500 text-white shadow",
-        discounted: "border-transparent bg-purple-500 text-white shadow",
+        new: "border-transparent bg-blue-500 text-white shadow animate-shine",
+        hot: "border-transparent bg-red-500 text-white shadow animate-shine",
+        discounted: "border-transparent bg-purple-500 text-white shadow animate-shine",
       },
     },
     defaultVariants: {

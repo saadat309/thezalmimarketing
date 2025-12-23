@@ -28,6 +28,7 @@ const DEFAULT_WHATSAPP_NUMBER = "923218446496"; // Fallback WhatsApp number (wit
 
 function PropertyCard(props) {
   const {
+    id, // Added id prop
     image,
     imageThumb,
     title,
@@ -61,6 +62,7 @@ function PropertyCard(props) {
     price_period_unit,
     is_file, // Destructure is_file
     file_type, // Destructure file_type
+    short_desc, // Destructure short_desc
     phase, // Destructure phase
     societyName, // Destructure societyName
     is_furnished, // Destructure is_furnished
@@ -230,6 +232,7 @@ function PropertyCard(props) {
 
   return (
     <Card
+      id={id}
       className={`py-0 gap-0 overflow-hidden group shadow-sm shadow-card-foreground/30 border-0 will-change-transform
         ${is_file ? "cursor-default" : "cursor-pointer"}
         ${is_file ? "" : "transition-all duration-300 hover:shadow-2xl active:scale-[0.98]"}
@@ -238,15 +241,7 @@ function PropertyCard(props) {
     >
       <div className="p-3 will-change-transform">
         <div className="relative overflow-hidden rounded-lg aspect-video bg-muted will-change-transform">
-          {is_file ? (
-            <div className="flex items-center justify-center w-full h-full bg-white bg-[radial-gradient(#413c58_1px,transparent_1px)] bg-size-[12px_12px]">
-              <img
-                src="/files.svg"
-                alt="File Icon"
-                className="w-20 h-20 text-primary"
-              />
-            </div>
-          ) : image ? (
+          {image ? (
             <SmartImage
               src={image}
               alt={title || "Property"}
@@ -258,6 +253,14 @@ function PropertyCard(props) {
                 </div>
               }
             />
+          ) : is_file ? (
+            <div className="flex items-center justify-center w-full h-full bg-white bg-[radial-gradient(#413c58_1px,transparent_1px)] bg-size-[12px_12px]">
+              <img
+                src="/files.svg"
+                alt="File Icon"
+                className="w-20 h-20 text-primary"
+              />
+            </div>
           ) : (
             <div className="flex items-center justify-center w-full h-full bg-muted">
               <ImageOff className="w-12 h-12 text-muted-foreground/50" />
@@ -317,6 +320,11 @@ function PropertyCard(props) {
             )}
             {(displayNumericPrice !== null || isDiscounted) && (
               <div className="will-change-transform">{renderPrice()}</div>
+            )}
+            {is_file && short_desc && (
+              <p className="text-sm text-muted-foreground line-clamp-3 mt-1 will-change-transform">
+                {short_desc}
+              </p>
             )}
           </div>
         )}
