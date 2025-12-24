@@ -27,6 +27,89 @@ const mapFilterOptionsQueryOptions = queryOptions({
 });
 
 export const Route = createFileRoute("/maps/")({
+  head: ({ loaderData }) => {
+    const maps = loaderData || [];
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": maps.map((map, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "url": `https://thezalmimarketing.com/maps/`, // Maps don't have detail pages yet, so pointing to the list
+        "name": map.title
+      }))
+    };
+
+    return {
+      title: "Society Maps & Master Plans in Pakistan | The Zalmi Marketing",
+      meta: [
+        { title: "Society Maps & Master Plans in Pakistan | The Zalmi Marketing" },
+        {
+          name: "description",
+          content:
+            "Browse and download official master plans and society maps for DHA, Bahria Town, and other major housing societies in Pakistan.",
+        },
+        { name: "robots", content: "index, follow" },
+
+        // Open Graph
+        { property: "og:type", content: "website" },
+        {
+          property: "og:title",
+          content: "Society Maps & Master Plans in Pakistan | The Zalmi Marketing",
+        },
+        {
+          property: "og:description",
+          content:
+            "Access official society maps and master plans across Pakistan at The Zalmi Marketing.",
+        },
+        {
+          property: "og:url",
+          content: "https://thezalmimarketing.com/maps/",
+        },
+        { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+        // Twitter
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:url", content: "https://thezalmimarketing.com/maps/" },
+        { name: "twitter:title", content: "Society Maps & Master Plans in Pakistan | The Zalmi Marketing" },
+        { name: "twitter:description", content: "Access official society maps and master plans across Pakistan at The Zalmi Marketing." },
+        { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+      ],
+      links: [
+        {
+          rel: "canonical",
+          href: "https://thezalmimarketing.com/maps/",
+        },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://thezalmimarketing.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Maps",
+                "item": "https://thezalmimarketing.com/maps/"
+              }
+            ]
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(itemListSchema),
+        },
+      ],
+    };
+  },
   loader: async ({ context: { queryClient }, search }) => {
     await queryClient.ensureQueryData(mapFilterOptionsQueryOptions);
     return queryClient.ensureQueryData(mapsQueryOptions(search));
@@ -106,11 +189,11 @@ function RouteComponent() {
             All Maps
           </h1>
           <div className="relative w-full max-w-4xl px-4 mt-8">
-            <Search className="absolute text-muted-foreground -translate-y-1/2 left-7 top-1/2" />
+            <Search className="absolute -translate-y-1/2 text-muted-foreground left-7 top-1/2" />
             <Input
               type="text"
               placeholder="Search maps, cities, societies, phases..."
-              className="w-full py-6 pl-14 pr-4 rounded-full shadow-lg bg-background text-black"
+              className="w-full py-6 pr-4 text-black rounded-full shadow-lg pl-14 bg-background"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -118,7 +201,7 @@ function RouteComponent() {
 
           {/* Filter Popovers / Sheet */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-            <div className="hidden lg:flex flex-wrap items-center justify-center gap-2">
+            <div className="flex-wrap items-center justify-center hidden gap-2 lg:flex">
               <DropdownMenu
                 modal={false}
                 open={isCityDropdownOpen}
@@ -130,7 +213,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedCity || "City"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -167,7 +250,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedSociety || "Society"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -204,7 +287,7 @@ function RouteComponent() {
                     className="w-[150px] justify-between bg-background text-black"
                   >
                     {selectedPhase || "Phase"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -238,17 +321,17 @@ function RouteComponent() {
             </div>
 
             {/* Mobile Filter Sheet */}
-            <div className="lg:hidden flex gap-2">
+            <div className="flex gap-2 lg:hidden">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center gap-2 bg-background text-black"
+                    className="flex items-center gap-2 text-black bg-background"
                   >
                     <Filter className="w-4 h-4" />
                     Filters
                     {isFilterActive && (
-                      <Badge className="ml-1 px-2">Active</Badge>
+                      <Badge className="px-2 ml-1">Active</Badge>
                     )}
                   </Button>
                 </SheetTrigger>
@@ -343,7 +426,7 @@ function RouteComponent() {
           </div>
         </div>
       </GlobalHero>
-      <div className="container py-8 px-4 mx-auto">
+      <div className="container px-4 py-8 mx-auto">
         {isLoading || isFetching ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (

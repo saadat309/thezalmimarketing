@@ -35,6 +35,55 @@ const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/\D/g, '')}`; // Rem
 
 
 export const Route = createFileRoute("/about")({
+  head: () => ({
+    meta: [
+      { title: "About Us | The Zalmi Marketing - Top Real Estate Experts in Lahore" },
+      {
+        name: "description",
+        content:
+          "Learn about The Zalmi Marketing, a premier real estate agency in Lahore led by Ch. Sajid Mahmood. Delivering excellence in DHA Lahore and nationwide since 2020.",
+      },
+      {
+        name: "keywords",
+        content: "About Zalmi Marketing, Ch. Sajid Mahmood, Real Estate Experts Lahore, DHA Lahore Agency",
+      },
+      // Open Graph
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://thezalmimarketing.com/about" },
+      { property: "og:title", content: "About Us | The Zalmi Marketing" },
+      { property: "og:description", content: "Learn about The Zalmi Marketing, a premier real estate agency in Lahore led by Ch. Sajid Mahmood." },
+      { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+      // Twitter
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: "https://thezalmimarketing.com/about" },
+      { name: "twitter:title", content: "About Us | The Zalmi Marketing" },
+      { name: "twitter:description", content: "Learn about The Zalmi Marketing, a premier real estate agency in Lahore led by Ch. Sajid Mahmood." },
+      { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://thezalmimarketing.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "About Us",
+              "item": "https://thezalmimarketing.com/about"
+            }
+          ]
+        }),
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 

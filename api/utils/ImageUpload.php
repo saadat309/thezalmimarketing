@@ -252,18 +252,13 @@ class ImageUpload {
             
             $fullPath = $publicDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $cleanPath);
             
-            error_log("Attempting to delete file: " . $fullPath);
-            
             if (file_exists($fullPath)) {
                 if (unlink($fullPath)) {
-                    error_log("Successfully deleted: " . $fullPath);
                     return true;
                 } else {
-                    error_log("Failed to unlink: " . $fullPath);
                     return false;
                 }
             } else {
-                error_log("File not found for deletion: " . $fullPath);
                 return true; // Consider success if already gone
             }
         };

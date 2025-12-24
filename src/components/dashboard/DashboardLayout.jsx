@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import { useEffect } from 'react';
 import { useQueriesStore } from '@/store/queriesStore';
 import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 export function DashboardLayout() {
   return (
@@ -29,12 +30,7 @@ function AppLayoutContent() {
     const fetchProfile = async () => {
       if (!token) return;
       try {
-        const res = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'X-Auth-Token': token
-          }
-        });
+        const res = await apiFetch('/auth/me');
         if (res.ok) {
           const data = await res.json();
           login(token, data);
@@ -50,11 +46,11 @@ function AppLayoutContent() {
   useEffect(() => {
     if (token) {
       // Initial fetch
-      fetchUnreadCount(token);
+      fetchUnreadCount();
 
       // Poll every 30 seconds
       const interval = setInterval(() => {
-        fetchUnreadCount(token);
+        fetchUnreadCount();
       }, 30000);
 
       return () => clearInterval(interval);

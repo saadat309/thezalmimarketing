@@ -108,8 +108,6 @@ function get_category(PDO $pdo, $id) {
 
 function create_category(PDO $pdo) {
     $input = get_request_data(); // Get data from $_POST or JSON body
-    error_log("Input data for create_category: " . print_r($input, true));
-    error_log("Files data for create_category: " . print_r($_FILES, true));
 
     if (empty($input['name'])) {
         return send_json(['error' => 'name is required'], 400);
@@ -171,15 +169,10 @@ function create_category(PDO $pdo) {
 function update_category(PDO $pdo, $id) {
     $input = get_request_data(); // Get data from $_POST or JSON body
 
-    error_log("--- UPDATE CATEGORY DEBUG (ID: $id) ---");
-    error_log("Input data received: " . print_r($input, true));
-    error_log("Files data received: " . print_r($_FILES, true));
-
     $stmt = $pdo->prepare("SELECT id, name, slug, pic, thumb FROM categories WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch();
     if (!$exists) return send_json(['error' => 'Category not found'], 404);
-    error_log("Existing category data (from DB): " . print_r($exists, true));
 
     $name = $input['name'] ?? $exists['name'];
     $slug = $exists['slug'];
@@ -219,17 +212,14 @@ function update_category(PDO $pdo, $id) {
     $pdo->beginTransaction();
     try {
         $update_params = [$name, $slug, $new_pic, $new_thumb, $id];
-        error_log("Final params for UPDATE: " . print_r($update_params, true));
         $stmt = $pdo->prepare("UPDATE categories SET name = ?, slug = ?, pic = ?, thumb = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
-        error_log("UPDATE affected rows: " . $affected_rows);
         $pdo->commit();
 
         $stmt2 = $pdo->prepare("SELECT id, name, slug, pic, thumb, created_at, updated_at FROM categories WHERE id = ?");
         $stmt2->execute([$id]);
         $row = $stmt2->fetch();
-        error_log("Category after update: " . print_r($row, true));
         return send_json($row);
     } catch (PDOException $e) {
         $pdo->rollBack();
@@ -239,8 +229,6 @@ function update_category(PDO $pdo, $id) {
         $pdo->rollBack();
         error_log("Exception during update: " . $e->getMessage());
         return send_json(['error' => 'Error during category update', 'detail' => $e->getMessage()], 500);
-    } finally {
-        error_log("--- END UPDATE CATEGORY DEBUG ---");
     }
 }
 

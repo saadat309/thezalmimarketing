@@ -80,7 +80,6 @@ function get_label(PDO $pdo, $id) {
 
 function create_label(PDO $pdo) {
     $input = get_request_data();
-    error_log("Input data for create_label: " . print_r($input, true));
 
     if (empty($input['name'])) {
         return send_json(['error' => 'name is required'], 400);
@@ -107,7 +106,6 @@ function create_label(PDO $pdo) {
         $stmt2 = $pdo->prepare("SELECT id, name, slug, is_badge, is_filter, badge_variant, created_at, updated_at FROM labels WHERE id = ?");
         $stmt2->execute([$new_id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
-        error_log("Label after create: " . print_r($row, true));
         return send_json($row, 201);
 
     } catch (PDOException $e) {
@@ -118,21 +116,16 @@ function create_label(PDO $pdo) {
         $pdo->rollBack();
         error_log("Exception during create: " . $e->getMessage());
         return send_json(['error' => 'Error during label creation', 'detail' => $e->getMessage()], 500);
-    } finally {
-        error_log("--- END CREATE LABEL DEBUG ---");
     }
 }
 
 function update_label(PDO $pdo, $id) {
     $input = get_request_data();
-    error_log("--- UPDATE LABEL DEBUG (ID: $id) ---");
-    error_log("Input data received: " . print_r($input, true));
 
     $stmt = $pdo->prepare("SELECT id, name, slug, is_badge, is_filter, badge_variant FROM labels WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$exists) return send_json(['error' => 'Label not found'], 404);
-    error_log("Existing label data (from DB): " . print_r($exists, true));
 
     $name = $input['name'] ?? $exists['name'];
     $slug = $exists['slug'];
@@ -148,18 +141,15 @@ function update_label(PDO $pdo, $id) {
     $pdo->beginTransaction();
     try {
         $update_params = [$name, $slug, $is_badge, $is_filter, $badge_variant, $id];
-        error_log("Final params for UPDATE: " . print_r($update_params, true));
         $stmt = $pdo->prepare("UPDATE labels SET name = ?, slug = ?, is_badge = ?, is_filter = ?, badge_variant = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
-        error_log("UPDATE affected rows: " . $affected_rows);
         
         $pdo->commit();
 
         $stmt2 = $pdo->prepare("SELECT id, name, slug, is_badge, is_filter, badge_variant, created_at, updated_at FROM labels WHERE id = ?");
         $stmt2->execute([$id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
-        error_log("Label after update: " . print_r($row, true));
         return send_json($row);
     } catch (PDOException $e) {
         $pdo->rollBack();
@@ -169,8 +159,6 @@ function update_label(PDO $pdo, $id) {
         $pdo->rollBack();
         error_log("Exception during update: " . $e->getMessage());
         return send_json(['error' => 'Error during label update', 'detail' => $e->getMessage()], 500);
-    } finally {
-        error_log("--- END UPDATE LABEL DEBUG ---");
     }
 }
 

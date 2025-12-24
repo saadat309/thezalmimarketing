@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner'; // Assuming a spinner component for loading
 import CityForm from '@/components/dashboard/city-form/CityForm'; // Import the new CityForm
 import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 export const Route = createFileRoute('/dashboard/cities')({
   component: DashboardCities,
@@ -89,12 +90,7 @@ function DashboardCities() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/cities", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
-      });
+      const response = await apiFetch("/cities");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -123,12 +119,8 @@ function DashboardCities() {
         });
       }
 
-      const response = await fetch("/api/cities", {
+      const response = await apiFetch("/cities", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
         body: formData,
       });
 
@@ -164,12 +156,8 @@ function DashboardCities() {
       }
       formData.append('_method', 'PATCH'); // Method override
 
-      const response = await fetch(`/api/cities/${editedItem.id}`, {
+      const response = await apiFetch(`/cities/${editedItem.id}`, {
         method: "POST", // Use POST for FormData with method override
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
         body: formData,
       });
 
@@ -192,12 +180,8 @@ function DashboardCities() {
   const handleDeleteCity = async (id) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/cities/${id}`, {
+      const response = await apiFetch(`/cities/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token 
-        },
       });
 
       if (!response.ok) {
@@ -223,12 +207,8 @@ function DashboardCities() {
     try {
       // Create an array of promises for all delete operations
             const deletePromises = selectedRows.map((row) =>
-              fetch(`/api/cities/${row.original.id}`, {
+              apiFetch(`/cities/${row.original.id}`, {
                 method: "DELETE",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "X-Auth-Token": token
-                },
               })
             );
       const results = await Promise.allSettled(deletePromises);

@@ -37,7 +37,58 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-export const Route = createFileRoute("/contact")({ component: RouteComponent, });
+export const Route = createFileRoute("/contact")({
+  head: () => ({
+    meta: [
+      { title: "Contact Us | The Zalmi Marketing Lahore - Real Estate Services" },
+      {
+        name: "description",
+        content:
+          "Get in touch with The Zalmi Marketing in DHA Lahore. Contact us for property inquiries, DHA Lahore investment advice, and real estate services in Pakistan.",
+      },
+      {
+        name: "keywords",
+        content: "Contact Zalmi Marketing, Real Estate Office Lahore, DHA Lahore Phase 6 Office, Property Inquiry Lahore",
+      },
+      // Open Graph
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://thezalmimarketing.com/contact" },
+      { property: "og:title", content: "Contact Us | The Zalmi Marketing" },
+      { property: "og:description", content: "Get in touch with The Zalmi Marketing for property inquiries and investment advice." },
+      { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+      // Twitter
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: "https://thezalmimarketing.com/contact" },
+      { name: "twitter:title", content: "Contact Us | The Zalmi Marketing" },
+      { name: "twitter:description", content: "Get in touch with The Zalmi Marketing for property inquiries and investment advice." },
+      { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://thezalmimarketing.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Contact Us",
+              "item": "https://thezalmimarketing.com/contact"
+            }
+          ]
+        }),
+      },
+    ],
+  }),
+  component: RouteComponent,
+});
 
 function RouteComponent() {
   return (

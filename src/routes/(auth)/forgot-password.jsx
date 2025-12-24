@@ -2,6 +2,11 @@ import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/(auth)/forgot-password')({
+  head: () => ({
+    meta: [
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
   component: RouteComponent,
 })
 

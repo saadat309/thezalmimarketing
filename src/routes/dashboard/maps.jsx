@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Spinner } from '@/components/ui/spinner'; // Import Spinner
 import MapForm from '@/components/dashboard/map-form/MapForm';
 import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 export const Route = createFileRoute('/dashboard/maps')({
   component: DashboardMaps,
@@ -141,12 +142,7 @@ function DashboardMaps() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/maps?all=1', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          "X-Auth-Token": token 
-        }
-      });
+      const response = await apiFetch('/maps?all=1');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -193,12 +189,8 @@ function DashboardMaps() {
         }
       }
 
-      const response = await fetch("/api/maps", {
+      const response = await apiFetch("/maps", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
         body: formData,
       });
 
@@ -259,12 +251,8 @@ function DashboardMaps() {
         formData.append('mapPdf_removed', 'true');
       }
 
-      const response = await fetch(`/api/maps/${editedItem.id}`, {
+      const response = await apiFetch(`/maps/${editedItem.id}`, {
         method: "POST", // Use POST for FormData with method override
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
         body: formData,
       });
 
@@ -288,12 +276,8 @@ function DashboardMaps() {
   const handleDeleteMap = async (id) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/maps/${id}`, {
+      const response = await apiFetch(`/maps/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -316,12 +300,8 @@ function DashboardMaps() {
     setIsSubmitting(true);
     try {
             const deletePromises = selectedRows.map((row) =>
-              fetch(`/api/maps/${row.original.id}`, {
+              apiFetch(`/maps/${row.original.id}`, {
                 method: "DELETE",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "X-Auth-Token": token
-                },
               })
             );
       const results = await Promise.allSettled(deletePromises);

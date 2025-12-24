@@ -6,9 +6,10 @@ import { ArrowUpDown, CopyIcon, ArrowDown, ArrowUp, Loader2 } from 'lucide-react
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner"; 
-import UserForm from '@/components/dashboard/user-form/user-form';
 import { Spinner } from '@/components/ui/spinner';
-import { useAuthStore } from "@/store/authStore"; // Import useAuthStore
+import UserForm from '@/components/dashboard/user-form/user-form';
+import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 export const Route = createFileRoute('/dashboard/users')({
   component: DashboardUsers,
@@ -31,12 +32,7 @@ function DashboardUsers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/users", {
-        headers: {
-          Authorization: `Bearer ${useAuthStore.getState().token}`,
-          "X-Auth-Token": useAuthStore.getState().token, // Send token
-        },
-      });
+      const response = await apiFetch("/users");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -57,13 +53,8 @@ function DashboardUsers() {
   const handleAddUser = async (data) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/users", {
+      const response = await apiFetch("/users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${useAuthStore.getState().token}`,
-          "X-Auth-Token": useAuthStore.getState().token,
-        },
         body: JSON.stringify(data),
       });
 
@@ -97,13 +88,8 @@ function DashboardUsers() {
   const handleEditUser = async (data) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/users/${data.id}`, {
+      const response = await apiFetch(`/users/${data.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${useAuthStore.getState().token}`,
-          "X-Auth-Token": useAuthStore.getState().token,
-        },
         body: JSON.stringify(data),
       });
 
@@ -127,12 +113,8 @@ function DashboardUsers() {
   const handleDeleteUser = async (id) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/users/${id}`, {
+      const response = await apiFetch(`/users/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}`,
-          'X-Auth-Token': useAuthStore.getState().token
-        }
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -155,12 +137,8 @@ function DashboardUsers() {
     setIsSubmitting(true);
     try {
       const deletePromises = selectedRows.map((row) =>
-        fetch(`/api/users/${row.original.id}`, {
+        apiFetch(`/users/${row.original.id}`, {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${useAuthStore.getState().token}`,
-            "X-Auth-Token": useAuthStore.getState().token,
-          },
         })
       );
 
@@ -194,15 +172,10 @@ function DashboardUsers() {
     setIsSubmitting(true);
     try {
       toast.info(`Generating new invite link for ${userEmail}...`);
-      const response = await fetch(
-        `/api/users/${userId}/generate-invite-token`,
+      const response = await apiFetch(
+        `/users/${userId}/generate-invite-token`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${useAuthStore.getState().token}`,
-            "X-Auth-Token": token
-          },
         }
       );
 

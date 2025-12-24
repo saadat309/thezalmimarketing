@@ -13,8 +13,11 @@ export async function apiFetch(endpoint, options = {}) {
   // Prepend /api if not already there
   const fullUrl = url.startsWith('/api') ? url : `/api${url}`;
 
+  // Check if body is FormData to handle headers correctly
+  const isFormData = options.body instanceof FormData;
+
   const defaultHeaders = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { 
       'Authorization': `Bearer ${token}`,
       'X-Auth-Token': token 
@@ -32,8 +35,10 @@ export async function apiFetch(endpoint, options = {}) {
   const response = await fetch(fullUrl, config);
 
   if (response.status === 401) {
-    // Optional: Handle token expiration/logout here
-    // useAuthStore.getState().logout();
+    // Handle token expiration/logout here
+    useAuthStore.getState().logout();
+    // Redirect to login page
+    window.location.href = '/login';
   }
 
   return response;

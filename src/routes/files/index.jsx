@@ -27,6 +27,68 @@ const fileFilterOptionsQueryOptions = queryOptions({
 });
 
 export const Route = createFileRoute("/files/")({
+  head: () => ({
+    meta: [
+      { title: "Real Estate Plot Files for Sale in Pakistan | The Zalmi Marketing" },
+      {
+        name: "description",
+        content:
+          "Find plot files and investment opportunities in top housing schemes across Pakistan. Secure your future with verified plot files.",
+      },
+      { name: "robots", content: "index, follow" },
+
+      // Open Graph
+      { property: "og:type", content: "website" },
+      {
+        property: "og:title",
+        content: "Real Estate Plot Files for Sale in Pakistan | The Zalmi Marketing",
+      },
+      {
+        property: "og:description",
+        content:
+          "Explore verified real estate plot files for sale across Pakistan at The Zalmi Marketing.",
+      },
+              {
+                property: "og:url",
+                content: "https://thezalmimarketing.com/files/",
+              },
+              { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+              // Twitter
+              { name: "twitter:card", content: "summary_large_image" },
+              { name: "twitter:url", content: "https://thezalmimarketing.com/files/" },
+              { name: "twitter:title", content: "Real Estate Plot Files for Sale in Pakistan | The Zalmi Marketing" },
+              { name: "twitter:description", content: "Explore verified real estate plot files for sale across Pakistan at The Zalmi Marketing." },
+              { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+            ],    links: [
+      {
+        rel: "canonical",
+        href: "https://thezalmimarketing.com/files/",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://thezalmimarketing.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Files",
+              "item": "https://thezalmimarketing.com/files/"
+            }
+          ]
+        }),
+      },
+    ],
+  }),
   loader: async ({ context: { queryClient }, search }) => {
     await queryClient.ensureQueryData(fileFilterOptionsQueryOptions);
     return queryClient.ensureQueryData(filesQueryOptions(search));
@@ -137,11 +199,11 @@ function RouteComponent() {
             Explore Files
           </h1>
           <div className="relative w-full max-w-4xl px-4 mt-8">
-            <Search className="absolute text-muted-foreground -translate-y-1/2 left-7 top-1/2" />
+            <Search className="absolute -translate-y-1/2 text-muted-foreground left-7 top-1/2" />
             <Input
               type="text"
               placeholder="Search files, societies, phases..."
-              className="w-full py-6 pl-14 pr-4 rounded-full shadow-lg bg-background text-black"
+              className="w-full py-6 pr-4 text-black rounded-full shadow-lg pl-14 bg-background"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -149,7 +211,7 @@ function RouteComponent() {
 
           {/* Filter Popovers / Sheet */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-            <div className="hidden lg:flex flex-wrap items-center justify-center gap-2">
+            <div className="flex-wrap items-center justify-center hidden gap-2 lg:flex">
               <DropdownMenu
                 modal={false}
                 open={isCityDropdownOpen}
@@ -161,7 +223,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedCity || "City"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -198,7 +260,7 @@ function RouteComponent() {
                     className="w-[180px] justify-between bg-background text-black"
                   >
                     {selectedSociety || "Society"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -235,7 +297,7 @@ function RouteComponent() {
                     className="w-[150px] justify-between bg-background text-black"
                   >
                     {selectedPhase || "Phase"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -272,7 +334,7 @@ function RouteComponent() {
                     className="w-[150px] justify-between bg-background text-black"
                   >
                     {selectedFileType || "File Type"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -316,7 +378,7 @@ function RouteComponent() {
                     className="w-[100px] justify-between bg-background text-black"
                   >
                     {selectedAreaUnit || "Unit"}
-                    <ChevronDown className="ml-2 h-4 w-4 text-black" />
+                    <ChevronDown className="w-4 h-4 ml-2 text-black" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -379,17 +441,17 @@ function RouteComponent() {
             </div>
 
             {/* Mobile Filter Sheet */}
-            <div className="lg:hidden flex gap-2">
+            <div className="flex gap-2 lg:hidden">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center gap-2 bg-background text-black"
+                    className="flex items-center gap-2 text-black bg-background"
                   >
                     <Filter className="w-4 h-4" />
                     Filters
                     {isFilterActive && (
-                      <Badge className="ml-1 px-2">Active</Badge>
+                      <Badge className="px-2 ml-1">Active</Badge>
                     )}
                   </Button>
                 </SheetTrigger>
@@ -549,7 +611,7 @@ function RouteComponent() {
           </div>
         </div>
       </GlobalHero>
-      <div className="container py-8 px-4 mx-auto">
+      <div className="container px-4 py-8 mx-auto">
         {isLoading || isFetching ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (

@@ -98,8 +98,6 @@ function get_society(PDO $pdo, $id) {
 
 function create_society(PDO $pdo) {
     $input = get_request_data();
-    error_log("--- CREATE SOCIETY DEBUG ---");
-    error_log("Input data for create_society: " . print_r($input, true));
 
     if (empty($input['name'])) {
         return send_json(['error' => 'name is required'], 400);
@@ -131,7 +129,6 @@ function create_society(PDO $pdo) {
         $stmt2->execute([$new_id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
         $row['map_ids'] = get_maps_for_entity($pdo, 'society', $new_id); // Include map_ids
-        error_log("Society after create: " . print_r($row, true));
         return send_json($row, 201);
 
     } catch (PDOException $e) {
@@ -142,22 +139,17 @@ function create_society(PDO $pdo) {
         $pdo->rollBack();
         error_log("Exception during create: " . $e->getMessage());
         return send_json(['error' => 'Error during society creation', 'detail' => $e->getMessage()], 500);
-    } finally {
-        error_log("--- END CREATE SOCIETY DEBUG ---");
     }
 }
 
 
 function update_society(PDO $pdo, $id) {
     $input = get_request_data();
-    error_log("--- UPDATE SOCIETY DEBUG (ID: $id) ---");
-    error_log("Input data received: " . print_r($input, true));
 
     $stmt = $pdo->prepare("SELECT id, name, slug FROM societies WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$exists) return send_json(['error' => 'Society not found'], 404);
-    error_log("Existing society data (from DB): " . print_r($exists, true));
 
     $name = $input['name'] ?? $exists['name'];
     $slug = $exists['slug'];
@@ -169,11 +161,9 @@ function update_society(PDO $pdo, $id) {
     $pdo->beginTransaction();
     try {
         $update_params = [$name, $slug, $id];
-        error_log("Final params for UPDATE: " . print_r($update_params, true));
         $stmt = $pdo->prepare("UPDATE societies SET name = ?, slug = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
-        error_log("UPDATE affected rows: " . $affected_rows);
 
         // Handle map associations
         if (isset($input['map_ids']) && is_array($input['map_ids'])) {
@@ -208,7 +198,6 @@ function update_society(PDO $pdo, $id) {
         $stmt2->execute([$id]);
         $row = $stmt2->fetch(PDO::FETCH_ASSOC);
         $row['map_ids'] = get_maps_for_entity($pdo, 'society', $id); // Include map_ids
-        error_log("Society after update: " . print_r($row, true));
         return send_json($row);
     } catch (PDOException $e) {
         $pdo->rollBack();
@@ -218,8 +207,6 @@ function update_society(PDO $pdo, $id) {
         $pdo->rollBack();
         error_log("Exception during update: " . $e->getMessage());
         return send_json(['error' => 'Error during society update', 'detail' => $e->getMessage()], 500);
-    } finally {
-        error_log("--- END UPDATE SOCIETY DEBUG ---");
     }
 }
 

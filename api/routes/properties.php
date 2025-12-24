@@ -302,7 +302,13 @@ function get_property(PDO $pdo, $id) {
             LEFT JOIN cities ci ON p.city_id = ci.id
             LEFT JOIN societies s ON p.society_id = s.id
             LEFT JOIN phases ph ON p.phase_id = ph.id
-            WHERE p.id = ?";
+            WHERE ";
+    
+    if (is_numeric($id)) {
+        $sql .= "p.id = ?";
+    } else {
+        $sql .= "p.slug = ?";
+    }
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$id]);
@@ -320,8 +326,6 @@ function get_property(PDO $pdo, $id) {
 
 function create_property(PDO $pdo) {
     $input = get_request_data();
-    error_log("Input data for create_property: " . print_r($input, true));
-    error_log("Files data for create_property: " . print_r($_FILES, true));
 
     if (empty($input['title'])) {
         return send_json(['error' => 'Title is required'], 400);
@@ -570,8 +574,6 @@ function create_property(PDO $pdo) {
 
 function update_property(PDO $pdo, $id, $input_data = null) {
     $input = $input_data ?? get_request_data();
-    error_log("Input data for update_property (ID: $id): " . print_r($input, true));
-    error_log("Files data for update_property (ID: $id): " . print_r($_FILES, true));
 
     $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
     $stmt->execute([$id]);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuillRichText from "../QuillRichText";
 import { MediaUpload } from "../MediaUpload";
 import { LabelSelector } from "../LabelSelector";
+import { SearchableSelect } from "../SearchableSelect";
+import { apiFetch } from "@/lib/apiClient";
 import { propertyFormSchema } from "./validation";
 import { PlusIcon, XIcon, TrashIcon, GripVertical, Loader2 } from "lucide-react";
 import {
@@ -77,6 +79,12 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
   const [categories, setCategories] = useState([]);
   const [labels, setLabels] = useState([]);
   const [propertiesOptions, setPropertiesOptions] = useState([]);
+
+  const categoryOptions = useMemo(() => categories.map(c => ({ value: String(c.id), label: c.name })), [categories]);
+  const cityOptions = useMemo(() => cities.map(c => ({ value: String(c.id), label: c.name })), [cities]);
+  const societyOptions = useMemo(() => societies.map(s => ({ value: String(s.id), label: s.name })), [societies]);
+  const phaseOptions = useMemo(() => phases.map(p => ({ value: String(p.id), label: p.name })), [phases]);
+  const propertyOptions = useMemo(() => propertiesOptions.map(p => ({ value: String(p.id), label: p.name })), [propertiesOptions]);
 
   const [galleryMedia, setGalleryMedia] = useState([]);
   const [thumbnailMedia, setThumbnailMedia] = useState([]);
@@ -153,21 +161,21 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
     console.error("PropertyForm initialData.id:", initialData?.id); // Debugging line
     const fetchData = async () => {
       try {
-        const promises = [
-          fetch('/api/categories'),
-          fetch('/api/cities'),
-          fetch('/api/societies'),
-          fetch('/api/phases'),
-          fetch('/api/labels'),
-          fetch('/api/properties')
+        const endpoints = [
+          '/categories',
+          '/cities',
+          '/societies',
+          '/phases',
+          '/labels',
+          '/properties'
         ];
 
         // If editing or duplicating, fetch full property details to get media and other deep data not present in list view
         if (initialData?.id) {
-            promises.push(fetch(`/api/properties/${initialData.id}`));
+            endpoints.push(`/properties/${initialData.id}`);
         }
 
-        const responses = await Promise.all(promises);
+        const responses = await Promise.all(endpoints.map(endpoint => apiFetch(endpoint)));
 
         const categoriesData = responses[0].ok ? await responses[0].json() : [];
         const citiesData = responses[1].ok ? await responses[1].json() : [];
@@ -177,7 +185,7 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
         const propertiesData = responses[5].ok ? await responses[5].json() : [];
         
         let fullPropertyData = null;
-        if (initialData?.id && responses[6] && responses[6].ok) {
+        if (initialData?.id && responses.length > 6 && responses[6] && responses[6].ok) {
             fullPropertyData = await responses[6].json();
         }
 
@@ -845,25 +853,12 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       name="category_id"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          key={field.value + '-' + (categories.length > 0)} // Added key prop
-                          onValueChange={(value) => {
-                            field.onChange(value === "" ? null : value); // Convert empty string to null
-                          }}
-                          value={field.value || ""}
-                        >
-                          <SelectTrigger id="category_id">
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">None</SelectItem>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={String(cat.id)}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          options={categoryOptions}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select a category"
+                        />
                       )}
                     />
                   </div>
@@ -873,25 +868,12 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       name="city_id"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          key={field.value + '-' + (cities.length > 0)} // Added key prop
-                          onValueChange={(value) => {
-                            field.onChange(value === "0" ? null : value);
-                          }}
-                          value={field.value ? String(field.value) : "0"}
-                        >
-                          <SelectTrigger id="city_id">
-                            <SelectValue placeholder="Select a city" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">None</SelectItem>
-                            {cities.map((city) => (
-                              <SelectItem key={city.id} value={String(city.id)}>
-                                {city.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          options={cityOptions}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select a city"
+                        />
                       )}
                     />
                   </div>
@@ -903,25 +885,12 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       name="society_id"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          key={field.value + '-' + (societies.length > 0)} // Added key prop
-                          onValueChange={(value) => {
-                            field.onChange(value === "0" ? null : value); 
-                          }}
-                          value={field.value ? String(field.value) : "0"}
-                        >
-                          <SelectTrigger id="society_id">
-                            <SelectValue placeholder="Select a society" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">None</SelectItem>
-                            {societies.map((soc) => (
-                              <SelectItem key={soc.id} value={String(soc.id)}>
-                                {soc.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          options={societyOptions}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select a society"
+                        />
                       )}
                     />
                   </div>
@@ -931,25 +900,12 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       name="phase_id"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          key={field.value + '-' + (phases.length > 0)} // Added key prop
-                          onValueChange={(value) => {
-                            field.onChange(value === "0" ? null : value);
-                          }}
-                          value={field.value ? String(field.value) : "0"}
-                        >
-                          <SelectTrigger id="phase_id">
-                            <SelectValue placeholder="Select a phase" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">None</SelectItem>
-                            {phases.map((phase) => (
-                              <SelectItem key={phase.id} value={String(phase.id)}>
-                                {phase.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          options={phaseOptions}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select a phase"
+                        />
                       )}
                     />
                   </div>
@@ -963,25 +919,13 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                       name="_selected_property"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          key={propertiesOptions.length} // Changed key to avoid remount on value change
-                          onValueChange={(value) => {
-                            field.onChange(value === "" ? null : value); // Convert empty string to null
-                          }}
-                          value={field.value || ""}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select a property to relate" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={null}>Select a property</SelectItem>
-                            {propertiesOptions.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          options={propertyOptions}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select a property to relate"
+                          className="flex-1"
+                        />
                       )}
                     />
                     <Button
@@ -1077,12 +1021,8 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                               }}
                               onToggleIsBadge={async (checked) => {
                                 try {
-                                  const response = await fetch(`/api/labels/${lab.id}`, {
+                                  const response = await apiFetch(`/labels/${lab.id}`, {
                                     method: 'PATCH',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'Authorization': `Bearer ${token}`
-                                    },
                                     body: JSON.stringify({ is_badge: checked }),
                                   });
 
@@ -1166,12 +1106,8 @@ export default function PropertyForm({ initialData, onSuccess, onCancel, isDupli
                         if (!name) return;
 
                         try {
-                            const response = await fetch("/api/labels", {
+                            const response = await apiFetch("/labels", {
                               method: "POST",
-                              headers: {
-                                "Content-Type": "application/json",
-                                'Authorization': `Bearer ${token}`
-                              },
                               body: JSON.stringify({
                                 name: name,
                                 is_badge: true, // Default to true as per frontend logic

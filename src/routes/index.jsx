@@ -29,7 +29,7 @@ const Reveal = ({ children, className = "" }) => (
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: "-100px" }}
-    transition={{ duration: 0.6, ease: "easeOut" }}
+    transition={{ duration: 0.8, ease: "easeOut" }}
     className={className}
   >
     {children}
@@ -39,6 +39,81 @@ const Reveal = ({ children, className = "" }) => (
 export const Route = createFileRoute("/")({
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(homeQueryOptions()), // Use queryClient to fetch data
+  head: () => ({
+    meta: [
+      { title: "The Zalmi Marketing | Best Real Estate Agency in Lahore" },
+      {
+        name: "description",
+        content:
+          "The Zalmi Marketing is Lahore's most trusted real estate agency. Specializing in DHA Lahore, DHA Multan, and premium properties across Pakistan. Your partner for secure property investments.",
+      },
+      {
+        name: "keywords",
+        content:
+          "Real Estate Lahore, DHA Lahore, Zalmi Marketing, Property Lahore, DHA Projects Pakistan",
+      },
+      // Open Graph
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://thezalmimarketing.com/" },
+      {
+        property: "og:title",
+        content: "The Zalmi Marketing | Best Real Estate Agency in Lahore",
+      },
+      {
+        property: "og:description",
+        content:
+          "The Zalmi Marketing is Lahore's most trusted real estate agency specializing in DHA Lahore and premium properties across Pakistan.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+      },
+      // Twitter
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: "https://thezalmimarketing.com/" },
+      {
+        name: "twitter:title",
+        content: "The Zalmi Marketing | Best Real Estate Agency in Lahore",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "The Zalmi Marketing is Lahore's most trusted real estate agency specializing in DHA Lahore and premium properties across Pakistan.",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "RealEstateAgent",
+          name: "The Zalmi Marketing",
+          url: "https://thezalmimarketing.com/",
+          logo: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+          description:
+            "The Zalmi Marketing is a leading real estate agency in Lahore specializing in DHA Lahore and premium properties across Pakistan.",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Lahore",
+            addressCountry: "PK",
+          },
+          sameAs: [
+            "https://www.facebook.com/share/182ygLHmct/",
+            "https://www.tiktok.com/@thezalmimarketingdha?_r=1&_t=ZS-922kJzik3lf",
+            "https://youtube.com/@thezalmimarketing?si=vDrnNAQ9pl9y1DU_",
+            "https://wa.me/923218446496",
+          ],
+        }),
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://thezalmimarketing.com/" }],
+  }),
   component: RouteComponent,
 });
 
@@ -56,7 +131,7 @@ function LinkedPropertyCard({ id, ...property }) {
   }
 
   return (
-    <Link to={`/properties/${id}`}>
+    <Link to={`/properties/${property.slug}`}>
       <PropertyCard {...property} />
     </Link>
   );

@@ -12,6 +12,7 @@ import { Spinner } from '@/components/ui/spinner'; // Import Spinner
 import PropertyFileForm from '@/components/dashboard/property-form/property-file-form'; // Import PropertyFileForm
 import { getYoutubeEmbedUrl } from "@/lib/utils";
 import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 
 export const Route = createFileRoute('/dashboard/files')({
@@ -113,11 +114,7 @@ function DashboardFiles() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/files?is_file=1&all=1', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }); // Fetch files with is_file=1
+      const response = await apiFetch('/files?is_file=1&all=1'); // Fetch files with is_file=1
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -136,11 +133,7 @@ function DashboardFiles() {
     // while only fetching details for the form.
     setError(null);
     try {
-      const response = await fetch(`/api/files/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiFetch(`/files/${id}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -227,12 +220,8 @@ function DashboardFiles() {
     setIsSubmitting(true);
     try {
         const formData = prepareFormData(data);
-        const response = await fetch("/api/files", {
+        const response = await apiFetch("/files", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "X-Auth-Token": token
-          },
           body: formData,
         });
 
@@ -259,12 +248,8 @@ function DashboardFiles() {
         const formData = prepareFormData(data);
         formData.append('_method', 'PATCH');
 
-        const response = await fetch(`/api/files/${data.id}`, {
+        const response = await apiFetch(`/files/${data.id}`, {
           method: "POST", // Use POST for PATCH simulation with FormData
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "X-Auth-Token": token
-          },
           body: formData,
         });
 
@@ -288,12 +273,8 @@ function DashboardFiles() {
   const handleDeleteFile = async (id) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/files/${id}`, {
+      const response = await apiFetch(`/files/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -316,12 +297,8 @@ function DashboardFiles() {
     setIsSubmitting(true);
     try {
       const deletePromises = selectedRows.map((row) =>
-        fetch(`/api/files/${row.original.id}`, {
+        apiFetch(`/files/${row.original.id}`, {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "X-Auth-Token": token
-          },
         })
       );
 

@@ -10,6 +10,7 @@ import { UploadCloud, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/apiClient';
 
 export const Route = createFileRoute('/dashboard/profile')({
   component: DashboardProfile,
@@ -47,12 +48,7 @@ function DashboardProfile() {
     const fetchProfile = async () => {
       try {
         if (!token) return;
-        const res = await fetch("/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "X-Auth-Token": token
-          },
-        });
+        const res = await apiFetch("/auth/me");
         if (res.ok) {
             const data = await res.json();
             const profileData = {
@@ -109,12 +105,8 @@ function DashboardProfile() {
         formData.append("profile_pic", selectedFile);
       }
       
-      const res = await fetch("/api/auth/me", {
+      const res = await apiFetch("/auth/me", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
         body: formData,
       });
 
@@ -126,12 +118,7 @@ function DashboardProfile() {
       toast.success("Profile updated successfully");
       
       // Fetch updated profile to update store and local state
-       const profileRes = await fetch("/api/auth/me", {
-         headers: {
-           Authorization: `Bearer ${token}`,
-           "X-Auth-Token": token
-         },
-       });
+       const profileRes = await apiFetch("/auth/me");
         if (profileRes.ok) {
             const newData = await profileRes.json();
             const newProfileData = {

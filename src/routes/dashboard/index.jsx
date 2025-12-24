@@ -8,6 +8,7 @@ import { useMapsStore } from '@/store/mapsStore';
 import { Spinner } from '@/components/ui/spinner'; // Assuming Spinner is available
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 export const Route = createFileRoute('/dashboard/')({
     component: DashboardIndex,
@@ -36,18 +37,8 @@ function DashboardIndex() {
             setError(null);
             try {
                 const [availableItemsRes, queriesRes] = await Promise.all([
-                  fetch("/api/landing-available-items", {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      "X-Auth-Token": token,
-                    },
-                  }),
-                  fetch("/api/queries", {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      "X-Auth-Token": token
-                    },
-                  }),
+                  apiFetch("/landing-available-items"),
+                  apiFetch("/queries"),
                 ]);
 
                 if (!availableItemsRes.ok || !queriesRes.ok) {
@@ -89,18 +80,29 @@ function DashboardIndex() {
 
     const queryChartData = React.useMemo(() => {
       const dailyCounts = totalQueries.reduce((acc, query) => {
-        const date = query.created_at.split(' ')[0];
-        if (!acc[date]) {
-          acc[date] = { date, totalQueries: 0, unreadQueries: 0 };
+        if (!query.created_at) return acc;
+        
+        // MySQL format: YYYY-MM-DD HH:MM:SS
+        // Replace space with T to make it a valid ISO-like string for constructor
+        const dateObj = new Date(query.created_at.replace(' ', 'T'));
+        
+        if (isNaN(dateObj.getTime())) return acc;
+
+        // Group by Pakistani Date (YYYY-MM-DD)
+        const pkDate = dateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' }); 
+
+        if (!acc[pkDate]) {
+          acc[pkDate] = { date: pkDate, totalQueries: 0, unreadQueries: 0 };
         }
-        acc[date].totalQueries++;
+        acc[pkDate].totalQueries++;
         if (!query.is_read) {
-          acc[date].unreadQueries++;
+          acc[pkDate].unreadQueries++;
         }
         return acc;
       }, {});
 
-      return Object.values(dailyCounts).sort((a, b) => new Date(a.date) - new Date(b.date));
+      return Object.values(dailyCounts)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [totalQueries]);
 
     if (isLoading) {

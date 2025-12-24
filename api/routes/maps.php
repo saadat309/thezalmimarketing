@@ -122,7 +122,7 @@ function list_maps(PDO $pdo) {
 }
 
 function get_map(PDO $pdo, $id) {
-    $stmt = $pdo->prepare("SELECT
+    $sql = "SELECT
                             md.id, md.title, md.slug, md.description, md.map_pic, md.map_thumb, md.pdf, md.hide, md.created_at, md.updated_at,
                             md.city_id, c.name AS city_name,
                             md.society_id, s.name AS society_name,
@@ -131,7 +131,15 @@ function get_map(PDO $pdo, $id) {
                          LEFT JOIN cities c ON md.city_id = c.id
                          LEFT JOIN societies s ON md.society_id = s.id
                          LEFT JOIN phases p ON md.phase_id = p.id
-                         WHERE md.id = ?");
+                         WHERE ";
+    
+    if (is_numeric($id)) {
+        $sql .= "md.id = ?";
+    } else {
+        $sql .= "md.slug = ?";
+    }
+
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([$id]);
     $map = $stmt->fetch();
     if (!$map) return send_json(['error' => 'Map not found'], 404);
@@ -141,8 +149,6 @@ function get_map(PDO $pdo, $id) {
 
 function create_map(PDO $pdo) {
     $input = get_request_data();
-    error_log("Input data for create_map: " . print_r($input, true));
-    error_log("Files data for create_map: " . print_r($_FILES, true));
 
     if (empty($input['title'])) {
         return send_json(['error' => 'Title is required'], 400);
@@ -247,15 +253,11 @@ function create_map(PDO $pdo) {
 
 function update_map(PDO $pdo, $id) {
     $input = get_request_data();
-    error_log("--- UPDATE MAP DEBUG (ID: $id) ---");
-    error_log("Input data received: " . print_r($input, true));
-    error_log("Files data received: " . print_r($_FILES, true));
 
     $stmt = $pdo->prepare("SELECT id, title, slug, description, map_pic, map_thumb, pdf, hide, city_id, society_id, phase_id FROM map_docs WHERE id = ?");
     $stmt->execute([$id]);
     $exists = $stmt->fetch();
     if (!$exists) return send_json(['error' => 'Map not found'], 404);
-    error_log("Existing map data (from DB): " . print_r($exists, true));
 
     $title = $input['title'] ?? $exists['title'];
     $slug = $exists['slug'];
@@ -329,11 +331,9 @@ function update_map(PDO $pdo, $id) {
         $update_params = [
             $title, $slug, $description, $new_map_pic, $new_map_thumb, $new_pdf, $hide, $city_id, $society_id, $phase_id, $id
         ];
-        error_log("Final params for UPDATE: " . print_r($update_params, true));
         $stmt = $pdo->prepare("UPDATE map_docs SET title = ?, slug = ?, description = ?, map_pic = ?, map_thumb = ?, pdf = ?, hide = ?, city_id = ?, society_id = ?, phase_id = ? WHERE id = ?");
         $stmt->execute($update_params);
         $affected_rows = $stmt->rowCount();
-        error_log("UPDATE affected rows: " . $affected_rows);
         
         $pdo->commit();
         return get_map($pdo, $id);
@@ -346,8 +346,6 @@ function update_map(PDO $pdo, $id) {
         $pdo->rollBack();
         error_log("Exception during map update: " . $e->getMessage());
         return send_json(['error' => 'Error during map update', 'detail' => $e->getMessage()], 500);
-    } finally {
-        error_log("--- END UPDATE MAP DEBUG ---");
     }
 }
 

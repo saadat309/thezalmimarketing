@@ -5,6 +5,11 @@ import { toast } from 'sonner';
 import { z } from "zod";
 
 export const Route = createFileRoute('/(auth)/accept-invite')({
+  head: () => ({
+    meta: [
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
   component: RouteComponent,
   validateSearch: (search) => {
     return z.object({

@@ -13,11 +13,22 @@ import { Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 
-export const Route = createFileRoute('/search')({
+export const Route = createFileRoute("/search")({
+  head: () => ({
+    meta: [
+        { title: "Search Properties | The Zalmi Marketing" },
+        {
+          name: "description",
+          content:
+            "Search for properties, maps, and investment opportunities across Pakistan with The Zalmi Marketing.",
+        },
+        { name: "robots", content: "noindex, follow" },
+      ],
+  }),
   component: SearchResults,
   validateSearch: (search) => {
     return {
-      q: search.q || '',
+      q: search.q || "",
     };
   },
 });
@@ -97,26 +108,26 @@ function SearchResults() {
       </GlobalHero>
 
       {!q ? (
-        <div className="container py-12 px-4 text-center">
+        <div className="container px-4 py-12 text-center">
           <h1 className="text-2xl font-bold">Search for anything</h1>
           <p className="text-muted-foreground">
             Enter a search term in the search bar to get started.
           </p>
         </div>
       ) : isLoading ? (
-        <div className="container flex justify-center py-12 px-4">
+        <div className="container flex justify-center px-4 py-12">
           <Spinner size="large" />
         </div>
       ) : isError ? (
-        <div className="container py-12 px-4 text-center text-destructive">
+        <div className="container px-4 py-12 text-center text-destructive">
           Error: {error.message}
         </div>
       ) : !hasResults ? (
-        <div className="container py-12 px-4 text-center">
+        <div className="container px-4 py-12 text-center">
           <p className="mt-4">No results found for "{q}".</p>
         </div>
       ) : (
-        <div className="container py-12 px-4 mx-auto">
+        <div className="container px-4 py-12 mx-auto">
           <div className="grid grid-cols-1 gap-8 mt-8 lg:grid-cols-4">
             <div className="lg:col-span-3">
               {/* Categories results - Moved to main view */}
@@ -137,7 +148,9 @@ function SearchResults() {
                   <h2 className="text-2xl font-bold">Properties</h2>
                   <div className="grid grid-cols-1 gap-6 mt-4 md:grid-cols-2 xl:grid-cols-3">
                     {properties.map((property) => (
-                      <PropertyCard key={property.id} {...property} />
+                      <Link key={property.id} to={`/properties/${property.slug}`}>
+                        <PropertyCard {...property} />
+                      </Link>
                     ))}
                   </div>
                 </section>
@@ -182,7 +195,7 @@ function SearchResults() {
                             <li key={item}>
                               <Link
                                 to={`${list.linkPrefix}${encodeURIComponent(item)}`}
-                                className="hover:underline text-blue-500"
+                                className="text-blue-500 hover:underline"
                               >
                                 {item}
                               </Link>

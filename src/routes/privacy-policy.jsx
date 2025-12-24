@@ -4,6 +4,51 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/privacy-policy")({
+  head: () => ({
+    meta: [
+      { title: "Privacy Policy | The Zalmi Marketing" },
+      {
+        name: "description",
+        content:
+          "Read the privacy policy of The Zalmi Marketing to understand how we collect, use, and protect your personal information.",
+      },
+      // Open Graph
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://thezalmimarketing.com/privacy-policy" },
+      { property: "og:title", content: "Privacy Policy | The Zalmi Marketing" },
+      { property: "og:description", content: "Read our privacy policy to learn how we protect your personal information." },
+      { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+      // Twitter
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: "https://thezalmimarketing.com/privacy-policy" },
+      { name: "twitter:title", content: "Privacy Policy | The Zalmi Marketing" },
+      { name: "twitter:description", content: "Read our privacy policy to learn how we protect your personal information." },
+      { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://thezalmimarketing.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Privacy Policy",
+              "item": "https://thezalmimarketing.com/privacy-policy"
+            }
+          ]
+        }),
+      },
+    ],
+  }),
   component: PrivacyPolicyPage,
 });
 

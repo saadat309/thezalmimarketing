@@ -129,10 +129,8 @@ function create_user(PDO $pdo, $data, $current_user) {
         $stmt = $pdo->prepare("INSERT INTO users (name, email, role_id, status, password_hash) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([$data['name'], $data['email'], $data['role_id'], $status, $empty_password_hash]);
         $new_user_id = $pdo->lastInsertId();
-        error_log("create_user: After user INSERT, new_user_id = " . var_export($new_user_id, true));
 
         if (!$new_user_id) {
-            error_log("create_user: Failed to get lastInsertId after user INSERT. Rolling back.");
             $pdo->rollBack();
             return send_json(['error' => 'Failed to create user record'], 500);
         }
@@ -145,7 +143,6 @@ function create_user(PDO $pdo, $data, $current_user) {
         $invite_stmt = $pdo->prepare("INSERT INTO invites (token_hash, email, role_id, issued_by, expires_at) VALUES (?, ?, ?, ?, ?)");
         $issued_by = $current_user['id'];
         $invite_stmt->execute([$token_hash, $data['email'], $data['role_id'], $issued_by, $expires_at]);
-        error_log("create_user: After invite INSERT.");
         
         // Fetch and return the newly created user along with the invite token
         $user = get_user_data_for_response($pdo, $new_user_id);
@@ -153,12 +150,10 @@ function create_user(PDO $pdo, $data, $current_user) {
         $user['invite_link'] = FRONTEND_URL . "/accept-invite?token=" . $invite_token . "&email=" . urlencode($data['email']);
         
         $pdo->commit();
-        error_log("create_user: Transaction committed successfully.");
         return send_json($user, 201);
 
     } catch (PDOException $e) {
         $pdo->rollBack();
-        error_log("create_user: PDOException caught: " . $e->getMessage() . " Code: " . $e->getCode());
         // Handle duplicate email error
         if ($e->getCode() == 23000) { // Integrity constraint violation
             return send_json(['error' => 'Email already exists'], 409);
@@ -371,7 +366,6 @@ function generate_invite_token_for_user(PDO $pdo, $user_id, $current_user) {
 
     } catch (PDOException $e) {
         $pdo->rollBack();
-        error_log("generate_invite_token_for_user: PDOException caught: " . $e->getMessage());
         return send_json(['error' => 'Failed to generate invite token', 'detail' => $e->getMessage()], 500);
     }
 }

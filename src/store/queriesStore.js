@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { apiFetch } from '@/lib/apiClient';
 
 export const useQueriesStore = create((set, get) => ({
   unreadCount: 0,
@@ -8,15 +9,9 @@ export const useQueriesStore = create((set, get) => ({
   incrementUnreadCount: () => set((state) => ({ unreadCount: state.unreadCount + 1 })),
   decrementUnreadCount: () => set((state) => ({ unreadCount: Math.max(0, state.unreadCount - 1) })),
 
-  fetchUnreadCount: async (token) => {
-    if (!token) return;
+  fetchUnreadCount: async () => {
     try {
-      const response = await fetch('/api/queries/unread-count', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'X-Auth-Token': token
-        }
-      });
+      const response = await apiFetch('/queries/unread-count');
       if (response.ok) {
         const data = await response.json();
         set({ unreadCount: data.count });

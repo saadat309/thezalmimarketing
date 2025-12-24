@@ -15,5 +15,10 @@ export const Route = createFileRoute('/dashboard')({
       });
     }
   },
+  head: () => ({
+    meta: [
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
   component: DashboardLayout,
 });

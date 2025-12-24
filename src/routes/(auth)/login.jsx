@@ -2,6 +2,11 @@ import { LoginForm } from '@/components/auth/login-form';
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/(auth)/login')({
+  head: () => ({
+    meta: [
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
   component: RouteComponent,
 })
 

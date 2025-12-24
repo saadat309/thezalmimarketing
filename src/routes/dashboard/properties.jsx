@@ -10,6 +10,7 @@ import PropertyForm from '@/components/dashboard/property-form/property-form'; /
 import { Spinner } from '@/components/ui/spinner'; // Import Spinner
 import { getYoutubeEmbedUrl } from "@/lib/utils";
 import { useAuthStore } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
 
 export const Route = createFileRoute('/dashboard/properties')({
   component: DashboardProperties,
@@ -134,12 +135,7 @@ function DashboardProperties() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/properties?is_file=0&all=1", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
-      }); // Explicitly fetch properties where is_file is false
+      const response = await apiFetch("/properties?is_file=0&all=1"); // Explicitly fetch properties where is_file is false
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -269,13 +265,10 @@ function DashboardProperties() {
     setIsSubmitting(true);
     try {
         const formData = prepareFormData(data);
-        const response = await fetch("/api/properties", {
+        const response = await apiFetch("/properties", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "X-Auth-Token": token
-          },
           body: formData,
+          headers: {} // apiFetch merges headers, passing empty to avoid default JSON content-type if needed but actually apiFetch handles it
         });
 
         if (!response.ok) {
@@ -301,12 +294,8 @@ function DashboardProperties() {
         const formData = prepareFormData(data);
         formData.append('_method', 'PATCH');
 
-        const response = await fetch(`/api/properties/${data.id}`, {
+        const response = await apiFetch(`/properties/${data.id}`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "X-Auth-Token": token
-          },
           body: formData,
         });
 
@@ -330,12 +319,8 @@ function DashboardProperties() {
   const handleDeleteProperty = async (id) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/properties/${id}`, {
+      const response = await apiFetch(`/properties/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Auth-Token": token
-        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -358,12 +343,8 @@ function DashboardProperties() {
     setIsSubmitting(true);
     try {
             const deletePromises = selectedRows.map((row) =>
-              fetch(`/api/properties/${row.original.id}`, {
+              apiFetch(`/properties/${row.original.id}`, {
                 method: "DELETE",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "X-Auth-Token": token
-                },
               })
             );
       const results = await Promise.allSettled(deletePromises);

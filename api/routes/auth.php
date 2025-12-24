@@ -272,7 +272,7 @@ function login_user(PDO $pdo) {
             'role_id' => $user['role_id'],
             'role_name' => get_role_name_by_id($pdo, $user['role_id']),
             'iat' => time(),
-            'exp' => time() + (60 * 60 * 24) // 24 hours
+            'exp' => time() + (60 * 60 * 24 * 7) // 7 days
         ];
         $jwt_token = generate_jwt($jwt_payload);
 

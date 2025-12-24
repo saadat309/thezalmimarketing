@@ -50,3 +50,10 @@ export function getEmbedUrl(input) {
 export function getYoutubeEmbedUrl(input) {
   return getEmbedUrl(input);
 }
+
+export function getAbsoluteUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const baseUrl = "https://thezalmimarketing.com"; // Change to your actual production URL
+  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+}

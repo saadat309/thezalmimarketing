@@ -24,7 +24,9 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { MediaUpload } from "../MediaUpload";
 import { LabelSelector } from "../LabelSelector";
+import { SearchableSelect } from "../SearchableSelect";
 import { propertyFormSchema } from "./validation";
+import { apiFetch } from "@/lib/apiClient";
 import { PlusIcon, XIcon, GripVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -180,6 +182,10 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
   const [labels, setLabels] = useState([]);
   const [thumbnailMedia, setThumbnailMedia] = useState([]);
 
+  const cityOptions = useMemo(() => cities.map(c => ({ value: String(c.id), label: c.name })), [cities]);
+  const societyOptions = useMemo(() => societies.map(s => ({ value: String(s.id), label: s.name })), [societies]);
+  const phaseOptions = useMemo(() => phases.map(p => ({ value: String(p.id), label: p.name })), [phases]);
+
   const {
     register,
     handleSubmit,
@@ -237,18 +243,16 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
     const fetchDropdownData = async () => {
       try {
         const [citiesRes, societiesRes, phasesRes, labelsRes] = await Promise.all([
-          fetch('/api/cities'),
-          fetch('/api/societies'),
-          fetch('/api/phases'),
-          fetch('/api/labels'),
+          apiFetch('/cities'),
+          apiFetch('/societies'),
+          apiFetch('/phases'),
+          apiFetch('/labels'),
         ]);
 
-        const [citiesData, societiesData, phasesData, labelsData] = await Promise.all([
-          citiesRes.json(),
-          societiesRes.json(),
-          phasesRes.json(),
-          labelsRes.json(),
-        ]);
+        const citiesData = citiesRes.ok ? await citiesRes.json() : [];
+        const societiesData = societiesRes.ok ? await societiesRes.json() : [];
+        const phasesData = phasesRes.ok ? await phasesRes.json() : [];
+        const labelsData = labelsRes.ok ? await labelsRes.json() : [];
 
         setCities(citiesData.map(d => ({ ...d, id: String(d.id) })));
         setSocieties(societiesData.map(d => ({ ...d, id: String(d.id) })));
@@ -378,12 +382,8 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
   // Handler for toggling is_badge for an existing label
   const handleToggleIsBadge = useCallback(async (labelId, checked) => {
     try {
-      const response = await fetch(`/api/labels/${labelId}`, {
+      const response = await apiFetch(`/labels/${labelId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ is_badge: checked ? 1 : 0 }), // PHP expects 0/1
       });
 
@@ -843,25 +843,12 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   name="city_id"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      key={field.value + '-' + (cities.length > 0)}
-                      value={field.value ? String(field.value) : "0"}
-                      onValueChange={(value) => {
-                        field.onChange(value === "0" ? null : value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a city" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">None</SelectItem>
-                        {cities.map((city) => (
-                          <SelectItem key={city.id} value={city.id.toString()}>
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={cityOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select a city"
+                    />
                   )}
                 />
               </div>
@@ -873,25 +860,12 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   name="society_id"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      key={field.value + '-' + (societies.length > 0)}
-                      value={field.value ? String(field.value) : "0"}
-                      onValueChange={(value) => {
-                        field.onChange(value === "0" ? null : value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a society" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">None</SelectItem>
-                        {societies.map((soc) => (
-                          <SelectItem key={soc.id} value={soc.id.toString()}>
-                            {soc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={societyOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select a society"
+                    />
                   )}
                 />
               </div>
@@ -901,28 +875,12 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                   name="phase_id"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      key={field.value + '-' + (phases.length > 0)}
-                      value={field.value ? String(field.value) : "0"}
-                      onValueChange={(value) => {
-                        field.onChange(value === "0" ? null : value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a phase" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">None</SelectItem>
-                        {phases.map((phase) => (
-                          <SelectItem
-                            key={phase.id}
-                            value={phase.id.toString()}
-                          >
-                            {phase.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={phaseOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select a phase"
+                    />
                   )}
                 />
               </div>
@@ -1033,12 +991,8 @@ export default function PropertyFileForm({ initialData, onSuccess, onCancel, isD
                     if (!name) return;
 
                     try {
-                        const response = await fetch("/api/labels", {
+                        const response = await apiFetch("/labels", {
                           method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                          },
                           body: JSON.stringify({
                             name: name,
                             is_badge: true, // New labels are badges by default

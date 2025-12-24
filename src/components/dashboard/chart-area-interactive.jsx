@@ -150,9 +150,11 @@ export function ChartAreaInteractive({ data, chartConfig, title, description, re
               minTickGap={5}
               tickFormatter={(value) => {
                 const date = new Date(value)
+                if (isNaN(date.getTime())) return "";
                 return date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
+                  timeZone: "Asia/Karachi",
                 });
               }} />
             <YAxis
@@ -165,10 +167,15 @@ export function ChartAreaInteractive({ data, chartConfig, title, description, re
               cursor={false}
               content={
                 <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
+                  labelFormatter={(_, payload) => {
+                    const dateVal = payload?.[0]?.payload?.date;
+                    if (!dateVal) return "";
+                    const date = new Date(dateVal);
+                    if (isNaN(date.getTime())) return "Invalid Date";
+                    return date.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
+                      timeZone: "Asia/Karachi",
                     });
                   }}
                   indicator="dot" />

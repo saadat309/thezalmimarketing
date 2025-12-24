@@ -11,6 +11,7 @@ import { useQueriesStore } from '@/store/queriesStore'; // Import useQueriesStor
 import {
   useAuthStore
 } from '@/store/authStore';
+import { apiFetch } from '@/lib/apiClient';
  
 export const Route = createFileRoute('/dashboard/queries')({
   component: DashboardQueries,
@@ -95,24 +96,14 @@ function DashboardQueries() {
     setIsLoading(true);
     setError(null);
     try {
-      const queriesResponse = await fetch('/api/queries', {
-        headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-        }
-      });
+      const queriesResponse = await apiFetch('/queries');
       if (!queriesResponse.ok) {
         throw new Error(`HTTP error! status: ${queriesResponse.status}`);
       }
       const data = await queriesResponse.json();
       setQueries(data); // Update local state
 
-      const unreadCountResponse = await fetch('/api/queries/unread-count', {
-        headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-        }
-      });
+      const unreadCountResponse = await apiFetch('/queries/unread-count');
       if (!unreadCountResponse.ok) {
         throw new Error(`HTTP error! status: ${unreadCountResponse.status}`);
       }
@@ -133,13 +124,8 @@ function DashboardQueries() {
   const handleAddQuery = async (data) => {
     setIsSubmitting(true);
     try {
-        const response = await fetch('/api/queries', {
+        const response = await apiFetch('/queries', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-            },
             body: JSON.stringify(data),
         });
 
@@ -168,13 +154,8 @@ function DashboardQueries() {
   const handleEditQuery = async (data) => {
     setIsSubmitting(true);
     try {
-        const response = await fetch(`/api/queries/${data.id}`, {
+        const response = await apiFetch(`/queries/${data.id}`, {
             method: 'PUT', // or PATCH
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-            },
             body: JSON.stringify(data),
         });
 
@@ -201,12 +182,8 @@ function DashboardQueries() {
       // Find the query locally to check its read status before deleting
       const queryToDelete = queries.find(q => q.id === id);
 
-      const response = await fetch(`/api/queries/${id}`, {
+      const response = await apiFetch(`/api/queries/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-        }
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -234,12 +211,8 @@ function DashboardQueries() {
     setIsSubmitting(true);
     try {
       const deletePromises = selectedRows.map(row => 
-        fetch(`/api/queries/${row.original.id}`, { 
+        apiFetch(`/queries/${row.original.id}`, { 
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-          }
         })
       );
 
@@ -329,13 +302,8 @@ function DashboardQueries() {
     // The query object is now directly passed as 'query'
     if (!query.is_read) {
       try {
-        const response = await fetch(`/api/queries/${query.id}`, {
+        const response = await apiFetch(`/queries/${query.id}`, {
           method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${useAuthStore.getState().token}`, // Send token
-          'X-Auth-Token': useAuthStore.getState().token
-          },
           body: JSON.stringify({ is_read: true }),
         });
 

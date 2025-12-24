@@ -321,7 +321,7 @@ function PropertyCard(props) {
             {(displayNumericPrice !== null || isDiscounted) && (
               <div className="will-change-transform">{renderPrice()}</div>
             )}
-            {is_file && short_desc && (
+            {!!is_file && short_desc && (
               <p className="text-sm text-muted-foreground line-clamp-3 mt-1 will-change-transform">
                 {short_desc}
               </p>

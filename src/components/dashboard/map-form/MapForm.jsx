@@ -1,11 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -18,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { SearchableSelect } from "../SearchableSelect";
+import { apiFetch } from "@/lib/apiClient";
 
 export default function MapForm({
   initialData,
@@ -31,6 +26,10 @@ export default function MapForm({
   const [cities, setCities] = useState([]); // State for cities
   const [societies, setSocieties] = useState([]); // State for societies
   const [phases, setPhases] = useState([]); // State for phases
+
+  const cityOptions = useMemo(() => cities.map(c => ({ value: c.id.toString(), label: c.name })), [cities]);
+  const societyOptions = useMemo(() => societies.map(s => ({ value: s.id.toString(), label: s.name })), [societies]);
+  const phaseOptions = useMemo(() => phases.map(p => ({ value: p.id.toString(), label: p.name })), [phases]);
 
   const {
     register,
@@ -60,9 +59,9 @@ export default function MapForm({
       try {
         const [citiesResponse, societiesResponse, phasesResponse] =
           await Promise.all([
-            fetch("/api/cities"),
-            fetch("/api/societies"),
-            fetch("/api/phases"),
+            apiFetch("/cities"),
+            apiFetch("/societies"),
+            apiFetch("/phases"),
           ]);
 
         if (!citiesResponse.ok) throw new Error("Failed to fetch cities.");
@@ -194,94 +193,52 @@ export default function MapForm({
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-                                                        <Label htmlFor="city_id">City</Label>
-                                                        <Controller
-                                                          name="city_id"
-                                                          control={control}
-                                                          render={({ field }) => {
-                                                            return (
-                                                              <Select
-                                                                key={field.value + '-' + (cities.length > 0)} // Added key prop
-                                                                value={field.value ?? ""}
-                                                                onValueChange={(value) => {
-                                                                  field.onChange(value === "" ? null : value); // Convert empty string to null
-                                                                }}
-                                                              >
-                                                                <SelectTrigger>
-                                                                  <SelectValue placeholder="Select a city" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                  <SelectItem value={null}>None</SelectItem>
-                                                                  {cities.map((city) => (
-                                                                    <SelectItem key={city.id} value={city.id.toString()}>
-                                                                      {city.name}
-                                                                    </SelectItem>
-                                                                  ))}
-                                                                </SelectContent>
-                                                              </Select>
-                                                            );
-                                                          }}
-                                                        />                                        </div>
-                            
-                                        <div className="space-y-2">
-                                                                      <Label htmlFor="society_id">Society</Label>
-                                                                      <Controller
-                                                                        name="society_id"
-                                                                        control={control}
-                                                                        render={({ field }) => {
-                                                                          return (
-                                                                            <Select
-                                                                              key={field.value + '-' + (societies.length > 0)} // Added key prop
-                                                                              value={field.value ?? ""}
-                                                                              onValueChange={(value) => {
-                                                                                field.onChange(value === "" ? null : value); // Convert empty string to null
-                                                                              }}
-                                                                            >
-                                                                              <SelectTrigger>
-                                                                                <SelectValue placeholder="Select a society" />
-                                                                              </SelectTrigger>
-                                                                              <SelectContent>
-                                                                                <SelectItem value={null}>None</SelectItem>
-                                                                                {societies.map((soc) => (
-                                                                                  <SelectItem key={soc.id} value={soc.id.toString()}>
-                                                                                    {soc.name}
-                                                                                  </SelectItem>
-                                                                                ))}
-                                                                              </SelectContent>
-                                                                            </Select>
-                                                                          );
-                                                                        }}
-                                                                      />                                        </div>
-                            
-                                        <div className="space-y-2">
-                                                                      <Label htmlFor="phase_id">Phase</Label>
-                                                                      <Controller
-                                                                        name="phase_id"
-                                                                        control={control}
-                                                                        render={({ field }) => {
-                                                                          return (
-                                                                            <Select
-                                                                              key={field.value + '-' + (phases.length > 0)} // Added key prop
-                                                                              value={field.value ?? ""}
-                                                                              onValueChange={(value) => {
-                                                                                field.onChange(value === "" ? null : value); // Convert empty string to null
-                                                                              }}
-                                                                            >
-                                                                              <SelectTrigger>
-                                                                                <SelectValue placeholder="Select a phase" />
-                                                                              </SelectTrigger>
-                                                                              <SelectContent>
-                                                                                <SelectItem value={null}>None</SelectItem>
-                                                                                {phases.map((phase) => (
-                                                                                  <SelectItem key={phase.id} value={phase.id.toString()}>
-                                                                                    {phase.name}
-                                                                                  </SelectItem>
-                                                                                ))}
-                                                                              </SelectContent>
-                                                                            </Select>
-                                                                          );
-                                                                        }}
-                                                                      />            </div>
+              <Label htmlFor="city_id">City</Label>
+              <Controller
+                name="city_id"
+                control={control}
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={cityOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select a city"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="society_id">Society</Label>
+              <Controller
+                name="society_id"
+                control={control}
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={societyOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select a society"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phase_id">Phase</Label>
+              <Controller
+                name="phase_id"
+                control={control}
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={phaseOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select a phase"
+                  />
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 

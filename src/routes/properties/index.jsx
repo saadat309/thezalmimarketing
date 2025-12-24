@@ -30,11 +30,93 @@ const filterOptionsQueryOptions = queryOptions({
 });
 
 export const Route = createFileRoute("/properties/")({
+  head: ({ loaderData }) => {
+    const properties = loaderData || [];
+    
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": properties.map((property, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "url": `https://thezalmimarketing.com/properties/${property.slug}/`,
+        "name": property.title
+      }))
+    };
+
+    return {
+      meta: [
+        {title: "Properties for Sale & Rent in Pakistan | The Zalmi Marketing"},
+        {
+          name: "description",
+          content:
+            "Browse properties for sale, rent, and installment plans across Pakistan. Filter by city, price, area, and type.",
+        },
+        { name: "robots", content: "index, follow" },
+
+        // Open Graph
+        { property: "og:type", content: "website" },
+        {
+          property: "og:title",
+          content: "Properties for Sale & Rent in Pakistan | The Zalmi Marketing",
+        },
+        {
+          property: "og:description",
+          content:
+            "Browse verified property listings across Pakistan by The Zalmi Marketing.",
+        },
+              {
+                property: "og:url",
+                content: "https://thezalmimarketing.com/properties/",
+              },
+              { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+              // Twitter
+              { name: "twitter:card", content: "summary_large_image" },
+              { name: "twitter:url", content: "https://thezalmimarketing.com/properties/" },
+              { name: "twitter:title", content: "Properties for Sale & Rent in Pakistan | The Zalmi Marketing" },
+              { name: "twitter:description", content: "Browse verified property listings across Pakistan by The Zalmi Marketing." },
+              { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+            ],      links: [
+        {
+          rel: "canonical",
+          href: "https://thezalmimarketing.com/properties/",
+        },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://thezalmimarketing.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Properties",
+                "item": "https://thezalmimarketing.com/properties/"
+              }
+            ]
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(itemListSchema),
+        },
+      ],
+    };
+  },
+
   loader: async ({ context: { queryClient }, search }) => {
-    // Ensure filter options are pre-fetched
     await queryClient.ensureQueryData(filterOptionsQueryOptions);
     return queryClient.ensureQueryData(propertiesQueryOptions(search));
   },
+
   component: RouteComponent,
 });
 
@@ -871,7 +953,7 @@ function RouteComponent() {
         ) : properties && properties.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {properties.map((property) => (
-              <Link key={property.id} to={`/properties/${property.id}`}>
+              <Link key={property.id} to={`/properties/${property.slug}`}>
                 <PropertyCard {...property} />
               </Link>
             ))}
