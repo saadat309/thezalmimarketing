@@ -89,7 +89,7 @@ export default function HeroSection() {
                 </Button>
               </Link>
 
-              <Link to="/properties" search={{ category: 'Apartment' }}>
+              <Link to="/properties" search={{ category: 'Appartment' }}>
                 <Button
                   variant="outline"
                   className="p-2 pl-0 rounded-full bg-card backdrop-blur-sm"
@@ -97,7 +97,7 @@ export default function HeroSection() {
                   <div className="inline-flex items-center p-2 mr-1 rounded-full bg-muted">
                     <Building className="w-4 h-4" />
                   </div>
-                  Apartment
+                  Appartment
                 </Button>
               </Link>
 

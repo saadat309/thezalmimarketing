@@ -1,17 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle } from "lucide-react";
 import { GlobalHero } from "@/components/global/GlobalHero";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  FaWhatsapp,
-
-  FaMapMarkerAlt,
-
-} from "react-icons/fa";
+import { FaWhatsapp, FaMapMarkerAlt } from "react-icons/fa";
 import { MapPin } from "lucide-react";
 import WhyUs from "@/components/global/WhyUs";
+import TeamSection from "@/components/global/TeamSection";
 import { motion } from "framer-motion";
 
 const Reveal = ({ children, className = "", delay = 0 }) => (
@@ -90,7 +85,7 @@ export const Route = createFileRoute("/about")({
 function RouteComponent() {
   return (
     <div>
-      <GlobalHero image="/images/business-7111770_1280.jpg" overlay height="60vh">
+      <GlobalHero image="/images/business-7111770_1280.jpg" overlay height="65vh">
         <div className="relative z-10 px-6 py-12 text-white md:px-12 md:py-20">
           <div className="max-w-3xl">
             <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl">
@@ -114,9 +109,6 @@ function RouteComponent() {
     </div>
   );
 }
-
-
-
 
 function AboutPage() {
   return (
@@ -231,6 +223,9 @@ function AboutPage() {
             </Card>
           </Reveal>
         </div>
+
+        {/* Team Section */}
+        <TeamSection />
 
         {/* Why Trust Us Section */}
         <Reveal>

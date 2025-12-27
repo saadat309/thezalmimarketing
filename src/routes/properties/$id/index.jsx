@@ -500,6 +500,15 @@ function ContactForm({ propertyTitle, propertyId, className }) {
     mutationFn: submitQuery,
 
     onSuccess: () => {
+      // Manually trigger lead event for GA4/Google Ads
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'generate_lead', {
+          'event_category': 'form',
+          'event_label': 'property_page',
+          'value': propertyTitle // Optional: track which property they asked about
+        });
+      }
+
       toast.success("Sent successfully!");
 
       form.reset({

@@ -77,6 +77,15 @@ function RootComponent() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  // Google Analytics Page View Tracking
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag("config", "G-NGRY91WE1N", {
+        page_path: location.href,
+      });
+    }
+  }, [location.href]);
+
   return (
     <React.Fragment>
       <HeadContent />

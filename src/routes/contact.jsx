@@ -145,6 +145,13 @@ function Contact() {
   const mutation = useMutation({
     mutationFn: submitQuery,
     onSuccess: () => {
+      // Manually trigger lead event for GA4/Google Ads
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'generate_lead', {
+          'event_category': 'form',
+          'event_label': 'contact_page'
+        });
+      }
       toast.success("Your inquiry has been sent successfully!");
       form.reset();
     },
