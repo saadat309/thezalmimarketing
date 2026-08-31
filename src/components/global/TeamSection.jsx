@@ -20,37 +20,67 @@ export default function TeamSection() {
     {
       name: "Ch. Sajid Mahmood",
       role: "CEO & Founder",
+      specialist: "Investment Advisor & DHA Lahore Specialist",
       image: "/owner pic.jpg",
-      bio: "Leading The Zalmi Marketing with a vision of trust and excellence since 2020.",
     },
     {
       name: "Abrar Hussain Imran",
       role: "Co-CEO",
-      image: "/staff-1.jpg",
-      bio: "Driving strategic growth and operational excellence across all departments.",
+      specialist: "CEO Zalmi Estate & Vice President DHA EAA",
+      image: "/abrar.jpeg",
     },
     {
       name: "Waseem Khan",
       role: "Sales Executive",
-      image: "/staff-2.jpg",
-      bio: "Expert in client relations and finding the perfect property matches.",
+      specialist: "DHA Phase 7 Specialist",
+      image: "/waseem.jpeg",
     },
     {
       name: "Zeeshan Ahmed",
       role: "Sales Executive",
-      image: "/staff-1.jpg",
-      bio: "Dedicated to providing transparent and professional real estate services.",
+      specialist: "DHA 9 Prism Expert",
+      image: "/zeeshan.jpeg",
     },
     {
       name: "Sohail Awan",
       role: "Sales Executive",
-      image: "/staff-2.jpg",
-      bio: "Committed to delivering exceptional value and support to our clients.",
+      specialist: "DHA Multan Specialist",
+      image: "/sohail.jpeg",
+    },
+    {
+      name: "Muhammad Azhar",
+      role: "Sales Executive",
+      specialist: "DHA Specialist",
+      image: "/azhar.jpeg",
+    },
+    {
+      name: "Ch Tariq",
+      role: "Sales Executive",
+      specialist: "DHA Islamabad Vally Specialist",
+      image: "/tariq.jpeg",
+    },
+    {
+      name: "Muhammad Usman",
+      role: "Sales Executive",
+      specialist: "DHA House Sale Purchase",
+      image: "/usman.jpeg",
+    },
+    {
+      name: "Muhammad Hammad",
+      role: "Sales Executive",
+      specialist: "DHA House Rent",
+      image: "/hammad.jpeg",
+    },
+    {
+      name: "Abdul Razaq",
+      role: "Sales Executive",
+      specialist: "DHA Phase 8 Specialist",
+      image: "/abdul-razaq.jpeg",
     },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       <div className="text-center">
         <h2 className="text-3xl font-bold tracking-tight">Meet Our Team</h2>
         <p className="max-w-2xl mx-auto mt-4 text-muted-foreground">
@@ -58,30 +88,27 @@ export default function TeamSection() {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {team.map((member, index) => (
           <Reveal key={index} delay={index * 0.1} className="h-full">
-            <Card className="h-full overflow-hidden transition-all duration-300 border-0 hover:shadow-lg group">
-              <div className="relative overflow-hidden aspect-[4/5] bg-muted">
+            <Card className="flex flex-col h-full gap-0 p-0 overflow-hidden transition-all duration-300 border-0 bg-[var(--vintage-grape)] text-white hover:shadow-2xl group">
+              <div className="relative overflow-hidden aspect-square bg-muted shrink-0">
                 {member.image ? (
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover object-top w-full h-full transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex items-center justify-center w-full h-full text-muted-foreground/30 bg-secondary/20">
                     <User className="w-24 h-24" />
                   </div>
                 )}
-                <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:opacity-100" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 transition-transform duration-300 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
-                  <p className="text-sm font-medium text-white/90">{member.bio}</p>
-                </div>
               </div>
-              <CardContent className="p-6 text-center">
-                <h3 className="text-lg font-bold text-foreground line-clamp-1">{member.name}</h3>
-                <p className="mt-1 text-sm font-medium text-primary">{member.role}</p>
+              <CardContent className="flex flex-col justify-center flex-grow p-6 text-center">
+                <h3 className="text-lg font-bold text-white line-clamp-1">{member.name}</h3>
+                <p className="mt-1 text-sm font-medium text-[var(--tea-green)]">{member.role}</p>
+                <p className="mt-2 text-xs font-normal text-white/70">{member.specialist}</p>
               </CardContent>
             </Card>
           </Reveal>
