@@ -3,20 +3,22 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import {tanstackRouter} from "@tanstack/router-plugin/vite";
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     tanstackRouter({
-      target: 'react',
+      target: "react",
       autoCodeSlitting: true,
     }),
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler'],],
+        plugins: [["babel-plugin-react-compiler"]],
       },
     }),
     tailwindcss(),
+    visualizer({ open: true }),
   ],
   resolve: {
     alias: {
@@ -25,17 +27,17 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
+      "/api": {
+        target: "http://localhost:8000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
-      '/sitemap.xml': {
-        target: 'http://localhost:8000',
+      "/sitemap.xml": {
+        target: "http://localhost:8000",
         changeOrigin: true,
-        rewrite: () => '/sitemap.php',
+        rewrite: () => "/sitemap.php",
       },
     },
   },
-})
+});
 

@@ -3,14 +3,19 @@ import {
   ArrowUpCircleIcon,
   BarChartIcon,
   Building2,
+  Calculator,
+  ChevronRight,
   FileText,
   FolderIcon,
   Home,
+  Layers,
   LayoutDashboardIcon,
   LayoutGrid,
   Mail,
   Map,
   Milestone,
+  Percent,
+  Receipt,
   User,
   UsersIcon,
 } from "lucide-react";
@@ -24,13 +29,21 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { MdOutlineRealEstateAgent } from "react-icons/md";
 import { useQueriesStore } from "@/store/queriesStore"; 
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/authStore";
 
-const navItems = [
+const mainNavItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -70,6 +83,49 @@ const navItems = [
     title: "Societies",
     url: "/dashboard/societies",
     icon: UsersIcon,
+  },
+];
+
+const calculatorNavItems = [
+  {
+    title: "Calculator Phases",
+    url: "/dashboard/calculator-phases",
+    icon: Calculator,
+  },
+  {
+    title: "Calculator Blocks",
+    url: "/dashboard/calculator-blocks",
+    icon: Layers,
+  },
+  {
+    title: "Calculator Property Types",
+    url: "/dashboard/calculator-property-types",
+    icon: Building2,
+  },
+  {
+    title: "Calculator Rates",
+    url: "/dashboard/calculator-rates",
+    icon: BarChartIcon,
+  },
+  {
+    title: "Calculator Transfer Fees",
+    url: "/dashboard/calculator-transfer-fees",
+    icon: ArrowUpCircleIcon,
+  },
+  {
+    title: "Calculator Fees",
+    url: "/dashboard/calculator-fees",
+    icon: Receipt,
+  },
+  {
+    title: "Calculator Tax Rates",
+    url: "/dashboard/calculator-tax-rates",
+    icon: Percent,
+  },
+  {
+    title: "Calculator Fee Rules",
+    url: "/dashboard/calculator-fee-rules",
+    icon: Receipt,
   },
 ];
 
@@ -139,7 +195,7 @@ export function AppSidebar({ ...props }) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navItems.map((item) => (
+          {mainNavItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <Link
                 to={item.url}
@@ -155,6 +211,41 @@ export function AppSidebar({ ...props }) {
               </Link>
             </SidebarMenuItem>
           ))}
+          <Collapsible
+            asChild
+            defaultOpen={location.pathname.includes("/dashboard/calculator-")}
+            className="group/collapsible"
+          >
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton tooltip="Manage Calculator">
+                  <Calculator />
+                  <span>Manage Calculator</span>
+                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {calculatorNavItems.map((item) => (
+                    <SidebarMenuSubItem key={item.title}>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === item.url}
+                      >
+                        <Link
+                          to={item.url}
+                          onClick={() => isMobile && setOpenMobile(false)}
+                        >
+                          {item.icon && <item.icon />}
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
         </SidebarMenu>
         <SidebarMenu className="mt-auto">
           {secondaryNavItems.map((item) => (

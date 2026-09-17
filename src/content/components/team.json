@@ -1,0 +1,56 @@
+{
+  "badge": "Our Experts",
+  "headingPre": "Meet Our Elite ",
+  "headingHighlight": "Advisory Team",
+  "subheading": "The dedicated professionals behind our success, committed to delivering exceptional real estate outcomes with unmatched market expertise.",
+  "team": [
+    {
+      "name": "Ch. Sajid Mahmood",
+      "role": "CEO & Founder",
+      "specialist": "Investment Advisor & DHA Lahore Specialist",
+      "image": "/final Ch sajid.webp"
+    },
+    {
+      "name": "Abrar Hussain Imran",
+      "role": "Co-CEO",
+      "specialist": "CEO Zalmi Estate & Vice President DHA EAA",
+      "image": "/abrar sahb new.webp"
+    },
+    {
+      "name": "Waseem Khan",
+      "role": "Sales Executive",
+      "specialist": "DHA Phase 7 Specialist",
+      "image": "/waseem.jpeg"
+    },
+    {
+      "name": "Zeeshan Ahmed",
+      "role": "Sales Executive",
+      "specialist": "DHA 9 Prism Expert",
+      "image": "/zeeshan.jpeg"
+    },
+    {
+      "name": "Sohail Awan",
+      "role": "Sales Executive",
+      "specialist": "DHA Multan Specialist",
+      "image": "/sohail.jpeg"
+    },
+    {
+      "name": "Ch Tariq",
+      "role": "Sales Executive",
+      "specialist": "DHA Islamabad Valley Specialist",
+      "image": "/tariq.jpeg"
+    },
+    {
+      "name": "Muhammad Usman",
+      "role": "Sales Executive",
+      "specialist": "DHA House Sale Purchase",
+      "image": "/usman.jpeg"
+    },
+    {
+      "name": "Abdul Razaq",
+      "role": "Sales Executive",
+      "specialist": "DHA Phase 8 Specialist",
+      "image": "/abdul-razaq.jpeg"
+    }
+  ]
+}

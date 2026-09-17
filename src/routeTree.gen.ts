@@ -9,10 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SearchRouteImport } from './routes/search'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PropertiesIndexRouteImport } from './routes/properties/index'
@@ -30,17 +30,20 @@ import { Route as DashboardLandingPageRouteImport } from './routes/dashboard/lan
 import { Route as DashboardFilesRouteImport } from './routes/dashboard/files'
 import { Route as DashboardCitiesRouteImport } from './routes/dashboard/cities'
 import { Route as DashboardCategoriesRouteImport } from './routes/dashboard/categories'
+import { Route as DashboardCalculatorTransferFeesRouteImport } from './routes/dashboard/calculator-transfer-fees'
+import { Route as DashboardCalculatorTaxRatesRouteImport } from './routes/dashboard/calculator-tax-rates'
+import { Route as DashboardCalculatorRatesRouteImport } from './routes/dashboard/calculator-rates'
+import { Route as DashboardCalculatorPropertyTypesRouteImport } from './routes/dashboard/calculator-property-types'
+import { Route as DashboardCalculatorPhasesRouteImport } from './routes/dashboard/calculator-phases'
+import { Route as DashboardCalculatorFeesRouteImport } from './routes/dashboard/calculator-fees'
+import { Route as DashboardCalculatorFeeRulesRouteImport } from './routes/dashboard/calculator-fee-rules'
+import { Route as DashboardCalculatorBlocksRouteImport } from './routes/dashboard/calculator-blocks'
 import { Route as authResetPasswordRouteImport } from './routes/(auth)/reset-password'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as authAcceptInviteRouteImport } from './routes/(auth)/accept-invite'
 import { Route as PropertiesIdIndexRouteImport } from './routes/properties/$id/index'
 
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
@@ -54,6 +57,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalculatorRoute = CalculatorRouteImport.update({
+  id: '/calculator',
+  path: '/calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -141,6 +149,53 @@ const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCalculatorTransferFeesRoute =
+  DashboardCalculatorTransferFeesRouteImport.update({
+    id: '/calculator-transfer-fees',
+    path: '/calculator-transfer-fees',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardCalculatorTaxRatesRoute =
+  DashboardCalculatorTaxRatesRouteImport.update({
+    id: '/calculator-tax-rates',
+    path: '/calculator-tax-rates',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardCalculatorRatesRoute =
+  DashboardCalculatorRatesRouteImport.update({
+    id: '/calculator-rates',
+    path: '/calculator-rates',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardCalculatorPropertyTypesRoute =
+  DashboardCalculatorPropertyTypesRouteImport.update({
+    id: '/calculator-property-types',
+    path: '/calculator-property-types',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardCalculatorPhasesRoute =
+  DashboardCalculatorPhasesRouteImport.update({
+    id: '/calculator-phases',
+    path: '/calculator-phases',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardCalculatorFeesRoute = DashboardCalculatorFeesRouteImport.update({
+  id: '/calculator-fees',
+  path: '/calculator-fees',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCalculatorFeeRulesRoute =
+  DashboardCalculatorFeeRulesRouteImport.update({
+    id: '/calculator-fee-rules',
+    path: '/calculator-fee-rules',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardCalculatorBlocksRoute =
+  DashboardCalculatorBlocksRouteImport.update({
+    id: '/calculator-blocks',
+    path: '/calculator-blocks',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const authResetPasswordRoute = authResetPasswordRouteImport.update({
   id: '/(auth)/reset-password',
   path: '/reset-password',
@@ -170,14 +225,22 @@ const PropertiesIdIndexRoute = PropertiesIdIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/calculator': typeof CalculatorRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
-  '/search': typeof SearchRoute
   '/accept-invite': typeof authAcceptInviteRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/reset-password': typeof authResetPasswordRoute
+  '/dashboard/calculator-blocks': typeof DashboardCalculatorBlocksRoute
+  '/dashboard/calculator-fee-rules': typeof DashboardCalculatorFeeRulesRoute
+  '/dashboard/calculator-fees': typeof DashboardCalculatorFeesRoute
+  '/dashboard/calculator-phases': typeof DashboardCalculatorPhasesRoute
+  '/dashboard/calculator-property-types': typeof DashboardCalculatorPropertyTypesRoute
+  '/dashboard/calculator-rates': typeof DashboardCalculatorRatesRoute
+  '/dashboard/calculator-tax-rates': typeof DashboardCalculatorTaxRatesRoute
+  '/dashboard/calculator-transfer-fees': typeof DashboardCalculatorTransferFeesRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/cities': typeof DashboardCitiesRoute
   '/dashboard/files': typeof DashboardFilesRoute
@@ -198,13 +261,21 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/calculator': typeof CalculatorRoute
   '/contact': typeof ContactRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
-  '/search': typeof SearchRoute
   '/accept-invite': typeof authAcceptInviteRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/reset-password': typeof authResetPasswordRoute
+  '/dashboard/calculator-blocks': typeof DashboardCalculatorBlocksRoute
+  '/dashboard/calculator-fee-rules': typeof DashboardCalculatorFeeRulesRoute
+  '/dashboard/calculator-fees': typeof DashboardCalculatorFeesRoute
+  '/dashboard/calculator-phases': typeof DashboardCalculatorPhasesRoute
+  '/dashboard/calculator-property-types': typeof DashboardCalculatorPropertyTypesRoute
+  '/dashboard/calculator-rates': typeof DashboardCalculatorRatesRoute
+  '/dashboard/calculator-tax-rates': typeof DashboardCalculatorTaxRatesRoute
+  '/dashboard/calculator-transfer-fees': typeof DashboardCalculatorTransferFeesRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/cities': typeof DashboardCitiesRoute
   '/dashboard/files': typeof DashboardFilesRoute
@@ -226,14 +297,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/calculator': typeof CalculatorRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
-  '/search': typeof SearchRoute
   '/(auth)/accept-invite': typeof authAcceptInviteRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/reset-password': typeof authResetPasswordRoute
+  '/dashboard/calculator-blocks': typeof DashboardCalculatorBlocksRoute
+  '/dashboard/calculator-fee-rules': typeof DashboardCalculatorFeeRulesRoute
+  '/dashboard/calculator-fees': typeof DashboardCalculatorFeesRoute
+  '/dashboard/calculator-phases': typeof DashboardCalculatorPhasesRoute
+  '/dashboard/calculator-property-types': typeof DashboardCalculatorPropertyTypesRoute
+  '/dashboard/calculator-rates': typeof DashboardCalculatorRatesRoute
+  '/dashboard/calculator-tax-rates': typeof DashboardCalculatorTaxRatesRoute
+  '/dashboard/calculator-transfer-fees': typeof DashboardCalculatorTransferFeesRoute
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/cities': typeof DashboardCitiesRoute
   '/dashboard/files': typeof DashboardFilesRoute
@@ -256,14 +335,22 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/calculator'
     | '/contact'
     | '/dashboard'
     | '/privacy-policy'
-    | '/search'
     | '/accept-invite'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/dashboard/calculator-blocks'
+    | '/dashboard/calculator-fee-rules'
+    | '/dashboard/calculator-fees'
+    | '/dashboard/calculator-phases'
+    | '/dashboard/calculator-property-types'
+    | '/dashboard/calculator-rates'
+    | '/dashboard/calculator-tax-rates'
+    | '/dashboard/calculator-transfer-fees'
     | '/dashboard/categories'
     | '/dashboard/cities'
     | '/dashboard/files'
@@ -284,13 +371,21 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/calculator'
     | '/contact'
     | '/privacy-policy'
-    | '/search'
     | '/accept-invite'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
+    | '/dashboard/calculator-blocks'
+    | '/dashboard/calculator-fee-rules'
+    | '/dashboard/calculator-fees'
+    | '/dashboard/calculator-phases'
+    | '/dashboard/calculator-property-types'
+    | '/dashboard/calculator-rates'
+    | '/dashboard/calculator-tax-rates'
+    | '/dashboard/calculator-transfer-fees'
     | '/dashboard/categories'
     | '/dashboard/cities'
     | '/dashboard/files'
@@ -311,14 +406,22 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/calculator'
     | '/contact'
     | '/dashboard'
     | '/privacy-policy'
-    | '/search'
     | '/(auth)/accept-invite'
     | '/(auth)/forgot-password'
     | '/(auth)/login'
     | '/(auth)/reset-password'
+    | '/dashboard/calculator-blocks'
+    | '/dashboard/calculator-fee-rules'
+    | '/dashboard/calculator-fees'
+    | '/dashboard/calculator-phases'
+    | '/dashboard/calculator-property-types'
+    | '/dashboard/calculator-rates'
+    | '/dashboard/calculator-tax-rates'
+    | '/dashboard/calculator-transfer-fees'
     | '/dashboard/categories'
     | '/dashboard/cities'
     | '/dashboard/files'
@@ -340,10 +443,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CalculatorRoute: typeof CalculatorRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
-  SearchRoute: typeof SearchRoute
   authAcceptInviteRoute: typeof authAcceptInviteRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authLoginRoute: typeof authLoginRoute
@@ -356,13 +459,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/privacy-policy': {
       id: '/privacy-policy'
       path: '/privacy-policy'
@@ -382,6 +478,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculator': {
+      id: '/calculator'
+      path: '/calculator'
+      fullPath: '/calculator'
+      preLoaderRoute: typeof CalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -503,6 +606,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCategoriesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/calculator-transfer-fees': {
+      id: '/dashboard/calculator-transfer-fees'
+      path: '/calculator-transfer-fees'
+      fullPath: '/dashboard/calculator-transfer-fees'
+      preLoaderRoute: typeof DashboardCalculatorTransferFeesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-tax-rates': {
+      id: '/dashboard/calculator-tax-rates'
+      path: '/calculator-tax-rates'
+      fullPath: '/dashboard/calculator-tax-rates'
+      preLoaderRoute: typeof DashboardCalculatorTaxRatesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-rates': {
+      id: '/dashboard/calculator-rates'
+      path: '/calculator-rates'
+      fullPath: '/dashboard/calculator-rates'
+      preLoaderRoute: typeof DashboardCalculatorRatesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-property-types': {
+      id: '/dashboard/calculator-property-types'
+      path: '/calculator-property-types'
+      fullPath: '/dashboard/calculator-property-types'
+      preLoaderRoute: typeof DashboardCalculatorPropertyTypesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-phases': {
+      id: '/dashboard/calculator-phases'
+      path: '/calculator-phases'
+      fullPath: '/dashboard/calculator-phases'
+      preLoaderRoute: typeof DashboardCalculatorPhasesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-fees': {
+      id: '/dashboard/calculator-fees'
+      path: '/calculator-fees'
+      fullPath: '/dashboard/calculator-fees'
+      preLoaderRoute: typeof DashboardCalculatorFeesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-fee-rules': {
+      id: '/dashboard/calculator-fee-rules'
+      path: '/calculator-fee-rules'
+      fullPath: '/dashboard/calculator-fee-rules'
+      preLoaderRoute: typeof DashboardCalculatorFeeRulesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/calculator-blocks': {
+      id: '/dashboard/calculator-blocks'
+      path: '/calculator-blocks'
+      fullPath: '/dashboard/calculator-blocks'
+      preLoaderRoute: typeof DashboardCalculatorBlocksRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/(auth)/reset-password': {
       id: '/(auth)/reset-password'
       path: '/reset-password'
@@ -542,6 +701,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface DashboardRouteChildren {
+  DashboardCalculatorBlocksRoute: typeof DashboardCalculatorBlocksRoute
+  DashboardCalculatorFeeRulesRoute: typeof DashboardCalculatorFeeRulesRoute
+  DashboardCalculatorFeesRoute: typeof DashboardCalculatorFeesRoute
+  DashboardCalculatorPhasesRoute: typeof DashboardCalculatorPhasesRoute
+  DashboardCalculatorPropertyTypesRoute: typeof DashboardCalculatorPropertyTypesRoute
+  DashboardCalculatorRatesRoute: typeof DashboardCalculatorRatesRoute
+  DashboardCalculatorTaxRatesRoute: typeof DashboardCalculatorTaxRatesRoute
+  DashboardCalculatorTransferFeesRoute: typeof DashboardCalculatorTransferFeesRoute
   DashboardCategoriesRoute: typeof DashboardCategoriesRoute
   DashboardCitiesRoute: typeof DashboardCitiesRoute
   DashboardFilesRoute: typeof DashboardFilesRoute
@@ -557,6 +724,14 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCalculatorBlocksRoute: DashboardCalculatorBlocksRoute,
+  DashboardCalculatorFeeRulesRoute: DashboardCalculatorFeeRulesRoute,
+  DashboardCalculatorFeesRoute: DashboardCalculatorFeesRoute,
+  DashboardCalculatorPhasesRoute: DashboardCalculatorPhasesRoute,
+  DashboardCalculatorPropertyTypesRoute: DashboardCalculatorPropertyTypesRoute,
+  DashboardCalculatorRatesRoute: DashboardCalculatorRatesRoute,
+  DashboardCalculatorTaxRatesRoute: DashboardCalculatorTaxRatesRoute,
+  DashboardCalculatorTransferFeesRoute: DashboardCalculatorTransferFeesRoute,
   DashboardCategoriesRoute: DashboardCategoriesRoute,
   DashboardCitiesRoute: DashboardCitiesRoute,
   DashboardFilesRoute: DashboardFilesRoute,
@@ -578,10 +753,10 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CalculatorRoute: CalculatorRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRouteWithChildren,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
-  SearchRoute: SearchRoute,
   authAcceptInviteRoute: authAcceptInviteRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,

@@ -1,0 +1,25 @@
+{
+  "seo": {
+    "title": "Zalmi Calculator | DHA Transfer Calculator & Property Tax Expense Pakistan",
+    "description": "Use Zalmi Calculator by The Zalmi Marketing to instantly calculate DHA Lahore transfer fees, DC values, FBR withholding taxes (236C, 236K), and stamp duty for plots and villas in Pakistan.",
+    "keywords": "Zalmi Calculator, DHA Transfer Calculator, DHA Transfer Expense, DHA Transfer Fee Lahore, FBR Tax Calculator Property Pakistan, Zalmi Estate Calculator, Zalmi Properties Calculator, Zalmi Marketing",
+    "ogType": "website",
+    "ogUrl": "https://thezalmimarketing.com/calculator",
+    "ogTitle": "Zalmi Calculator | DHA Transfer Fee & Property Tax Calculator",
+    "ogDescription": "Calculate exact DHA Lahore transfer charges, DC valuation, FBR tax (Filer/Non-Filer), and stamp duty instantly with Zalmi Calculator.",
+    "ogImage": "https://thezalmimarketing.com/Zalmi Marketing Logo White.webp",
+    "twitterCard": "summary_large_image",
+    "twitterUrl": "https://thezalmimarketing.com/calculator",
+    "twitterTitle": "Zalmi Calculator | DHA Transfer Calculator",
+    "twitterDescription": "Instant DHA transfer expense and property tax calculator by The Zalmi Marketing Lahore.",
+    "twitterImage": "https://thezalmimarketing.com/Zalmi Marketing Logo White.webp"
+  },
+  "hero": {
+    "badge": "Official Property Transfer Calculator",
+    "heading": "Calculate Transfer Fees & Taxes",
+    "subheading": "Accurate DC values, FBR valuations, stamp duty, transfer fees, and government taxes based on official schedules.",
+    "loadingMessage": "Loading Property Transfer Calculator...",
+    "errorTitle": "Calculator Unavailable",
+    "retryButton": "Retry"
+  }
+}

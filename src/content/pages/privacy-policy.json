@@ -1,0 +1,51 @@
+{
+  "seo": {
+    "title": "Privacy Policy | The Zalmi Marketing",
+    "description": "Read the privacy policy of The Zalmi Marketing to understand how we collect, use, and protect your personal information.",
+    "ogType": "website",
+    "ogUrl": "https://thezalmimarketing.com/privacy-policy",
+    "ogTitle": "Privacy Policy | The Zalmi Marketing",
+    "ogDescription": "Read our privacy policy to learn how we protect your personal information.",
+    "ogImage": "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+    "twitterCard": "summary_large_image",
+    "twitterUrl": "https://thezalmimarketing.com/privacy-policy",
+    "twitterTitle": "Privacy Policy | The Zalmi Marketing",
+    "twitterDescription": "Read our privacy policy to learn how we protect your personal information.",
+    "twitterImage": "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+    "canonical": "https://thezalmimarketing.com/privacy-policy"
+  },
+  "hero": {
+    "badge": "Legal & Compliance",
+    "heading": "Privacy Policy"
+  },
+  "policySections": [
+    {
+      "title": "Introduction",
+      "content": "Welcome to The Zalmi Marketing. We are committed to protecting your privacy and handling your personal data in an open and transparent manner. This privacy policy explains how we collect, use, disclose, and safeguard your information when you visit our website, https://www.thezalmimarketing.com, and use our services."
+    },
+    {
+      "title": "Information We Collect",
+      "content": "We may collect personal information that you voluntarily provide to us when you express an interest in obtaining information about us or our products and services, when you participate in activities on the website, or otherwise when you contact us. The personal information we collect may include: Name, Email Address, Phone Number, and any other information you choose to provide in your message."
+    },
+    {
+      "title": "How We Use Your Information",
+      "content": "We use the information we collect or receive to:\n        <ul class=\"list-disc list-inside space-y-2 mt-4 text-muted-foreground\">\n          <li>Respond to your inquiries and fulfill your requests.</li>\n          <li>Send administrative information to you, such as changes to our terms, conditions, and policies.</li>\n          <li>Provide you with marketing and promotional communications.</li>\n          <li>Improve our website and services for a better user experience.</li>\n          <li>Ensure the security of our website and prevent fraud.</li>\n        </ul>"
+    },
+    {
+      "title": "Sharing Your Information",
+      "content": "We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information unless we provide users with advance notice. This does not include website hosting partners and other parties who assist us in operating our website, conducting our business, or serving our users, so long as those parties agree to keep this information confidential."
+    },
+    {
+      "title": "Data Security",
+      "content": "We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process. However, please also remember that we cannot guarantee that the internet itself is 100% secure."
+    },
+    {
+      "title": "Your Privacy Rights",
+      "content": "You have the right to review, change, or terminate your account at any time. If you are a resident in the European Economic Area (EEA) or UK and you believe we are unlawfully processing your personal information, you also have the right to complain to your local data protection supervisory authority."
+    },
+    {
+      "title": "Contact Us",
+      "content": "If you have questions or comments about this policy, you may email us at <a href=\"mailto:thezalmimarkettingsajidmahmood@gmail.com\" class=\"text-[#F5A623] dark:text-[#D4AF37] hover:underline font-semibold\">thezalmimarkettingsajidmahmood@gmail.com</a> or by post to our office address at 67MB Commercial, 2nd Floor, Phase 6, DHA Lahore."
+    }
+  ]
+}

@@ -1,30 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GlobalHero } from "@/components/global/GlobalHero";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ShieldCheck } from "lucide-react";
+import content from "@/content/pages/privacy-policy.json";
 
 export const Route = createFileRoute("/privacy-policy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy | The Zalmi Marketing" },
+      { title: content.seo.title },
       {
         name: "description",
-        content:
-          "Read the privacy policy of The Zalmi Marketing to understand how we collect, use, and protect your personal information.",
+        content: content.seo.description,
       },
-      // Open Graph
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://thezalmimarketing.com/privacy-policy" },
-      { property: "og:title", content: "Privacy Policy | The Zalmi Marketing" },
-      { property: "og:description", content: "Read our privacy policy to learn how we protect your personal information." },
-      { property: "og:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
-      // Twitter
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:url", content: "https://thezalmimarketing.com/privacy-policy" },
-      { name: "twitter:title", content: "Privacy Policy | The Zalmi Marketing" },
-      { name: "twitter:description", content: "Read our privacy policy to learn how we protect your personal information." },
-      { name: "twitter:image", content: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp" },
+      { property: "og:type", content: content.seo.ogType },
+      { property: "og:url", content: content.seo.ogUrl },
+      { property: "og:title", content: content.seo.ogTitle },
+      { property: "og:description", content: content.seo.ogDescription },
+      { property: "og:image", content: content.seo.ogImage },
+      { name: "twitter:card", content: content.seo.twitterCard },
+      { name: "twitter:url", content: content.seo.twitterUrl },
+      { name: "twitter:title", content: content.seo.twitterTitle },
+      { name: "twitter:description", content: content.seo.twitterDescription },
+      { name: "twitter:image", content: content.seo.twitterImage },
     ],
+    links: [{ rel: "canonical", href: content.seo.canonical }],
     scripts: [
       {
         type: "application/ld+json",
@@ -32,18 +31,8 @@ export const Route = createFileRoute("/privacy-policy")({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://thezalmimarketing.com/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Privacy Policy",
-              "item": "https://thezalmimarketing.com/privacy-policy"
-            }
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://thezalmimarketing.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Privacy Policy", "item": "https://thezalmimarketing.com/privacy-policy" }
           ]
         }),
       },
@@ -53,73 +42,41 @@ export const Route = createFileRoute("/privacy-policy")({
 });
 
 function PrivacyPolicyPage() {
-  const companyName = "The Zalmi Marketing";
-  const companyEmail = "thezalmimarkettingsajidmahmood@gmail.com";
-  const websiteUrl = "https://www.thezalmimarketing.com"; // Placeholder URL
-
-  const policySections = [
-    {
-      title: "Introduction",
-      content: `Welcome to ${companyName}. We are committed to protecting your privacy and handling your personal data in an open and transparent manner. This privacy policy explains how we collect, use, disclose, and safeguard your information when you visit our website, ${websiteUrl}, and use our services.`,
-    },
-    {
-      title: "Information We Collect",
-      content: `We may collect personal information that you voluntarily provide to us when you express an interest in obtaining information about us or our products and services, when you participate in activities on the website, or otherwise when you contact us. The personal information we collect may include: Name, Email Address, Phone Number, and any other information you choose to provide in your message.`,
-    },
-    {
-      title: "How We Use Your Information",
-      content: `We use the information we collect or receive to:
-        <ul class="list-disc list-inside space-y-2 mt-4">
-          <li>Respond to your inquiries and fulfill your requests.</li>
-          <li>Send administrative information to you, such as changes to our terms, conditions, and policies.</li>
-          <li>Provide you with marketing and promotional communications.</li>
-          <li>Improve our website and services for a better user experience.</li>
-          <li>Ensure the security of our website and prevent fraud.</li>
-        </ul>`,
-    },
-    {
-        title: "Sharing Your Information",
-        content: `We do not sell, trade, or otherwise transfer to outside parties your personally identifiable information unless we provide users with advance notice. This does not include website hosting partners and other parties who assist us in operating our website, conducting our business, or serving our users, so long as those parties agree to keep this information confidential.`,
-    },
-    {
-        title: "Data Security",
-        content: `We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process. However, please also remember that we cannot guarantee that the internet itself is 100% secure.`,
-    },
-    {
-        title: "Your Privacy Rights",
-        content: `You have the right to review, change, or terminate your account at any time. If you are a resident in the European Economic Area (EEA) or UK and you believe we are unlawfully processing your personal information, you also have the right to complain to your local data protection supervisory authority.`,
-    },
-    {
-        title: "Contact Us",
-        content: `If you have questions or comments about this policy, you may email us at <a href="mailto:${companyEmail}" class="text-primary hover:underline">${companyEmail}</a> or by post to our office address.`,
-    }
-  ];
+  const policySections = content.policySections;
 
   return (
-    <div>
-      <GlobalHero image="/images/privacy-policy.jpg" overlay height="50vh">
-        <div className="relative z-10 flex flex-col items-center justify-center h-full text-center text-white">
-          <ShieldCheck className="w-16 h-16 mb-4" />
-          <h1 className="text-4xl font-bold md:text-5xl">Privacy Policy</h1>
-          <p className="mt-4 text-lg text-white/90">Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+    <div className="min-h-screen bg-background bg-grid-pattern">
+      {/* Independent Entry Section with Proper Navbar Spacing */}
+      <section className="relative pt-36 pb-20 sm:pt-40 sm:pb-24 bg-slate-950 dark:bg-slate-950 border-b border-[#F5A623]/20 dark:border-[#D4AF37]/20 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center opacity-35 scale-105 transform hover:scale-100 transition-transform duration-1000" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=2000&q=80')" }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/40" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#F5A623]/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+          <Badge variant="outline" className="px-4 py-1.5 text-xs font-medium text-white border-[#F5A623]/40 dark:border-[#D4AF37]/40 bg-[#F5A623]/10 dark:bg-[#D4AF37]/10 rounded-full">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#F5A623] dark:text-[#D4AF37] mr-2 inline" /> {content.hero.badge}
+          </Badge>
+          <h1 className="text-4xl font-extrabold sm:text-5xl lg:text-6xl font-display">
+            {content.hero.heading}
+          </h1>
+          <p className="max-w-2xl mx-auto text-base sm:text-lg text-luxury-muted">
+            Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
         </div>
-      </GlobalHero>
-      <div className="py-16 bg-background sm:py-24">
-        <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div className="max-w-5xl mx-auto">
-                <div className="space-y-8">
-                    {policySections.map((section, index) => (
-                        <Card key={index} className="bg-card">
-                            <CardHeader>
-                                <CardTitle className="text-2xl text-primary">{section.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="prose text-foreground max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
+      </section>
+
+      {/* Main Content */}
+      <div className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="space-y-8">
+            {policySections.map((section, index) => (
+                <Card key={index} className="bg-card border border-border shadow-xl rounded-2xl p-2 sm:p-4">
+                    <CardHeader>
+                        <CardTitle className="text-2xl font-display text-foreground">{section.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="prose dark:prose-invert text-muted-foreground leading-relaxed max-w-none text-base" dangerouslySetInnerHTML={{ __html: section.content }} />
+                    </CardContent>
+                </Card>
+            ))}
         </div>
       </div>
     </div>

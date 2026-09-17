@@ -1,0 +1,81 @@
+{
+  "seo": {
+    "title": "The Zalmi Marketing | Luxury Real Estate Agency in Lahore & Pakistan",
+    "description": "The Zalmi Marketing is Pakistan's premier luxury real estate agency. Specializing in DHA Lahore, DHA Multan, and ultra-prime properties.",
+    "keywords": "Luxury Real Estate Lahore, DHA Lahore, Zalmi Marketing, Property Lahore, DHA Projects Pakistan",
+    "ogType": "website",
+    "ogUrl": "https://thezalmimarketing.com/",
+    "ogTitle": "The Zalmi Marketing | Luxury Real Estate Agency in Lahore",
+    "ogDescription": "The Zalmi Marketing is Lahore's most trusted luxury real estate agency specializing in DHA Lahore and prime properties.",
+    "ogImage": "https://thezalmimarketing.com/Zalmi Marketing Logo White.webp",
+    "twitterCard": "summary_large_image",
+    "twitterUrl": "https://thezalmimarketing.com/",
+    "twitterTitle": "The Zalmi Marketing | Luxury Real Estate Agency in Lahore",
+    "twitterDescription": "The Zalmi Marketing is Lahore's most trusted luxury real estate agency specializing in DHA Lahore and prime properties.",
+    "twitterImage": "https://thezalmimarketing.com/Zalmi Marketing Logo White.webp",
+    "canonical": "https://thezalmimarketing.com/"
+  },
+  "hero": {
+    "headlineMain": "Discover Your",
+    "headlineHighlight": "Dream Property",
+    "headlineEnd": "With Total Confidence",
+    "trustBadges": [
+      { "value": "100%", "label": "Verified Files", "icon": "ShieldCheck" },
+      { "value": "2020+", "label": "Established Trust", "icon": "TrendingUp" },
+      { "value": "DHA", "label": "Specialized Experts", "icon": "Compass" }
+    ],
+    "tabs": [
+      { "id": "properties", "label": "Properties" },
+      { "id": "files", "label": "Plot Files" },
+      { "id": "maps", "label": "Society Maps" }
+    ],
+    "trendingShortcuts": [
+      { "label": "Modern Villa", "to": "/properties", "search": { "category": "Villa" }, "icon": "Home" },
+      { "label": "Apartment", "to": "/properties", "search": { "category": "Appartment" }, "icon": "Building2" },
+      { "label": "Allocation Files", "to": "/files", "search": { "file_type": "Allocation" }, "icon": "Warehouse" }
+    ]
+  },
+  "introSection": {
+    "badge": "The Zalmi Standard",
+    "headingPre": "Your Trusted Partner in ",
+    "headingHighlight": "Luxury Real Estate",
+    "description": "Specializing in elite residential estates, commercial flagships, and premium land developments across DHA Lahore and Pakistan."
+  },
+  "howItWorksSection": {
+    "badge": "Seamless Process",
+    "heading": "How It Works",
+    "subheading": "Simple steps to secure your dream luxury property",
+    "buttonText": "Explore Properties",
+    "buttonLink": "/properties",
+    "items": [
+      {
+        "icon": "Search",
+        "title": "Explore Listings",
+        "description": "Browse through curated high-end properties tailored to your exact standards."
+      },
+      {
+        "icon": "Lightbulb",
+        "title": "Expert Advisory",
+        "description": "Connect with our seasoned real estate experts for bespoke guidance."
+      },
+      {
+        "icon": "Handshake",
+        "title": "Secure Acquisition",
+        "description": "Finalize your investment securely with our transparent closing process."
+      }
+    ]
+  },
+  "calculatorFeatureSection": {
+    "badge": "New Zalmi Tool",
+    "heading": "Estimate every transfer before you commit",
+    "description": "Use the Zalmi Calculator to estimate DHA transfer fees, DC and FBR valuations, stamp duty, and applicable taxes before you move forward.",
+    "points": [
+      "Location-aware DHA property rates",
+      "Filer and non-filer tax scenarios",
+      "Itemized transfer expense breakdown"
+    ],
+    "buttonText": "Open Zalmi Calculator",
+    "buttonLink": "/calculator",
+    "disclaimer": "Estimates use configured schedules; verify final charges with the relevant authority."
+  }
+}

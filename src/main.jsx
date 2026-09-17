@@ -5,23 +5,39 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Imp
 import './index.css'
 import { routeTree } from './routeTree.gen';
 
-// Create a client
-const queryClient = new QueryClient(); // Create QueryClient instance
+// Pre-load logic or other sync initialization
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2, // Help with intermittent load failures
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
 
 const router = createRouter({
   routeTree,
   context: {
-    queryClient, // Pass queryClient to the router context
+    queryClient,
   },
   defaultPreload: 'intent',
 });
 
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
 
+// Ensure the styles are applied before React even mounts
+document.body.style.backgroundColor = '#0A0F1D';
+if (rootElement) {
+  rootElement.style.backgroundColor = '#0A0F1D';
+  rootElement.style.minHeight = '100vh';
+}
 
-createRoot(document.getElementById('root')).render(
+root.render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}> {/* Wrap with QueryClientProvider */}
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router}/>
     </QueryClientProvider>
   </StrictMode>,
-)
+);
+

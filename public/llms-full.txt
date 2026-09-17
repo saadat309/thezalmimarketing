@@ -1,0 +1,33 @@
+# The Zalmi Marketing - Comprehensive Knowledge Base
+
+> The Zalmi Marketing is Lahore's most trusted luxury real estate agency, specializing in DHA Lahore, DHA Multan, DHA Islamabad, and DHA Karachi. Led by CEO Ch. Sajid Mahmood and headquartered in DHA Phase 6, Lahore.
+
+## 1. Zalmi Calculator (Featured Tool)
+The **Zalmi Calculator** (`https://thezalmimarketing.com/calculator`) is Pakistan's leading digital real estate tool designed for buyers, sellers, and investors.
+- **Features**:
+  - Exact DHA transfer fee calculations based on phase, block, and property category.
+  - DC (District Collector) valuation and FBR valuation lookups.
+  - Filer vs Non-Filer tax computations for Section 236C (Capital Gain Tax on Sellers) and Section 236K (Advance Withholding Tax on Purchasers).
+  - Stamp duty calculations (AR-17, 63A challans, PLRA service fees, mutation fees).
+  - Biana (earnest money), verification charges, urgent/executive surcharge options.
+  - Export and print ready professional official summary reports (PDF/DOC/Image export).
+
+## 2. Real Estate Expertise & Portfolio
+- **Residential Estates**: Luxury villas, modern bungalows, smart homes in DHA Lahore Phases 1 through 13 (Prism).
+- **Commercial Properties**: Plazas, shops, corporate offices in commercial hubs (CCA, Y-Block, H-Block, Broadway Commercial).
+- **Plot Files**: 5 Marla, 10 Marla, 1 Kanal residential and commercial files with 100% verified documentation.
+
+## 3. Leadership & Trust
+- **CEO**: Ch. Sajid Mahmood
+- **Established**: 2020
+- **Reputation**: 100% verified files, transparent advisory, trusted by overseas Pakistanis and local investors.
+
+## 4. Navigation & Routes
+- Home: https://thezalmimarketing.com/
+- Zalmi Calculator: https://thezalmimarketing.com/calculator
+- Properties: https://thezalmimarketing.com/properties
+- Plot Files: https://thezalmimarketing.com/files
+- Society Maps: https://thezalmimarketing.com/maps
+- About Us: https://thezalmimarketing.com/about
+- Contact Us: https://thezalmimarketing.com/contact
+- Privacy Policy: https://thezalmimarketing.com/privacy-policy

@@ -1,23 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions } from '@tanstack/react-query'; // Import queryOptions
-import { fetchHomeData } from "@/lib/api"; // Import fetchHomeData from your API
+import { queryOptions } from '@tanstack/react-query';
+import { fetchHomeData } from "@/lib/api";
 import HeroSection from "@/components/home/HeroSection";
-import FileMarquee from "@/components/home/FileMarquee";
-import CardSlider from "@/components/home/CardSlider";
-import PersonalizedExperience from "@/components/home/PersonalizedExperience";
+import DhaBirdseyeSection from "@/components/home/DhaBirdseyeSection";
 import CategoryCard from "@/components/home/CategoryCard";
 import PropertyCard from "@/components/global/PropertyCard";
-import CardGrid from "@/components/home/CardGrid";
-import MapCard from "@/components/global/MapCard";
+import CategoriesSection from "@/components/home/CategoriesSection";
+import ServicesOverviewSection from "@/components/home/ServicesOverviewSection";
+import CalculatorFeatureSection from "@/components/home/CalculatorFeatureSection";
+import CalculatorMobileCta from "@/components/home/CalculatorMobileCta";
 import ReviewsSection from "@/components/home/ReviewSection";
-import HowItWorksSection from "@/components/home/HowItWorksSection"; // Import HowItWorksSection
-import TextSection from "@/components/global/TextSection"; // Import TextSection
-import WhyUs from "@/components/global/WhyUs";
-import { VideoPlayer } from "@/components/global/VideoPlayer";
+import HowItWorksSection from "@/components/home/HowItWorksSection";
+import InvestmentOpportunitiesSection from "@/components/home/InvestmentOpportunitiesSection";
+import FeaturedPropertiesSection from "@/components/home/FeaturedPropertiesSection";
+import FeaturedFilesSection from "@/components/home/FeaturedFilesSection";
+import FeaturedMapsSection from "@/components/home/FeaturedMapsSection";
+import FeaturedVideoSection from "@/components/home/FeaturedVideoSection";
+import DhaServicesSection from "@/components/home/DhaServicesSection";
+import WhyChooseUsSection from "@/components/home/WhyChooseUsSection";
+import PersonalizedExperience from "@/components/home/PersonalizedExperience";
+import FeaturedFeature from "@/components/home/FeaturedFeature";
+import ShapeShifterSection from "@/components/home/ShapeShifterSection";
+import ShortSlideDown from "@/components/animata/text/short-slide-down";
 import Popup from "@/components/global/popup";
 import { motion } from "framer-motion";
+import content from "@/content/pages/home.json";
 
-// Define query options for homepage data
 const homeQueryOptions = () =>
   queryOptions({
     queryKey: ['homeData'],
@@ -38,194 +46,53 @@ const Reveal = ({ children, className = "" }) => (
 
 export const Route = createFileRoute("/")({
   loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(homeQueryOptions()), // Use queryClient to fetch data
+    queryClient.ensureQueryData(homeQueryOptions()),
   head: () => ({
     meta: [
-      { title: "The Zalmi Marketing | Best Real Estate Agency in Lahore" },
+      { title: content.seo.title },
       {
         name: "description",
-        content:
-          "The Zalmi Marketing is Lahore's most trusted real estate agency. Specializing in DHA Lahore, DHA Multan, and premium properties across Pakistan. Your partner for secure property investments.",
+        content: content.seo.description,
       },
       {
         name: "keywords",
-        content:
-          "Real Estate Lahore, DHA Lahore, Zalmi Marketing, Property Lahore, DHA Projects Pakistan",
+        content: content.seo.keywords,
       },
-      // Open Graph
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://thezalmimarketing.com/" },
+      { property: "og:type", content: content.seo.ogType },
+      { property: "og:url", content: content.seo.ogUrl },
       {
         property: "og:title",
-        content: "The Zalmi Marketing | Best Real Estate Agency in Lahore",
+        content: content.seo.ogTitle,
       },
       {
         property: "og:description",
-        content:
-          "The Zalmi Marketing is Lahore's most trusted real estate agency specializing in DHA Lahore and premium properties across Pakistan.",
+        content: content.seo.ogDescription,
       },
       {
         property: "og:image",
-        content:
-          "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+        content: content.seo.ogImage,
       },
-      // Twitter
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:url", content: "https://thezalmimarketing.com/" },
+      { name: "twitter:card", content: content.seo.twitterCard },
+      { name: "twitter:url", content: content.seo.twitterUrl },
       {
-        name: "twitter:title",
-        content: "The Zalmi Marketing | Best Real Estate Agency in Lahore",
+        property: "twitter:title",
+        content: content.seo.twitterTitle,
       },
       {
-        name: "twitter:description",
-        content:
-          "The Zalmi Marketing is Lahore's most trusted real estate agency specializing in DHA Lahore and premium properties across Pakistan.",
+        property: "twitter:description",
+        content: content.seo.twitterDescription,
       },
       {
-        name: "twitter:image",
-        content:
-          "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+        property: "twitter:image",
+        content: content.seo.twitterImage,
       },
     ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "RealEstateAgent",
-          name: "The Zalmi Marketing",
-          url: "https://thezalmimarketing.com/",
-          logo: "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
-          description:
-            "The Zalmi Marketing is a leading real estate agency in Lahore specializing in DHA Lahore and premium properties across Pakistan.",
-          address: {
-            "@type": "PostalAddress",
-            addressLocality: "Lahore",
-            addressCountry: "PK",
-          },
-          sameAs: [
-            "https://www.facebook.com/share/182ygLHmct/",
-            "https://www.tiktok.com/@thezalmimarketingdha?_r=1&_t=ZS-922kJzik3lf",
-            "https://youtube.com/@thezalmimarketing?si=vDrnNAQ9pl9y1DU_",
-            "https://wa.me/923218446496",
-          ],
-        }),
-      },
-    ],
-    links: [{ rel: "canonical", href: "https://thezalmimarketing.com/" }],
+    links: [{ rel: "canonical", href: content.seo.canonical }],
   }),
   component: RouteComponent,
 });
 
-function LinkedCategoryCard({ id, ...category }) { // Destructure id
-  return (
-    <Link to={`/properties?category=${category.title}&image=${encodeURIComponent(category.src)}&categoryName=${encodeURIComponent(category.title)}`}> {/* Use title for filtering as per current search logic */}
-      <CategoryCard {...category} disableLink />
-    </Link>
-  );
-}
-
-function LinkedPropertyCard({ id, ...property }) {
-  if (property.is_file) {
-    return <PropertyCard {...property} />;
-  }
-
-  return (
-    <Link to={`/properties/${property.slug}`}>
-      <PropertyCard {...property} />
-    </Link>
-  );
-}
-
-// Sample data for the HowItWorksSection
-const howItWorksSectionData = {
-  heading: "How It Works",
-  subheading: "Simple steps to find your dream property",
-  buttonText: "Get Started Now",
-  buttonLink: "/properties",
-  items: [
-    {
-      icon: "Search",
-      title: "Explore Listings",
-      description: "Browse through a wide range of properties tailored to your needs.",
-    },
-    {
-      icon: "Lightbulb",
-      title: "Get Expert Advice",
-      description: "Connect with our experienced agents for personalized guidance.",
-    },
-    {
-      icon: "Handshake",
-      title: "Close the Deal",
-      description: "Secure your desired property with our seamless process.",
-    },
-  ],
-};
-
-
-
-const dhaServicesContent = {
-  title: "DHA Phases: Unmatched Living and Investment",
-  subtitle: "Zalmi Marketing specializes in DHA projects, offering comprehensive services in all major phases across Pakistan.",
-  content: [
-    "Defence Housing Authority (DHA) projects are synonymous with quality living, secure environments, and lucrative investment potential. Spread across Pakistan's key cities, DHA offers meticulously planned communities, state-of-the-art infrastructure, and a high standard of amenities. From residential plots and luxurious homes to commercial areas, DHA continues to be a top choice for discerning buyers and investors.",
-    "Zalmi Marketing provides end-to-end services for all DHA-related needs. Our expertise covers buying, selling, and investment consultation for all phases in Lahore, Karachi, Islamabad, and other major cities. We ensure a seamless experience, guiding you through every step of your property journey with transparency and professionalism.",
-  ],
-  align: "center",
-  columns: 2,
-};
-
-const servicesOverviewContent = {
-  title: "Our Comprehensive Real Estate Services",
-  subtitle:
-    "From expert advisory to seamless transactions, Zalmi Marketing is your complete real estate solution.",
-  content: [
-    "Property Buying & Selling: Navigate the market with confidence. We connect buyers with their ideal properties and help sellers achieve the best value for their assets.",
-    "Investment Consultation: Maximize your returns with our expert investment strategies tailored to the Pakistani real estate landscape.",
-    "DHA Project Specialization: In-depth knowledge and exclusive access to all DHA phases across Pakistan, ensuring prime opportunities.",
-    "Land & Commercial Deals: Explore lucrative options in commercial properties and strategic land acquisitions.",
-    "Documentation & Legal Support: Our team assists with all necessary paperwork and legalities, ensuring hassle-free transactions.",
-    "After-Sales Support: Our commitment extends beyond the sale, providing continuous support and guidance.",
-  ],
-  align: "center",
-  columns: 2,
-  maxWidth: "max-w-6xl",
-  borderPosition: "left",
-};
-
-const investmentOpportunitiesContent = {
-  title: "Investment Opportunities with Zalmi Marketing",
-  subtitle: "Unlock potential with our curated investment options.",
-  content: (
-    <ul className="space-y-2 text-left list-disc list-inside">
-      <li><strong>High-Growth Areas:</strong> Access to prime locations with significant appreciation potential.</li>
-      <li><strong>DHA Projects:</strong> Secure investments in Pakistan's most sought-after housing schemes.</li>
-      <li><strong>Commercial Ventures:</strong> Explore lucrative commercial properties in strategic business hubs.</li>
-      <li><strong>Expert Guidance:</strong> Receive personalized advice from seasoned real estate investment specialists.</li>
-      <li><strong>Diversified Portfolio:</strong> Opportunities in residential plots, apartments, and commercial units.</li>
-    </ul>
-  ),
-  align: "center",
-  maxWidth: "max-w-4xl", // Using max-w-4xl for this one
-};
-
-const whyChooseUsContent = {
-  title: "Why Choose Zalmi Marketing?",
-  subtitle: "Experience the difference of dedicated real estate services.",
-  content: (
-    <p className="text-lg leading-relaxed">
-      At <strong>Zalmi Marketing</strong>, we are more than just real estate agents; we are your trusted partners in building a prosperous future. Our commitment to <strong>transparency</strong>, <strong>professionalism</strong>, and <strong>client satisfaction</strong> sets us apart. With an in-depth understanding of the Pakistani real estate market, especially DHA projects, we guarantee a seamless and rewarding experience. Choose us for unparalleled expertise and dedicated support every step of the way.
-    </p>
-  ),
-  align: "center",
-  variant: "dark",
-  maxWidth: "max-w-5xl", // Using max-w-5xl for this one
-};
-
-
-
-
-
+const howItWorksSectionData = content.howItWorksSection;
 
 function RouteComponent() {
   const { 
@@ -238,7 +105,7 @@ function RouteComponent() {
     videoSection,
     popupSection,
     allFileProperties
-  } = Route.useLoaderData(); // Get data from loader
+  } = Route.useLoaderData();
 
   const videoToDisplay = videoSection 
     ? (videoSection.videoInputMethod === 'upload' 
@@ -247,135 +114,219 @@ function RouteComponent() {
     : null;
 
   return (
-    <main className="flex flex-col items-center justify-center w-full text-center max-w-[1440px] mx-auto min-h-screen">
-      <HeroSection />
-      <FileMarquee items={allFileProperties} />
+    <main className="flex flex-col items-center justify-center w-full text-center mx-auto bg-background text-foreground transition-colors duration-300">
+      <HeroSection categories={categoriesSection?.items} items={allFileProperties} />
 
-      <Reveal className="max-w-3xl pt-8">
-        <h2 className="text-4xl font-extrabold text-primary sm:text-5xl md:text-6xl">
-          Your Trusted Partner in Real Estate
-        </h2>
-        <p className="mt-4 text-xl text-muted-foreground">
-          We specialize in marketing land files, housing society projects, and
-          much more.
-        </p>
-      </Reveal>
+      {/* Group 1 (Intro, ShapeShifter, Categories, Services Overview) */}
+      <div className="w-full relative overflow-hidden bg-transparent text-foreground py-0">
+        <div className="absolute inset-0 opacity-60 dark:opacity-30 bg-group1-pattern pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(245,166,35,0.35),transparent_60%),radial-gradient(circle_at_80%_80%,rgba(212,175,55,0.3),transparent_60%)] pointer-events-none" />
 
-      {categoriesSection?.items?.length > 0 && (
-        <Reveal className="w-full py-8">
-          <CardSlider
-            items={categoriesSection.items} // Use fetched categories
-            CardComponent={LinkedCategoryCard}
-            autoScrollSpeed={0}
-            loop={false}
-            heading={categoriesSection.heading}
-            subheading={categoriesSection.subheading}
-            breakpoints={{ default: 1, sm: 3, md: 4, lg: 5 }}
-            customWidths={[{ width: 425, cards: 2 }]}
-            showViewAll={false}
-            className={"my-8"}
-          />
-        </Reveal>
-      )}
+        {/* 1. Intro Section (Responsive Brand Intro) */}
+        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto py-10 sm:py-16">
+          <Reveal className="max-w-4xl mx-auto text-center flex flex-col items-center">
+            <div className="mb-4 sm:mb-6">
+              <img
+                src="/Zalmi Marketing Logo White.webp"
+                alt="The Zalmi Marketing Logo"
+                className="h-12 sm:h-16 md:h-20 w-auto object-contain hidden dark:block drop-shadow-[0_10px_25px_rgba(212,175,55,0.3)] transition-transform duration-500 hover:scale-105"
+              />
+              <img
+                src="/Zalmi Marketing Logo Black.webp"
+                alt="The Zalmi Marketing Logo"
+                className="h-12 sm:h-16 md:h-20 w-auto object-contain block dark:hidden drop-shadow-[0_10px_25px_rgba(212,175,55,0.3)] transition-transform duration-500 hover:scale-105"
+              />
+            </div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold font-display tracking-tight text-foreground flex flex-col items-center justify-center px-2">
+              <span>{content.introSection.headingPre}</span>
+              <div className="h-[8em] sm:h-[4.5em] py-2 sm:py-4 overflow-visible my-2 w-full flex items-center justify-center">
+                <ShortSlideDown
+                  phrases={[
+                    ["Discover", "Luxury", "Living"],
+                    ["Premium", "DHA", "Homes"],
+                    ["Your", "Dream", "Property"],
+                    ["Elite", "Residential", "Estates"],
+                  ]}
+                  build={{ lineGapPx: 2, firstWordYPx: -2, entryOffsetYPx: -8 }}
+                  className="inline-flex h-full w-full items-center justify-center text-center text-2xl sm:text-4xl md:text-5xl lg:text-6xl"
+                  titleClassName="gold-text-gradient"
+                />
+              </div>
+            </h2>
+          </Reveal>
+        </section>
 
-      <Reveal>
-        <TextSection {...servicesOverviewContent} className={"my-8"} />
-      </Reveal>
+        {/* 2. ShapeShifter Section */}
+        <div className="relative z-10 w-full py-4 sm:py-8">
+          <ShapeShifterSection />
+        </div>
 
-      {propertiesSection?.items?.length > 0 && (
-        <Reveal className="w-full py-8 bg-primary text-primary-foreground">
-          <CardSlider
-            items={propertiesSection.items} // Use fetched properties
-            CardComponent={LinkedPropertyCard}
-            heading={propertiesSection.heading}
-            subheading={propertiesSection.subheading}
-            showViewAll={true}
-            viewAllHref="/properties"
-            className={"md:px-6 py-4 px-4"}
-            subheadingClassName="text-white/80"
-          />
-        </Reveal>
-      )}
+        {/* 3. Categories Section */}
+        {categoriesSection?.items?.length > 0 && (
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="w-full">
+              <CategoriesSection
+                items={categoriesSection.items}
+                heading={categoriesSection.heading}
+                subheading={categoriesSection.subheading}
+                className="my-0"
+              />
+            </Reveal>
+          </section>
+        )}
 
-      <Reveal>
-        <HowItWorksSection {...howItWorksSectionData} className={"my-8"} />
-      </Reveal>
+        {/* 4. Services Overview */}
+        <div className="w-full relative z-10">
+          <Reveal className="w-full">
+            <ServicesOverviewSection />
+          </Reveal>
+        </div>
 
-      {filePropertiesSection?.items?.length > 0 && (
-        <Reveal className="w-full py-8 bg-primary">
-          <CardGrid
-            items={filePropertiesSection.items} // Use fetched file properties
-            CardComponent={PropertyCard} // Non-clickable
-            heading={filePropertiesSection.heading}
-            subheading={filePropertiesSection.subheading}
-            showViewAll={true}
-            viewAllHref="/files"
-            maxItems={filePropertiesSection.items.length}
-            headingClassName="text-white text-4xl"
-            subheadingClassName="text-white text-lg"
-          />
-        </Reveal>
-      )}
+        {/* 5. Calculator Feature Announcement */}
+        <div className="w-full relative z-10">
+          <Reveal className="w-full">
+            <CalculatorFeatureSection {...content.calculatorFeatureSection} />
+          </Reveal>
+        </div>
+      </div>
 
-      {mapsSection?.items?.length > 0 && (
-        <Reveal className="w-full py-8 bg-primary">
-          <CardGrid
-            items={mapsSection.items}
-            CardComponent={MapCard}
-            heading={mapsSection.heading}
-            subheading={mapsSection.subheading}
-            showViewAll={true}
-            viewAllHref="/maps"
-            maxItems={mapsSection.items.length}
-            headingClassName="text-white text-4xl"
-            subheadingClassName="text-white text-lg"
-          />
-        </Reveal>
-      )}
+      <CalculatorMobileCta />
 
-      <Reveal>
-        <TextSection {...investmentOpportunitiesContent} className={"my-8"} />
-      </Reveal>
+      {/* Group 2 (Properties, Files, Investment Opportunities, How It Works) */}
+      <div className="w-full relative overflow-x-hidden bg-background text-foreground py-0">
+        <div className="absolute inset-0 opacity-60 dark:opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjAnIGhlaWdodD0nNjAnIHZpZXdCb3g9JzAgMCA2MCA2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZyBmaWxsPSdub25lJyBmaWxsLXJ1bGU9J2V2ZW5vZGQnPjxnIGZpbGw9JyNEMEFGMzcnIGZpbGwtb3BhY2l0eT0nMC4xNic+PHBhdGggZD0nTTM2IDM0di00aC0ydi00aC00djJoNHY0aDJ2LTRoNHYyaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNHY0aC00di0yek02IDM0di00SDR2NGgtNHYyaDR2NGgydi00aDR2LTJINnptNi0zMFYwSDR2NGgtNHYyaDR2NGgyVjZoNHY0aC00di0yeicvPjwvZz48L2c+PC9zdmc+')] bg-repeat pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(212,175,55,0.18)_0%,transparent_50%,rgba(245,166,35,0.15)_100%)] pointer-events-none" />
 
-      {reviews?.length > 0 && (
-        <Reveal className="w-full">
-          <ReviewsSection reviews={reviews} className={"my-8"} />
-        </Reveal>
-      )}
+        {/* Properties Section */}
+        {propertiesSection?.items?.length > 0 && (
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="w-full max-w-7xl mx-auto">
+              <FeaturedPropertiesSection
+                items={propertiesSection.items}
+                heading={propertiesSection.heading}
+                subheading={propertiesSection.subheading}
+              />
+            </Reveal>
+          </section>
+        )}
 
-      {videoSection && videoToDisplay && (
-        <Reveal className="w-full px-4 mx-auto my-8">
-          <h2 className="mb-4 text-3xl font-bold">{videoSection.heading}</h2>
-          <p className="mb-8 text-lg text-muted-foreground">
-            {videoSection.subheading}
-          </p>
-          <VideoPlayer video={videoToDisplay} />
-        </Reveal>
-      )}
+        {/* File Properties Section */}
+        {filePropertiesSection?.items?.length > 0 && (
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="relative z-10 w-full max-w-7xl mx-auto">
+              <FeaturedFilesSection
+                items={filePropertiesSection.items}
+                heading={filePropertiesSection.heading}
+                subheading={filePropertiesSection.subheading}
+              />
+            </Reveal>
+          </section>
+        )}
 
-      {/* DHA Services Section - */}
-      <Reveal>
-        <TextSection {...dhaServicesContent} className={"my-8"} />
-      </Reveal>
+        {/* Investment Opportunities Section (Hidden on mobile screens) */}
+        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto hidden md:block">
+          <Reveal className="w-full max-w-7xl mx-auto">
+            <InvestmentOpportunitiesSection />
+          </Reveal>
+        </section>
+      </div>
 
-      {/* Why Choose Us Section - New Variant 2 */}
-      <Reveal className="w-full">
-        <TextSection {...whyChooseUsContent} className={"my-8"} />
-      </Reveal>
+      {/* Group 3 (3 Sections: Maps, How It Works, Reviews) */}
+      <div className="w-full relative bg-background text-foreground py-0 overflow-visible">
+        <div className="absolute inset-0 opacity-55 dark:opacity-28 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nODAnIGhlaWdodD0nODAnIHZpZXdCb3g9JzAgMCA4MCA4MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cGF0aCBkPSdNNDAgMGw0MCA0MC00MCA0MEwwIDQweiUnIGZpbGw9JyNEMEFGMzcnIGZpbGwtb3BhY2l0eT0nMC4xMicgZmlsbC1ydWxlPSdldmVub2RkJy8+PGNpcmNsZSBjeD0nNDAnIGN5PSc0MCcgcj0nMTUnIGZpbGw9J25vbmUnIHN0cm9rZT0nI0QwQUYzNycgc3Ryb2tlLW9wYWNpdHk9JzAuMjUnIHN0cm9rZS13aWR0aD0nMS41Jy8+PC9zdmc+')] bg-repeat pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(245,166,35,0.2),transparent_70%)] pointer-events-none" />
 
-      <Reveal>
-        <PersonalizedExperience
-          cards={personalizedCards}
-          className={"px-4 md:px-6 mx-auto"}
-        />
-      </Reveal>
+        {/* Maps Section */}
+        {mapsSection?.items?.length > 0 && (
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="w-full max-w-7xl mx-auto">
+              <FeaturedMapsSection
+                items={mapsSection.items}
+                heading={mapsSection.heading}
+                subheading={mapsSection.subheading}
+              />
+            </Reveal>
+          </section>
+        )}
+
+        {/* How It Works Section */}
+        <div className="w-full relative bg-transparent text-foreground py-0 overflow-visible">
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <HowItWorksSection {...howItWorksSectionData} className={"my-0"} />
+          </section>
+        </div>
+
+        {/* Reviews Section (Full Width) */}
+        {reviews?.length > 0 && (
+          <div className="w-full relative z-10">
+            <Reveal className="w-full">
+              <ReviewsSection reviews={reviews} className={"my-0"} />
+            </Reveal>
+          </div>
+        )}
+
+        {/* Featured Feature Section (Full Width, Fixed BG with Reviews) */}
+        <div className="w-full relative z-10">
+          <Reveal className="w-full">
+            <FeaturedFeature />
+          </Reveal>
+        </div>
+      </div>
+
+      {/* Group 4 (2 Sections: Video, DHA Services) */}
+      <div className="w-full relative overflow-hidden bg-background text-foreground py-0">
+        <div className="absolute inset-0 opacity-80 dark:opacity-60 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgdmlld0JveD0nMCAwIDEwMCAxMDAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PGcgZmlsbD0nI0QwQUYzNycgZmlsbC1vcGFjaXR5PScwLjU1Jz48Y2lyY2xlIGN4PScyMCcgY3k9JzIwJyByPScyLjUnLz48Y2lyY2xlIGN4PS87MCcgY3k9JzMwJyByPScyJy8+PGNpcmNsZSBjeD0nNTAnIGN5PSc3MCcgcj0nMycvPjxjaXJjbGUgY3g9Jzg1JyBjeT0nODUnIHI9JzEuNScvPjxwYXRoIGQ9J00yMCAyMEw1MCA3ME04MCAzMEw1MCA3ME01MCA3MEw4NSA4NScgc3Ryb2tlPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgc3Ryb2tlLW9wYWNpdHk9JzAuNDUnIHN0cm9rZS13aWR0aD0nMS4yNScgZmlsbD0nbm9uZScvPjwvZz48L3N2Zz4=')] bg-repeat pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(212,175,55,0.35),transparent_70%)] pointer-events-none" />
+
+        {/* Video Section */}
+        {videoSection && videoToDisplay && (
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="w-full max-w-7xl mx-auto">
+              <FeaturedVideoSection
+                heading={videoSection.heading}
+                subheading={videoSection.subheading}
+                video={videoToDisplay}
+              />
+            </Reveal>
+          </section>
+        )}
+
+        {/* DHA Services Section */}
+        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+          <Reveal className="w-full max-w-7xl mx-auto">
+            <DhaServicesSection />
+          </Reveal>
+        </section>
+      </div>
+
+      {/* Group 5 (Why Choose Us, Personalized Experience) with DhaBirdseyeSection as Background */}
+      <DhaBirdseyeSection>
+        <div className="space-y-12 sm:space-y-20">
+          {/* Why Choose Us Section */}
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="relative z-10 w-full max-w-7xl mx-auto">
+              <WhyChooseUsSection />
+            </Reveal>
+          </section>
+
+          {/* Personalized Experience */}
+          <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+            <Reveal className="w-full max-w-7xl mx-auto">
+              <PersonalizedExperience
+                cards={personalizedCards}
+                className={"mx-auto"}
+              />
+            </Reveal>
+          </section>
+        </div>
+      </DhaBirdseyeSection>
 
       {popupSection && (
         <Popup
           isVisible={popupSection.isVisible}
           title={popupSection.heading}
           description={popupSection.subheading}
-          delayMs={popupSection.delayMs}
+          delayMs={(popupSection.delayMs || 5000) + 3000}
           mediaType={popupSection.mediaType}
           mediaPath={popupSection.mediaPath}
         />
@@ -383,4 +334,3 @@ function RouteComponent() {
     </main>
   );
 }
-

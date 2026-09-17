@@ -12,12 +12,12 @@ echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
 // 1. Static Pages
 $static_pages = [
     '',
+    '/calculator',
     '/about',
     '/contact',
     '/properties',
     '/maps',
     '/files',
-    '/search',
     '/privacy-policy'
 ];
 
@@ -25,7 +25,7 @@ foreach ($static_pages as $page) {
     echo '  <url>' . PHP_EOL;
     echo '    <loc>' . $base_url . $page . '</loc>' . PHP_EOL;
     echo '    <changefreq>weekly</changefreq>' . PHP_EOL;
-    echo '    <priority>' . ($page === '' ? '1.0' : '0.8') . '</priority>' . PHP_EOL;
+    echo '    <priority>' . (($page === '' || $page === '/calculator') ? '1.0' : '0.8') . '</priority>' . PHP_EOL;
     echo '  </url>' . PHP_EOL;
 }
 

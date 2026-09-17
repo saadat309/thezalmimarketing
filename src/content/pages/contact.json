@@ -1,0 +1,116 @@
+{
+  "seo": {
+    "title": "Contact Us | The Zalmi Marketing Lahore - Real Estate Services",
+    "description": "Get in touch with The Zalmi Marketing in DHA Lahore. Contact us for property inquiries, DHA Lahore investment advice, and real estate services in Pakistan.",
+    "keywords": "Contact Zalmi Marketing, Real Estate Office Lahore, DHA Lahore Phase 6 Office, Property Inquiry Lahore",
+    "ogType": "website",
+    "ogUrl": "https://thezalmimarketing.com/contact",
+    "ogTitle": "Contact Us | The Zalmi Marketing",
+    "ogDescription": "Get in touch with The Zalmi Marketing for property inquiries and investment advice.",
+    "ogImage": "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+    "twitterCard": "summary_large_image",
+    "twitterUrl": "https://thezalmimarketing.com/contact",
+    "twitterTitle": "Contact Us | The Zalmi Marketing",
+    "twitterDescription": "Get in touch with The Zalmi Marketing for property inquiries and investment advice.",
+    "twitterImage": "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+    "canonical": "https://thezalmimarketing.com/contact"
+  },
+  "hero": {
+    "badge": "VIP Concierge & Inquiry Desk",
+    "headingPre": "Connect With Pakistan's ",
+    "headingHighlight": "Elite Real Estate Experts",
+    "description": "Whether you're acquiring luxury villas in DHA Lahore, trading verified plot files, or building a high-yield portfolio, our senior advisory team is at your immediate service."
+  },
+  "quickContactCards": [
+    {
+      "title": "Direct Hotline",
+      "subtitle": "+92 321 8446496",
+      "desc": "Speak with our senior consultants instantly",
+      "href": "tel:+923218446496",
+      "actionText": "Call Now",
+      "icon": "Phone"
+    },
+    {
+      "title": "WhatsApp Concierge",
+      "subtitle": "Instant Chat 24/7",
+      "desc": "Get plot files and price updates on WhatsApp",
+      "actionText": "Chat Now",
+      "icon": "FaWhatsapp"
+    },
+    {
+      "title": "Email Assistance",
+      "subtitle": "Professional Inquiries",
+      "desc": "thezalmimarkettingsajidmahmood@gmail.com",
+      "href": "mailto:thezalmimarkettingsajidmahmood@gmail.com",
+      "actionText": "Send Email",
+      "icon": "Mail"
+    },
+    {
+      "title": "Flagship Office",
+      "subtitle": "DHA Phase 6, Lahore",
+      "desc": "67MB Commercial, 2nd Floor",
+      "href": "https://maps.app.goo.gl/XdCCsuZ3zNnswVko6?g_st=aw",
+      "actionText": "Get Directions",
+      "icon": "MapPin"
+    }
+  ],
+  "formSection": {
+    "badge": "Priority Response Guaranteed",
+    "heading": "Send a Direct Inquiry",
+    "description": "Complete the secure form below with your specific requirements, budget, or preferred DHA phase. Our senior consultants will respond within 2 business hours."
+  },
+  "officeHours": {
+    "title": "Office Working Hours",
+    "subtitle": "Visit our flagship office during business hours",
+    "schedule": [
+      { "days": "Monday – Saturday", "time": "9:00 AM – 8:00 PM" },
+      { "days": "Sunday", "time": "By Appointment Only", "highlight": true }
+    ]
+  },
+  "contactInformation": {
+    "badge": "Global Headquarters",
+    "heading": "Office Headquarters & Direct Channels",
+    "description": "Visit our flagship office in DHA Phase 6 Lahore or connect with us instantly via phone, email, or our verified social media channels.",
+    "socialLinks": [
+      { "name": "Facebook", "href": "https://www.facebook.com/share/182ygLHmct/" },
+      { "name": "Tiktok", "href": "https://www.tiktok.com/@thezalmimarketingdha?_r=1&_t=ZS-922kJzik3lf" },
+      { "name": "Youtube", "href": "https://youtube.com/@thezalmimarketing?si=vDrnNAQ9pl9y1DU_" },
+      { "name": "Whatsapp", "href": "https://wa.me/923218446496" }
+    ],
+    "contactDetails": [
+      {
+        "name": "Headquarters Office",
+        "value": "67MB Commercial, 2nd Floor, Phase 6, DHA Lahore, Pakistan",
+        "href": "https://maps.app.goo.gl/XdCCsuZ3zNnswVko6?g_st=aw"
+      },
+      {
+        "name": "Email Assistance",
+        "value": "thezalmimarkettingsajidmahmood@gmail.com",
+        "href": "mailto:thezalmimarkettingsajidmahmood@gmail.com"
+      },
+      {
+        "name": "Direct Hotline",
+        "value": "+92 321 8446496",
+        "href": "tel:+923218446496"
+      }
+    ]
+  },
+  "faqs": [
+    {
+      "q": "How can I verify a DHA Lahore plot file before purchasing?",
+      "a": "Our advisory team conducts direct verification through DHA Lahore transfer branches and official records, ensuring zero risk. You can also visit our Phase 6 office for live verification assistance."
+    },
+    {
+      "q": "Do you assist overseas Pakistanis with remote real estate investments?",
+      "a": "Yes! We manage end-to-end digital portfolio acquisitions, power of attorney facilitation, secure bank transfers, and virtual drone tours for overseas clients in the UK, USA, UAE, and Europe."
+    },
+    {
+      "q": "What documents are required to buy or sell property with Zalmi Marketing?",
+      "a": "For buying: CNIC copy, passport-sized photos, and advance token payment. For selling: Original allotment/transfer letter, CNIC copy, token tax clearance certificates, and dues clearance certificate from DHA."
+    },
+    {
+      "q": "Can I schedule a guided site visit for DHA luxury villas?",
+      "a": "Absolutely. Contact our direct hotline or WhatsApp concierge to book a private VIP vehicle tour of available villas and plots across DHA Lahore phases."
+    }
+  ]
+}

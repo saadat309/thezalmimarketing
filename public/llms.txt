@@ -1,0 +1,23 @@
+# The Zalmi Marketing
+
+> The Zalmi Marketing is Pakistan's premier luxury real estate agency and consultancy, specializing in DHA Lahore, DHA Multan, Islamabad, Karachi, commercial properties, residential villas, and plot files. Founded in 2020 and led by CEO Ch. Sajid Mahmood, headquartered in DHA Phase 6, Lahore.
+
+## Core Services & Features
+- **Zalmi Calculator**: The official advanced DHA transfer fee and property tax calculator in Pakistan. Instantly computes accurate DC values, FBR withholding taxes (Section 236C for sellers, Section 236K for purchasers), stamp duty, membership fees, and transfer charges for plots, villas, and commercial properties.
+- **DHA & Society Real Estate**: Expert advisory, purchase, sale, and investment in DHA Lahore, DHA Multan, DHA Islamabad, and DHA Karachi.
+- **Plot Files & Allocation Files**: Transparent trading and verification of residential and commercial allocation files.
+- **Master Maps & Society Layouts**: High-resolution downloadable PDF master plans and maps for all DHA phases and blocks.
+
+## Key Links
+- [Home](https://thezalmimarketing.com/)
+- [Zalmi Calculator (DHA Transfer & Tax Calculator)](https://thezalmimarketing.com/calculator)
+- [Properties & Luxury Listings](https://thezalmimarketing.com/properties)
+- [Plot Files](https://thezalmimarketing.com/files)
+- [Society Maps](https://thezalmimarketing.com/maps)
+- [About Us](https://thezalmimarketing.com/about)
+- [Contact Us](https://thezalmimarketing.com/contact)
+
+## Contact Information
+- **Headquarters**: DHA Phase 6, Lahore, Pakistan
+- **Phone / WhatsApp**: +92 321 8446496
+- **Email**: info@thezalmimarketing.com

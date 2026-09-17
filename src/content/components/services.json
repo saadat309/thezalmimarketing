@@ -1,0 +1,50 @@
+{
+  "badge": "The Zalmi Advantage",
+  "headingPre": "Bespoke ",
+  "headingHighlight": "Real Estate Services",
+  "subheading": "From elite advisory to seamless transactions, we deliver uncompromising excellence at every milestone of your real estate journey.",
+  "services": [
+    {
+      "icon": "Building2",
+      "title": "Acquisition & Sales",
+      "description": "Expert representation connecting discerning buyers with premier residential estates and maximizing asset value across prime locations.",
+      "tag": "Core Service",
+      "image": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      "icon": "TrendingUp",
+      "title": "Investment Strategy",
+      "description": "Data-driven portfolio consultation tailored to Pakistan's high-yield luxury property markets with robust risk management.",
+      "tag": "High Yield",
+      "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      "icon": "ShieldCheck",
+      "title": "DHA Specialization",
+      "description": "Exclusive insider access and deep multi-phase expertise across all major DHA developments in Lahore and nationwide.",
+      "tag": "Elite Access",
+      "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      "icon": "Briefcase",
+      "title": "Commercial Ventures",
+      "description": "Strategic land acquisitions and prime retail/office spaces positioned in bustling business hubs for maximum commercial return.",
+      "tag": "Commercial",
+      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      "icon": "FileText",
+      "title": "Legal & Documentation",
+      "description": "Rigorous title verification and comprehensive paperwork management executed by legal experts for absolute peace of mind.",
+      "tag": "Secure",
+      "image": "https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      "icon": "Crown",
+      "title": "Concierge After-Sales",
+      "description": "White-glove property management and advisory services extending long beyond the closing table to steward your legacy.",
+      "tag": "VIP Support",
+      "image": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=800"
+    }
+  ]
+}

@@ -203,7 +203,7 @@ export function CrudDataTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {(!disableAdd && (!canEditItem || canEditItem(item))) && (
+              {(!canEditItem || canEditItem(item)) && (
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditSheet(item); }}>
                   <FilePenIcon className="w-4 h-4 mr-2" />
                   Edit
@@ -260,8 +260,7 @@ export function CrudDataTable({
             </div>
         </div>
       )}
-      {!disableAdd && (
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetContent className={cn("sm:max-w-[600px]", sheetClassName)} onPointerDownOutside={(event) => event.preventDefault()}>
             <SheetHeader>
               <SheetTitle>{editingItem && !isDuplicating ? `Edit ${entityName}` : `Add New ${entityName}`}</SheetTitle>
@@ -325,7 +324,6 @@ export function CrudDataTable({
             )}
           </SheetContent>
         </Sheet>
-      )}
       <DataTable
         columns={allColumns}
         data={data}

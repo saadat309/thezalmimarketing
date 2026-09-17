@@ -6,6 +6,11 @@ import Footer from '@/components/home/Footer'
 import { Toaster } from "@/components/ui/sonner"
 import { useAuthStore } from '@/store/authStore'
 import NotFound from '@/components/global/NotFound'
+import LenisProvider from '@/components/providers/LenisProvider'
+import AIChatWidget from '@/components/ai/AIChatWidget'
+import BottomLeftWidgets from '@/components/global/BottomLeftWidgets'
+import DhaAssistancePopup from '@/components/dha/DhaAssistancePopup'
+import VerticalTilesPreloader from '@/components/ui/VerticalTilesPreloader'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -89,12 +94,19 @@ function RootComponent() {
   return (
     <React.Fragment>
       <HeadContent />
-      <div className="flex flex-col justify-between min-h-screen bg-background text-foreground">
-      {!shouldHideNavbarAndFooter && <Navbar/>}
-      <Outlet context={{ auth }} />
-      {!shouldHideNavbarAndFooter && <Footer/>}
-      <Toaster />
-    </div>
+      <LenisProvider>
+        <VerticalTilesPreloader>
+          <div className="flex flex-col justify-between min-h-screen bg-background text-foreground">
+            {!shouldHideNavbarAndFooter && <Navbar/>}
+            <Outlet context={{ auth }} />
+            {!shouldHideNavbarAndFooter && <Footer/>}
+            {!shouldHideNavbarAndFooter && <AIChatWidget />}
+            {!shouldHideNavbarAndFooter && <BottomLeftWidgets />}
+            {!shouldHideNavbarAndFooter && <DhaAssistancePopup />}
+            <Toaster />
+          </div>
+        </VerticalTilesPreloader>
+      </LenisProvider>
       <Scripts />
     </React.Fragment>
   )

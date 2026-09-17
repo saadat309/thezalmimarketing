@@ -62,8 +62,8 @@ if ($resource === 'queries' && $method !== 'POST') {
 }
 
 // 3. Content Management (Properties, Maps, etc.): Protected for modifications
-// Assuming GET is public for frontend website
-$content_resources = ['products', 'categories', 'images', 'cities', 'phases', 'societies', 'maps', 'properties', 'files', 'labels', 'landing-sections' ];
+// GET is public for frontend website
+$content_resources = ['products', 'categories', 'images', 'cities', 'phases', 'societies', 'maps', 'properties', 'files', 'labels', 'landing-sections', 'calculator-phases', 'calculator-blocks', 'calculator-property-types', 'calculator-rates', 'calculator-transfer-fees', 'calculator-fees', 'calculator-tax-rates', 'calculator-config', 'calculator-fee-rules' ];
 if (in_array($resource, $content_resources) && in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
     $user = authenticate_request($pdo);
 }
@@ -77,6 +77,12 @@ if ($resource === 'auth' && $id === 'me') {
    // auth.php's `get_my_profile` and `update_my_profile` call `get_authenticated_user_id`.
 }
 
+
+if ($resource === 'ai-tools') {
+    require __DIR__ . '/routes/ai-tools.php';
+    handle_ai_tools($pdo);
+    exit;
+}
 
 if ($resource === 'products') {
     require __DIR__ . '/routes/products.php';
@@ -106,6 +112,60 @@ if ($resource === 'cities') {
 if ($resource === 'phases') {
     require __DIR__ . '/routes/phases.php';
     handle_phases($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-phases') {
+    require __DIR__ . '/routes/calculator-phases.php';
+    handle_calculator_phases($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-blocks') {
+    require __DIR__ . '/routes/calculator-blocks.php';
+    handle_calculator_blocks($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-property-types') {
+    require __DIR__ . '/routes/calculator-property-types.php';
+    handle_calculator_property_types($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-rates') {
+    require __DIR__ . '/routes/calculator-rates.php';
+    handle_calculator_rates($method, $pdo, $segments);
+    exit;
+}
+
+if ($resource === 'calculator-transfer-fees') {
+    require __DIR__ . '/routes/calculator-transfer-fees.php';
+    handle_calculator_transfer_fees($method, $pdo, $segments);
+    exit;
+}
+
+if ($resource === 'calculator-fees') {
+    require __DIR__ . '/routes/calculator-fees.php';
+    handle_calculator_fees($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-tax-rates') {
+    require __DIR__ . '/routes/calculator-tax-rates.php';
+    handle_calculator_tax_rates($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-fee-rules') {
+    require __DIR__ . '/routes/calculator-fee-rules.php';
+    handle_calculator_fee_rules($method, $pdo, $id);
+    exit;
+}
+
+if ($resource === 'calculator-config') {
+    require __DIR__ . '/routes/calculator-config.php';
+    handle_calculator_config($pdo);
     exit;
 }
 

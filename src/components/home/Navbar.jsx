@@ -1,9 +1,4 @@
-/**
- prompt to make it reuseable:
-hi, do you have access to Navbar.jsx file from the files i uploaded in this project? if yes then read and understand its logic, once you understand its logic then using tailwind and css update the styles of ul and its li. each li item should use tanstack router Link and using its activeprops prop make the active item appear bold and test-primary with underline and also spacing form item to underline too. same effect should happen on hover on all items too and underline should appear to be drawn and float while hovering. make sure the ul component and li item should not tremble and vibrate on text and style transformations on hover and clicks. keep the same file-level names and imports as original file. also make sure to not change anything else in the code except what i asked for. your changes should be trackable and clearly visible with comments. 
- */
-
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,304 +7,294 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu } from "lucide-react";
+import { Menu, X, Sun, Moon, Calculator } from "lucide-react";
 import {
   Sheet,
   SheetContent,
-  SheetFooter,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { FaWhatsapp } from "react-icons/fa";
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-  // State to control the mobile sheet's open/close state
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const gap = 14; // px
-  const phoneNumber = "+923218446496"; // Replace with the actual phone number
-  const whatsappMessage = "Hi, I want to know about your services.";
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+  const [showDarkLogo, setShowDarkLogo] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const currentTheme = localStorage.getItem("theme") !== "light";
+    setIsDarkMode(currentTheme);
+    if (currentTheme) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
     function onScroll() {
-      const atTop = window.scrollY === 0;
-      setScrolled(!atTop);
+      const isScrolled = window.scrollY > 20;
+      setScrolled(isScrolled);
+      const darkModeActive = document.documentElement.classList.contains("dark");
+      setShowDarkLogo(!darkModeActive && window.scrollY > 80);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
-    // initialize
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const toggleTheme = () => {
+    const nextDark = !isDarkMode;
+    setIsDarkMode(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setShowDarkLogo(false);
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setShowDarkLogo(window.scrollY > 80);
+    }
+  };
+
+  const navLinkClass = scrolled
+    ? "px-3.5 py-1.5 rounded-full text-slate-800 dark:text-slate-200 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all duration-300 font-medium text-sm md:text-base"
+    : "px-3.5 py-1.5 rounded-full text-white hover:text-[#D4AF37] hover:bg-white/10 transition-all duration-300 font-medium text-sm md:text-base";
+  const activeNavLinkClass = "px-3.5 py-1.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] font-semibold border border-[#D4AF37]/40 shadow-[0_0_15px_rgba(212,175,55,0.2)] transition-all duration-300 text-sm md:text-base";
+
   return (
     <>
-      <header
-        className="fixed top-0 z-50 w-full bg-transparent"
-        style={{ top: scrolled ? 0 : `${gap}px`, transition: "top 100ms ease" }}
-      >
-        <div className="px-4 mx-auto max-w-7xl sm:px-6 md:px-8">
-          <div
-            className={`rounded-full bg-primary shadow-md transition-transform duration-100 ${scrolled ? "translate-y-0" : "translate-y-0"}`}
-          >
-            <nav className="flex items-center justify-between w-full px-4 py-2">
-              <Link to="/" className="flex items-center gap-1">
-                <img
-                  src="/Zalmi Marketing Logo White.webp"
-                  alt="The Zalmi Marketing Logo"
-                  className="object-contain w-auto h-10 sm:h-12 md:h-14"
-                />
-              </Link>
+      <header className={`fixed top-0 z-50 w-full transition-all duration-500  ${scrolled ? "py-3 px-3 sm:px-6" : "py-5 px-3 sm:px-8"}`}>
+        <div className="mx-auto max-w-7xl">
+              <div className={`transition-all duration-500  ${
+                scrolled
+                  ? "bg-slate-950/90 dark:bg-slate-950/90 bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/30 shadow-[0_10px_35px_rgba(0,0,0,0.35),0_0_30px_rgba(212,175,55,0.18)] rounded-full px-4 sm:px-6 py-2.5"
+                  : "bg-transparent rounded-none px-2 sm:px-4 py-2"
+              }`}>
+                <nav className="flex items-center justify-between w-full">
+                  <Link to="/" className="flex items-center gap-2 group">
+                    <img
+                      src={showDarkLogo ? "/Zalmi Marketing Logo Black.webp" : "/Zalmi Marketing Logo White.webp"}
+                      alt="The Zalmi Marketing Logo"
+                      className="object-contain w-auto h-10 sm:h-12 transition-all duration-300 group-hover:scale-105"
+                    />
+                  </Link>
 
-              <ul className="items-center hidden gap-4 text-sm md:flex md:gap-4 lg:gap-6 md:text-base nav-list">
-                <li>
-                  <Link
-                    to="/"
-                    className="nav-link text-primary-foreground"
-                    activeProps={{
-                      className: "nav-link active text-white font-bold",
-                    }}
-                  >
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/properties"
-                    className="nav-link text-primary-foreground"
-                    activeProps={{
-                      className: "nav-link active text-white font-bold",
-                    }}
-                  >
-                    Properties
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/maps"
-                    className="nav-link text-primary-foreground"
-                    activeProps={{
-                      className: "nav-link active text-white font-bold",
-                    }}
-                  >
-                    Maps
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/files"
-                    className="nav-link text-primary-foreground"
-                    activeProps={{
-                      className: "nav-link active text-white font-bold",
-                    }}
-                  >
-                    Files
-                  </Link>
-                </li>
-                <li
-                  className="lg:hidden"
-                  onMouseEnter={() => setIsDropdownOpen(true)}
-                  onMouseLeave={() => setIsDropdownOpen(false)}
-                >
-                  <DropdownMenu
-                    open={isDropdownOpen}
-                    onOpenChange={setIsDropdownOpen}
-                    modal={false}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex flex-row items-center gap-1 px-0 py-0 nav-link text-primary-foreground hover:bg-transparent active:text-white text-white data-[state=open]:text-white"
-                      >
-                        More
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-primary">
-                      <DropdownMenuItem>
-                        <Link
-                          to="/about"
-                          className="w-full nav-link text-primary-foreground custom-dropdown-item"
-                          activeProps={{
-                            className: "nav-link active text-white font-bold",
-                          }}
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          About
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link
-                          to="/contact"
-                          className="w-full nav-link text-primary-foreground custom-dropdown-item"
-                          activeProps={{
-                            className: "nav-link active text-white font-bold",
-                          }}
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          Contact
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </li>
-                <li className="hidden lg:block">
-                  <Link
-                    to="/about"
-                    className="nav-link text-primary-foreground"
-                    activeProps={{
-                      className: "nav-link active text-white font-bold",
-                    }}
-                  >
-                    About
-                  </Link>
-                </li>
-                <li className="hidden lg:block">
-                  <Link
-                    to="/contact"
-                    className="nav-link text-primary-foreground"
-                    activeProps={{
-                      className: "nav-link active text-white font-bold",
-                    }}
-                  >
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-
-              <div className="flex items-center gap-2">
-                {/* Add open and onOpenChange props to Sheet */}
-                <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="p-2 rounded-xl md:hidden"
-                      aria-label="Open menu"
-                    >
-                      <Menu style={{ width: 30, height: 30, color: "white" }} />
-                    </Button>
-                  </SheetTrigger>
-
-                  <SheetContent
-                    position="right"
-                    className="w-[280px] p-6 bg-primary text-white"
-                  >
-                    <nav className="flex flex-col gap-4 mt-2">
+                  <ul className="items-center hidden gap-1 md:flex lg:gap-2 nav-list">
+                    <li>
                       <Link
                         to="/"
-                        className="py-2 nav-link text-primary-foreground w-fit"
+                        className={navLinkClass}
                         activeProps={{
-                          className: "nav-link active text-white font-bold",
+                          className: activeNavLinkClass,
                         }}
-                        // Close sheet on link click
-                        onClick={() => setIsOpen(false)}
                       >
                         Home
                       </Link>
+                    </li>
+                    <li>
                       <Link
                         to="/properties"
-                        className="py-2 nav-link text-primary-foreground w-fit"
+                        className={navLinkClass}
                         activeProps={{
-                          className: "nav-link active text-white font-bold",
+                          className: activeNavLinkClass,
                         }}
-                        // Close sheet on link click
-                        onClick={() => setIsOpen(false)}
                       >
                         Properties
                       </Link>
+                    </li>
+                    <li>
                       <Link
                         to="/maps"
-                        className="py-2 nav-link text-primary-foreground w-fit"
+                        className={navLinkClass}
                         activeProps={{
-                          className: "nav-link active text-white font-bold",
+                          className: activeNavLinkClass,
                         }}
-                        // Close sheet on link click
-                        onClick={() => setIsOpen(false)}
                       >
                         Maps
                       </Link>
+                    </li>
+                    <li>
                       <Link
                         to="/files"
-                        className="py-2 nav-link text-primary-foreground w-fit"
+                        className={navLinkClass}
                         activeProps={{
-                          className: "nav-link active text-white font-bold",
+                          className: activeNavLinkClass,
                         }}
-                        // Close sheet on link click
-                        onClick={() => setIsOpen(false)}
                       >
                         Files
                       </Link>
+                    </li>
+                    <li>
                       <Link
-                        to="/about"
-                        className="py-2 nav-link text-primary-foreground w-fit"
+                        to="/calculator"
+                        className={navLinkClass + " flex items-center gap-2"}
                         activeProps={{
-                          className: "nav-link active text-white font-bold",
+                          className: activeNavLinkClass,
                         }}
-                        // Close sheet on link click
-                        onClick={() => setIsOpen(false)}
                       >
-                        About
+                        <Calculator className="w-4 h-4" />
+                        Zalmi Calculator
                       </Link>
-
-                      <Link
-                        to="/contact"
-                        className="py-2 nav-link text-primary-foreground w-fit"
-                        activeProps={{
-                          className: "nav-link active text-white font-bold",
-                        }}
-                        // Close sheet on link click
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Contact
-                      </Link>
-                    </nav>
-
-                    <SheetFooter>
-                      <Button asChild className="w-full mt-6">
-                        <a
-                          href={whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 group"
-                        >
-                          <FaWhatsapp
-                            className="text-green-500"
-                            style={{ width: 30, height: 30 }}
-                          />
-
-                          <span className="text-primary-foreground group-hover:text-green-500">
-                            {phoneNumber}
-                          </span>
-                        </a>
-                      </Button>
-                    </SheetFooter>
-                  </SheetContent>
-                </Sheet>
-
-                <div className="hidden md:block">
-                  <Button asChild variant="ghost">
-                    <a
-                      href={whatsappUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 group"
+                    </li>
+                    <li
+                      className="relative"
+                      onMouseEnter={() => setIsDropdownOpen(true)}
+                      onMouseLeave={() => setIsDropdownOpen(false)}
                     >
-                      <FaWhatsapp
-                        className="text-green-500"
-                        style={{ width: 30, height: 30 }}
-                      />
+                      <DropdownMenu
+                        open={isDropdownOpen}
+                        onOpenChange={setIsDropdownOpen}
+                        modal={false}
+                      >
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className={navLinkClass + " hover:bg-[#D4AF37]/10 data-[state=open]:bg-[#D4AF37]/20 data-[state=open]:text-[#D4AF37] cursor-pointer"}
+                          >
+                            More
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-slate-950/95 backdrop-blur-2xl border border-[#D4AF37]/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-2xl p-1.5 mt-2">
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to="/about"
+                              className="w-full px-4 py-2 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors cursor-pointer"
+                            >
+                              About Us
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              to="/contact"
+                              className="w-full px-4 py-2 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors cursor-pointer"
+                            >
+                              Contact Us
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </li>
+                  </ul>
 
-                      <span className="text-primary-foreground group-hover:text-green-500">
-                        {phoneNumber}
-                      </span>
-                    </a>
-                  </Button>
-                </div>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {/* Theme Toggle */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={toggleTheme}
+                      className="p-2.5 text-[#D4AF37] border border-[#D4AF37]/40 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 hover:text-[#D4AF37] rounded-full shadow-lg transition-all duration-300 cursor-pointer h-10 w-10 sm:h-11 sm:w-11"
+                      aria-label="Toggle theme"
+                    >
+                      {isDarkMode ? <Sun className="w-5 h-5 text-[#D4AF37]" /> : <Moon className="w-5 h-5 text-[#D4AF37]" />}
+                    </Button>
+
+                    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                      <SheetTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11 p-2 rounded-full bg-slate-900/80 border border-[#D4AF37]/30 text-white hover:bg-[#D4AF37]/20 md:hidden shadow-md flex items-center justify-center"
+                          aria-label="Open menu"
+                        >
+                          {isOpen ? (
+                            <X className="w-6 h-6 text-[#D4AF37]" />
+                          ) : (
+                            <Menu className="w-6 h-6 text-[#D4AF37]" />
+                          )}
+                        </Button>
+                      </SheetTrigger>
+
+                      <SheetContent
+                        position="right"
+                        className="w-[300px] p-6 bg-slate-950/98 backdrop-blur-3xl border-l border-[#D4AF37]/30 text-white flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#D4AF37]/20">
+                            <span className="text-sm font-display font-semibold tracking-wider uppercase text-[#D4AF37]">Navigation</span>
+                          </div>
+                          <nav className="flex flex-col gap-3">
+                            <Link
+                              to="/"
+                              className="px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                              activeProps={{
+                                className: "px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                              }}
+                              onClick={() => setIsOpen(false)}
+                            >
+                              Home
+                            </Link>
+                            <Link
+                              to="/properties"
+                              className="px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                              activeProps={{
+                                className: "px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                              }}
+                              onClick={() => setIsOpen(false)}
+                            >
+                              Properties
+                            </Link>
+                            <Link
+                              to="/maps"
+                              className="px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                              activeProps={{
+                                className: "px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                              }}
+                              onClick={() => setIsOpen(false)}
+                            >
+                              Maps
+                            </Link>
+                            <Link
+                              to="/files"
+                              className="px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                              activeProps={{
+                                className: "px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                              }}
+                              onClick={() => setIsOpen(false)}
+                            >
+                              Files
+                            </Link>
+                            <Link
+                            to="/calculator"
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                            activeProps={{
+                            className: "flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                            }}
+                            onClick={() => setIsOpen(false)}
+                            >
+                            <Calculator className="w-5 h-5" />
+                              Zalmi Calculator
+                             </Link>
+                            <Link
+                              to="/about"
+                              className="px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                              activeProps={{
+                                className: "px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                              }}
+                              onClick={() => setIsOpen(false)}
+                            >
+                              About Us
+                            </Link>
+                            <Link
+                              to="/contact"
+                              className="px-4 py-2.5 rounded-xl text-white hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all font-medium"
+                              activeProps={{
+                                className: "px-4 py-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/40",
+                              }}
+                              onClick={() => setIsOpen(false)}
+                            >
+                              Contact Us
+                            </Link>
+                          </nav>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                  </div>
+                </nav>
               </div>
-            </nav>
-          </div>
         </div>
       </header>
     </>
   );
 }
+
+

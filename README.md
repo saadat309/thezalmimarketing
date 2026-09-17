@@ -1,18 +1,26 @@
-# React + Vite
+# Documentation Index
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the official technical documentation suite for the web application.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Documentation Sections
 
-## React Compiler
+### 1. Architecture (`docs/architecture/`)
+- [Overview](architecture/overview.md) - High-level system topology, frontend/backend separation, and data flow.
+- [Frontend Architecture](architecture/frontend.md) - React 19, Vite, TanStack Router, TanStack Query, and Zustand stores.
+- [Backend Architecture](architecture/backend.md) - PHP Front Controller, PDO MySQL configuration, and modular route handlers.
+- [API Integration](architecture/api-integration.md) - `apiClient.js` fetch wrapper, dual auth headers, error interception, and data adapters.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### 2. Design System (`docs/design-system/`)
+- [Overview](design-system/overview.md) - Visual philosophy and brand direction.
+- [Tailwind & Tokens](design-system/tailwind-and-tokens.md) - Tailwind CSS v4 setup and CSS variables.
+- [Components](design-system/components.md) - UI primitives, Radix components, modals, and tables.
 
-Note: This will impact Vite dev & build performances.
+### 3. API Reference (`docs/api/`)
+- [Authentication](api/authentication.md) - JWT token lifecycle, headers, and RBAC middleware.
+- [Endpoints](api/endpoints.md) - Comprehensive catalog of REST endpoints (`/api/properties`, `/api/categories`, etc.).
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 4. Deployment (`docs/deployment/`)
+- [cPanel & MySQL](deployment/cpanel-mysql.md) - Production deployment guide on cPanel and Apache.
+- [Local Development](deployment/local-development.md) - Setting up local Node.js and PHP development environments.

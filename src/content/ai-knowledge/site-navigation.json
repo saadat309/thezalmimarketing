@@ -1,0 +1,40 @@
+{
+  "pages": [
+    {
+      "id": "home",
+      "title": "Home",
+      "url": "/",
+      "keywords": ["home"]
+    },
+    {
+      "id": "properties",
+      "title": "View Properties",
+      "url": "/properties",
+      "keywords": ["browse properties", "all properties", "houses for sale"]
+    },
+    {
+      "id": "files",
+      "title": "Browse Plot Files",
+      "url": "/files",
+      "keywords": ["plot files", "file availability"]
+    },
+    {
+      "id": "maps",
+      "title": "View Maps",
+      "url": "/maps",
+      "keywords": ["society maps", "dha maps"]
+    },
+    {
+      "id": "contact",
+      "title": "Contact Us",
+      "url": "/contact",
+      "keywords": ["contact us", "get in touch"]
+    },
+    {
+      "id": "calculator",
+      "title": "Open Transfer Calculator",
+      "url": "/calculator",
+      "keywords": ["transfer calculator", "calculate expenses"]
+    }
+  ]
+}

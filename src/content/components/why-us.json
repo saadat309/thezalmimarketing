@@ -1,0 +1,37 @@
+{
+  "whyUs": {
+    "badge": "Our Distinction",
+    "headingPre": "Why Trust ",
+    "headingHighlight": "The Zalmi Marketing?",
+    "subheading": "We combine elite market intelligence with unyielding integrity to deliver extraordinary real estate outcomes.",
+    "features": [
+      {
+        "title": "Expert Intelligence",
+        "description": "Deep, data-driven insight into DHA & premium luxury property markets across Pakistan."
+      },
+      {
+        "title": "Absolute Transparency",
+        "description": "Crystal-clear pricing, rigorous title verification, and honest advisory at every transaction step."
+      },
+      {
+        "title": "Client-Centric Vision",
+        "description": "Tailored investment strategies meticulously aligned with your financial aspirations and long-term goals."
+      }
+    ]
+  },
+  "whyChooseUsSection": {
+    "badge": "The Gold Standard",
+    "headingPre": "Why Partner With ",
+    "headingHighlight": "The Zalmi Marketing?",
+    "description": "At The Zalmi Marketing, we transcend conventional brokerage to become your trusted wealth-building partner. Rooted in absolute transparency, rigorous market intelligence, and uncompromising client dedication, we curate extraordinary real estate journeys.",
+    "highlights": [
+      "Absolute Transparency & Honest Advisory",
+      "Rigorous Legal Title Verification",
+      "Data-Driven Market Intelligence",
+      "Exclusive Off-Market Inventory Access"
+    ],
+    "ctaTitle": "Ready to Invest?",
+    "ctaDesc": "Connect with Ch. Sajid Mahmood and our senior consultants for immediate portfolio review.",
+    "ctaButton": "Schedule Consultation"
+  }
+}

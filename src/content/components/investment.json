@@ -1,0 +1,57 @@
+{
+  "badge": "Exclusive Yields",
+  "headingPre": "Curated ",
+  "headingHighlight": "Investment Opportunities",
+  "subheading": "Unlock extraordinary yield potential with our asymmetric, thoroughly vetted real estate portfolio.",
+  "opportunities": [
+    {
+      "title": "High-Growth Corridors & Master Sectors",
+      "description": "Early-access positioning in appreciating master-planned sectors offering superior capital gains and high rental yields across Pakistan's prime property markets.",
+      "tag": "High Growth",
+      "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1000",
+      "linkText": "Explore Corridor",
+      "to": "/contact"
+    },
+    {
+      "title": "Prime DHA Portfolios",
+      "description": "Secure blue-chip investments in Pakistan's most prestigious and stable housing societies.",
+      "tag": "Elite Assets",
+      "linkText": "View DHA Listings",
+      "to": "/properties"
+    },
+    {
+      "title": "Commercial Flagships",
+      "description": "High-traffic commercial plots and luxury retail spaces positioned in bustling business hubs.",
+      "tag": "Commercial",
+      "linkText": "Inquire Commercial",
+      "to": "/contact"
+    },
+    {
+      "title": "Verified Plot Files & Instant Transfer Desk",
+      "description": "Rigourously verified plot files with zero litigation risk and instant transfer support across DHA Lahore, Islamabad, and all major phases.",
+      "tag": "100% Verified",
+      "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=1000",
+      "linkText": "Verify Files Now",
+      "to": "/contact"
+    },
+    {
+      "title": "Bespoke Advisory",
+      "description": "Direct partnership with senior market analysts and investment strategists for personalized portfolios.",
+      "tag": "Expert Guidance",
+      "linkText": "Book Analyst",
+      "to": "/contact"
+    },
+    {
+      "title": "Diversified Assets",
+      "description": "Balanced exposure across residential villas, luxury apartments, and land developments.",
+      "tag": "Balance",
+      "linkText": "Explore Assets",
+      "to": "/properties"
+    },
+    {
+      "title": "Instant Portfolio Review",
+      "description": "Connect directly with our investment desk via WhatsApp for immediate live rates and file status.",
+      "buttonText": "Chat on WhatsApp"
+    }
+  ]
+}

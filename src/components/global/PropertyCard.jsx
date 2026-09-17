@@ -17,18 +17,18 @@ import {
   ImageOff,
   Map,
   Building,
-  FileText, // Added FileText icon
+  FileText,
 } from "lucide-react";
 import { FaPhone, FaWhatsapp } from "react-icons/fa";
 import SmartImage from "@/components/global/SmartImage";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const DEFAULT_PHONE_NUMBER = "+923218446496"; // Fallback phone number
-const DEFAULT_WHATSAPP_NUMBER = "923218446496"; // Fallback WhatsApp number (without +)
+const DEFAULT_PHONE_NUMBER = "+923218446496";
+const DEFAULT_WHATSAPP_NUMBER = "923218446496";
 
 function PropertyCard(props) {
   const {
-    id, // Added id prop
+    id,
     image,
     imageThumb,
     title,
@@ -49,9 +49,8 @@ function PropertyCard(props) {
     property_type,
     badges,
     onClick,
-    phone: phoneProp, // Renamed to avoid conflict with local variable
-    whatsapp: whatsappProp, // Renamed to avoid conflict with local variable
-    // DB-shaped raw fields from schema
+    phone: phoneProp,
+    whatsapp: whatsappProp,
     purchase_type,
     is_discounted,
     price_original_amount,
@@ -60,32 +59,31 @@ function PropertyCard(props) {
     installment_total_period_text,
     installment_display_mode,
     price_period_unit,
-    is_file, // Destructure is_file
-    file_type, // Destructure file_type
-    short_desc, // Destructure short_desc
-    phase, // Destructure phase
-    societyName, // Destructure societyName
-    is_furnished, // Destructure is_furnished
-    isLoading, // Add isLoading prop
+    is_file,
+    file_type,
+    short_desc,
+    phase,
+    societyName,
+    is_furnished,
+    isLoading,
   } = props;
 
   if (isLoading) {
     return (
-      <Card className="py-0 gap-0 overflow-hidden group shadow-sm shadow-card-foreground/30 border-0">
+      <Card className="py-0 gap-0 overflow-hidden group shadow-sm bg-card border border-border rounded-3xl">
         <div className="p-3">
-          <Skeleton className="relative overflow-hidden rounded-lg aspect-video" />
+          <Skeleton className="relative overflow-hidden rounded-2xl aspect-video bg-muted" />
         </div>
-        <CardContent className="px-3 pt-2 pb-3 space-y-2 text-left">
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
+        <CardContent className="px-4 pt-2 pb-4 space-y-3 text-left">
+          <Skeleton className="h-5 w-3/4 bg-muted" />
+          <Skeleton className="h-4 w-1/2 bg-muted" />
+          <Skeleton className="h-4 w-full bg-muted" />
+          <Skeleton className="h-4 w-full bg-muted" />
         </CardContent>
       </Card>
     );
   }
 
-  // Normalize values between existing props and DB-schema fields
   const finalPriceType =
     priceType ||
     (purchase_type
@@ -100,7 +98,7 @@ function PropertyCard(props) {
   const finalAreaUnit = areaUnit || "sqft";
   const finalBadges = category
     ? [{ label: category, variant: "default" }, ...(badges || []).filter(b => b.is_badge)]
-    : [...(badges || []).filter(b => b.is_badge)]; // Removed default propertyType badge if it's a file
+    : [...(badges || []).filter(b => b.is_badge)];
   
   if (property_type) {
     finalBadges.push({ label: property_type, variant: 'outline' });
@@ -117,7 +115,6 @@ function PropertyCard(props) {
   const finalInstallmentPeriod = installmentPeriod || price_period_unit || "month";
   const finalInstallmentDuration = installmentDuration || installment_total_period_text;
 
-  // Resolve original price (component prop wins, else DB field)
   const resolvedOriginalPrice =
     typeof originalPrice !== "undefined" && originalPrice !== null
       ? originalPrice
@@ -125,7 +122,6 @@ function PropertyCard(props) {
       ? price_original_amount
       : null;
 
-  // Determine whether we should use installment_advance_amount in place of price
   const hasInstallmentAdvanceDisplay =
     finalPriceType === "installment" && installment_display_mode === "advance" && typeof installment_advance_amount !== "undefined" && installment_advance_amount !== null;
 
@@ -142,12 +138,6 @@ function PropertyCard(props) {
 
   const isDiscounted = !!is_discounted || finalPriceType === "discounted";
 
-  const formatAmount = (amt) => (amt === 0 ? "Free" : finalCurrency + " " + Number(amt).toLocaleString());
-
-  const pluralize = (count, singular) => {
-    return count === 1 ? singular : singular + "s";
-  };
-
   const [isMapOpen, setIsMapOpen] = useState(false);
 
   const handleMapClick = (e) => {
@@ -156,38 +146,34 @@ function PropertyCard(props) {
   };
 
   const renderPrice = () => {
-    // If no price available and not discounted (no original price), render nothing
     if (displayNumericPrice === null && !isDiscounted && resolvedOriginalPrice === null) return null;
 
-    // RENT (per period)
     if (finalPriceType === "rent") {
       const label = displayNumericPrice === 0 ? "Free" : finalCurrency + " " + Number(displayNumericPrice).toLocaleString();
       return (
         <div className="space-y-0.5">
-          <div className="text-base font-bold text-amber-600">
+          <div className="text-lg font-bold text-[#F5A623] dark:text-[#D4AF37] font-display">
             {label}
-            <span className="text-xs font-normal text-primary">/{finalInstallmentPeriod}</span>
+            <span className="text-xs font-normal text-muted-foreground ml-1">/{finalInstallmentPeriod}</span>
           </div>
         </div>
       );
     }
 
-    // INSTALLMENT 
     if (finalPriceType === "installment") {
       const label = displayNumericPrice === 0 ? "Free" : finalCurrency + " " + Number(displayNumericPrice).toLocaleString();
       return (
         <div className="flex flex-row items-center gap-2 space-y-0.5 justify-between">
-          <div className="text-base font-bold text-amber-600">
+          <div className="text-lg font-bold text-[#F5A623] dark:text-[#D4AF37] font-display">
             {label}
-            {hasInstallmentAmountDisplay && <span className="text-xs font-normal text-primary">/{finalInstallmentPeriod}</span>}
-            {hasInstallmentAdvanceDisplay && <span className="ml-1 text-xs font-normal text-primary">(Advance)</span>}
+            {hasInstallmentAmountDisplay && <span className="text-xs font-normal text-muted-foreground ml-1">/{finalInstallmentPeriod}</span>}
+            {hasInstallmentAdvanceDisplay && <span className="ml-1 text-xs font-normal text-muted-foreground">(Advance)</span>}
           </div>
-          {finalInstallmentDuration && <div className="text-xs text-primary">Period: {finalInstallmentDuration}</div>}
+          {finalInstallmentDuration && <div className="text-xs text-muted-foreground">Period: {finalInstallmentDuration}</div>}
         </div>
       );
     }
 
-    // DISCOUNTED (schema boolean or priceType === 'discounted')
     if (isDiscounted && resolvedOriginalPrice !== null) {
       const mainLabel = displayNumericPrice === 0 ? "Free" : finalCurrency + " " + Number(displayNumericPrice || 0).toLocaleString();
       const originalLabel = finalCurrency + " " + Number(resolvedOriginalPrice).toLocaleString();
@@ -195,19 +181,18 @@ function PropertyCard(props) {
       const saveLabel = finalCurrency + " " + Number(saveAmt).toLocaleString();
       return (
         <div className="flex flex-row items-center gap-2 space-y-0.5 justify-between">
-          <div className="flex items-center gap-1">
-            <div className="text-base font-bold text-amber-600">{mainLabel}</div>
-            <div className="text-xs line-through text-[var-(--dark-gray)]">{originalLabel}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-lg font-bold text-[#F5A623] dark:text-[#D4AF37] font-display">{mainLabel}</div>
+            <div className="text-xs line-through text-muted-foreground">{originalLabel}</div>
           </div>
-          <div className="text-xs font-medium text-green-600">Save {saveLabel}</div>
+          <div className="text-xs font-semibold text-emerald-500">Save {saveLabel}</div>
         </div>
       );
     }
 
-    // DEFAULT sale / other
     if (displayNumericPrice !== null) {
       const label = displayNumericPrice === 0 ? "Free" : finalCurrency + " " + Number(displayNumericPrice).toLocaleString();
-      return <div className="text-base font-bold text-amber-600">{label}</div>;
+      return <div className="text-lg font-bold text-[#F5A623] dark:text-[#D4AF37] font-display">{label}</div>;
     }
 
     return null;
@@ -216,16 +201,27 @@ function PropertyCard(props) {
   const renderBadges = () => {
     if (!finalBadges || finalBadges.length === 0) return null;
     return (
-      <div className="absolute flex flex-wrap gap-2 top-3 left-3 will-change-transform">
-        {finalBadges.map((badge, index) => (
-          <Badge
-            key={index}
-            variant={badge.variant || "default"}
-            className="text-xs font-semibold shadow-md will-change-transform"
-          >
-            {badge.label}
-          </Badge>
-        ))}
+      <div className="absolute flex flex-wrap gap-2 top-3 left-3 z-10">
+        {finalBadges.map((badge, index) => {
+          const labelLower = badge.label?.toLowerCase() || "";
+          const isHot = labelLower.includes("hot") || labelLower.includes("featured");
+          const isNew = labelLower.includes("new") || labelLower.includes("latest");
+
+          let badgeClass = "text-xs font-bold px-3.5 py-1 rounded-full shadow-lg border-0";
+          if (isHot) {
+            badgeClass += " bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 text-white animate-pulse shadow-red-500/50 border border-red-400/40";
+          } else if (isNew) {
+            badgeClass += " bg-gradient-to-r from-emerald-600 via-green-500 to-teal-500 text-white animate-pulse shadow-emerald-500/50 border border-emerald-400/40";
+          } else {
+            badgeClass += " bg-[#F5A623] dark:bg-[#D4AF37] text-white dark:text-slate-950 font-bold";
+          }
+
+          return (
+            <Badge key={index} className={badgeClass}>
+              {badge.label}
+            </Badge>
+          );
+        })}
       </div>
     );
   };
@@ -233,20 +229,19 @@ function PropertyCard(props) {
   return (
     <Card
       id={id}
-      className={`py-0 gap-0 overflow-hidden group shadow-sm shadow-card-foreground/30 border-0 will-change-transform
-        ${is_file ? "cursor-default" : "cursor-pointer"}
-        ${is_file ? "" : "transition-all duration-300 hover:shadow-2xl active:scale-[0.98]"}
+      className={`py-0 gap-0 overflow-hidden group bg-card border border-border rounded-3xl shadow-xl transition-all duration-500 flex flex-col h-full
+        ${is_file ? "cursor-default" : "cursor-pointer hover:border-[#F5A623]/60 dark:hover:border-[#D4AF37]/60 hover:shadow-[0_20px_50px_rgba(245,166,35,0.15)] dark:hover:shadow-[0_20px_50px_rgba(212,175,55,0.15)] hover:-translate-y-1.5 active:scale-[0.98]"}
       `}
-      onClick={!is_file ? onClick : undefined} // Disable onClick if is_file is true
+      onClick={!is_file ? onClick : undefined}
     >
-      <div className="p-3 will-change-transform">
-        <div className="relative overflow-hidden rounded-lg aspect-video bg-muted will-change-transform">
+      <div className="p-3">
+        <div className="relative overflow-hidden rounded-2xl aspect-[16/10] bg-muted">
           {image ? (
             <SmartImage
               src={image}
               alt={title || "Property"}
               thumb={imageThumb}
-              className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110 will-change-transform"
+              className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
               errorPlaceholder={
                 <div className="flex items-center justify-center w-full h-full bg-muted">
                   <ImageOff className="w-12 h-12 text-muted-foreground/50" />
@@ -254,11 +249,11 @@ function PropertyCard(props) {
               }
             />
           ) : is_file ? (
-            <div className="flex items-center justify-center w-full h-full bg-white bg-[radial-gradient(#413c58_1px,transparent_1px)] bg-size-[12px_12px]">
+            <div className="flex items-center justify-center w-full h-full bg-muted">
               <img
                 src="/files.svg"
                 alt="File Icon"
-                className="w-20 h-20 text-primary"
+                className="w-20 h-20 text-[#F5A623] dark:text-[#D4AF37]"
               />
             </div>
           ) : (
@@ -267,31 +262,30 @@ function PropertyCard(props) {
             </div>
           )}
 
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-slate-950/20 pointer-events-none opacity-75 group-hover:opacity-85 transition-opacity" />
+
           {renderBadges()}
 
           {locationMap &&
-            !is_file && ( // Hide map button if is_file
-              <div className="absolute bottom-3 right-3 will-change-transform">
+            !is_file && (
+              <div className="absolute bottom-3 right-3 z-10">
                 <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="default"
                       size="sm"
-                      className="h-7 px-2.5 gap-1 shrink-0 text-xs will-change-transform"
+                      className="h-8 px-3.5 gap-1.5 shrink-0 text-xs backdrop-blur-md bg-slate-950/80 border border-[#F5A623]/30 dark:border-[#D4AF37]/30 text-white hover:bg-[#F5A623] dark:hover:bg-[#D4AF37] hover:text-slate-950 transition-all shadow-lg rounded-full font-medium"
                       onClick={handleMapClick}
                     >
-                      <Map
-                        strokeWidth={1.5}
-                        className="w-3 h-3 will-change-transform"
-                      />
-                      <span className="will-change-transform">View Map</span>
+                      <Map strokeWidth={1.5} className="w-3.5 h-3.5 text-[#F5A623] dark:text-[#D4AF37] group-hover:text-slate-950" />
+                      <span>View Map</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-3xl">
+                  <DialogContent className="max-w-3xl bg-card border border-border text-foreground rounded-3xl p-6">
                     <DialogHeader>
-                      <DialogTitle>{title || "Location"}</DialogTitle>
+                      <DialogTitle className="text-[#F5A623] dark:text-[#D4AF37]">{title || "Location"}</DialogTitle>
                     </DialogHeader>
-                    <div className="w-full h-[400px] sm:h-[500px] rounded-lg overflow-hidden">
+                    <div className="w-full h-[400px] sm:h-[500px] rounded-2xl overflow-hidden border border-border">
                       <iframe
                         src={locationMap}
                         width="100%"
@@ -310,144 +304,129 @@ function PropertyCard(props) {
         </div>
       </div>
 
-      <CardContent className="px-3 pt-2 pb-3 space-y-2 text-left will-change-transform">
-        {(title || displayNumericPrice !== null || isDiscounted) && (
-          <div className="space-y-1.5 text-left will-change-transform">
-            {title && (
-              <h3 className="text-base font-semibold text-left line-clamp-2 will-change-transform">
-                {title}
-              </h3>
-            )}
-            {(displayNumericPrice !== null || isDiscounted) && (
-              <div className="will-change-transform">{renderPrice()}</div>
-            )}
-            {!!is_file && short_desc && (
-              <p className="text-sm text-muted-foreground line-clamp-3 mt-1 will-change-transform">
-                {short_desc}
-              </p>
-            )}
-          </div>
-        )}
+      <CardContent className="px-5 pt-1 pb-5 space-y-3.5 text-left flex flex-col flex-grow justify-between">
+        <div className="space-y-3.5">
+          {(title || displayNumericPrice !== null || isDiscounted) && (
+            <div className="space-y-1.5 text-left">
+              {title && (
+                <h3 className="text-base font-bold text-foreground group-hover:text-[#F5A623] dark:group-hover:text-[#D4AF37] transition-colors line-clamp-2 font-display">
+                  {title}
+                </h3>
+              )}
+              {(displayNumericPrice !== null || isDiscounted) && (
+                <div>{renderPrice()}</div>
+              )}
+              {!!is_file && short_desc && (
+                <p className="text-sm text-muted-foreground line-clamp-3 mt-1 font-light">
+                  {short_desc}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
-        {(location || city) && (
-          <div className="flex items-center justify-between gap-2 text-left will-change-transform">
-            {city && (
-              <div className="flex items-center gap-1.5 text-xs font-medium text-primary will-change-transform">
-                <Building
-                  strokeWidth={1.5}
-                  className="shrink-0 w-3.5 h-3.5 will-change-transform"
-                />
-                <span className="text-left line-clamp-1 will-change-transform">
-                  {city}
-                </span>
-              </div>
-            )}
-            <div className="flex flex-col gap-0.5 text-primary text-xs flex-1 min-w-0 text-left will-change-transform">
-              {location && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin
-                    strokeWidth={1.5}
-                    className="w-3.5 h-3.5 shrink-0 will-change-transform"
-                  />
-                  <span className="text-left line-clamp-1 will-change-transform">
-                    {location}
+        <div className="space-y-3 mt-auto pt-3">
+          {(location || city) && (
+            <div className="flex items-center justify-between gap-2 text-left pt-2 border-t border-border">
+              {city && (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F5A623] dark:text-[#D4AF37]">
+                  <Building strokeWidth={1.5} className="shrink-0 w-3.5 h-3.5" />
+                  <span className="text-left line-clamp-1">
+                    {city}
                   </span>
                 </div>
               )}
+              <div className="flex flex-col gap-0.5 text-muted-foreground text-xs flex-1 min-w-0 text-right">
+                {location && (
+                  <div className="flex items-center justify-end gap-1.5">
+                    <MapPin strokeWidth={1.5} className="w-3.5 h-3.5 shrink-0 text-[#F5A623] dark:text-[#D4AF37]" />
+                    <span className="text-right line-clamp-1 font-light">
+                      {location}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {(beds > 0 || baths > 0 || area > 0) ? (
-          <div className="space-y-1.5 will-change-transform">
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1.5  text-left will-change-transform">
-              {!is_file && beds > 0 ? (
-                <div className="flex items-center gap-1 text-xs text-left will-change-transform">
-                  <Bed
-                    strokeWidth={1.5}
-                    className="w-3.5 h-3.5 text-muted-foreground shrink-0 will-change-transform"
-                  />
-                  <span className="font-medium will-change-transform">
-                    {beds}
-                  </span>
-                  <span className="text-muted-foreground will-change-transform">
-                    {pluralize(beds, "Bed")}
-                  </span>
-                </div>
-              ) : null}
+          {(beds > 0 || baths > 0 || area > 0) ? (
+            <div className="pt-2 border-t border-border">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-2xl border border-border/60">
+                {!is_file && beds > 0 ? (
+                  <div className="flex items-center gap-1.5 text-left">
+                    <Bed strokeWidth={1.5} className="w-4 h-4 text-[#F5A623] dark:text-[#D4AF37] shrink-0" />
+                    <span className="font-bold text-foreground">{beds}</span>
+                    <span className="text-muted-foreground">{pluralize(beds, "Bed")}</span>
+                  </div>
+                ) : null}
 
-              {!is_file && baths > 0 ? (
-                <div className="flex items-center gap-1 text-xs text-left will-change-transform">
-                  <Bath
-                    strokeWidth={1.5}
-                    className="w-3.5 h-3.5 text-muted-foreground shrink-0 will-change-transform"
-                  />
-                  <span className="font-medium will-change-transform">
-                    {baths}
-                  </span>
-                  <span className="text-muted-foreground will-change-transform">
-                    {pluralize(baths, "Bath")}
-                  </span>
-                </div>
-              ) : null}
+                {!is_file && baths > 0 ? (
+                  <div className="flex items-center gap-1.5 text-xs text-left">
+                    <Bath strokeWidth={1.5} className="w-4 h-4 text-[#F5A623] dark:text-[#D4AF37] shrink-0" />
+                    <span className="font-bold text-foreground">{baths}</span>
+                    <span className="text-muted-foreground">{pluralize(baths, "Bath")}</span>
+                  </div>
+                ) : null}
 
-              {area > 0 ? (
-                <div className="flex items-center gap-1 text-xs text-left will-change-transform">
-                  <Maximize2
-                    strokeWidth={1.5}
-                    className="w-3.5 h-3.5 text-muted-foreground shrink-0 will-change-transform"
-                  />
-                  <span className="font-medium will-change-transform">
-                    {area}
-                  </span>
-                  <span className="text-muted-foreground will-change-transform">
-                    {finalAreaUnit}
-                  </span>
-                </div>
-              ) : null}
+                {area > 0 ? (
+                  <div className="flex items-center gap-1.5 text-xs text-left">
+                    <Maximize2 strokeWidth={1.5} className="w-4 h-4 text-[#F5A623] dark:text-[#D4AF37] shrink-0" />
+                    <span className="font-bold text-foreground">{area}</span>
+                    <span className="text-muted-foreground">{finalAreaUnit}</span>
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {!!is_file && (
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="p-0 transition-transform duration-300 border-none hover:bg-transparent hover:scale-110"
-              onClick={() => {
-                const phoneNumber = phoneProp || DEFAULT_PHONE_NUMBER;
-                window.location.href = `tel:${phoneNumber}`;
-              }}
-            >
-              <FaPhone
-                style={{ width: "2rem", height: "2rem" }}
-                className="text-primary"
-              />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="p-0 transition-transform duration-300 border-none hover:bg-transparent hover:scale-110"
-              onClick={() => {
-                const whatsappNumber = whatsappProp || DEFAULT_WHATSAPP_NUMBER;
-                const whatsappMessage = `Hello, I'm interested in the property: ${title}.`;
-                window.open(
-                  `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`,
-                  "_blank"
-                );
-              }}
-            >
-              <FaWhatsapp
-                style={{ width: "2rem", height: "2rem" }}
-                className="text-green-500"
-              />
-            </Button>
-          </div>
-        )}
+          {!!is_file && (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-[#F5A623]/40 dark:border-[#D4AF37]/40 hover:bg-[#F5A623]/10 dark:hover:bg-[#D4AF37]/10 text-foreground text-xs font-semibold transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const phoneNumber = phoneProp || DEFAULT_PHONE_NUMBER;
+                  window.location.href = `tel:${phoneNumber}`;
+                }}
+              >
+                <FaPhone className="w-3.5 h-3.5 text-[#F5A623] dark:text-[#D4AF37] shrink-0" />
+                <span>Call Now</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-emerald-500/40 hover:bg-emerald-500/10 text-foreground text-xs font-semibold transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const whatsappNumber = whatsappProp || DEFAULT_WHATSAPP_NUMBER;
+                  const whatsappMessage = `Hello, I'm interested in the file: ${title}.`;
+                  window.open(
+                    `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`,
+                    "_blank"
+                  );
+                }}
+              >
+                <FaWhatsapp className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>WhatsApp</span>
+              </Button>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
-};
+}
 
-export default PropertyCard;
+function pluralize(count, noun) {
+  return count === 1 ? noun : noun + "s";
+}
+
+export default function LinkedPropertyCard({ id, ...property }) {
+  if (property.is_file) {
+    return <PropertyCard {...property} />;
+  }
+
+  return (
+    <PropertyCard {...property} />
+  );
+}

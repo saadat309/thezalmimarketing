@@ -1,0 +1,83 @@
+{
+  "seo": {
+    "title": "About Us | The Zalmi Marketing - Top Real Estate Experts in Lahore",
+    "description": "Learn about The Zalmi Marketing, a premier real estate agency in Lahore led by Ch. Sajid Mahmood. Delivering excellence in DHA Lahore and nationwide since 2020.",
+    "keywords": "About Zalmi Marketing, Ch. Sajid Mahmood, Real Estate Experts Lahore, DHA Lahore Agency",
+    "ogType": "website",
+    "ogUrl": "https://thezalmimarketing.com/about",
+    "ogTitle": "About Us | The Zalmi Marketing",
+    "ogDescription": "Learn about The Zalmi Marketing, a premier real estate agency in Lahore led by Ch. Sajid Mahmood.",
+    "ogImage": "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+    "twitterCard": "summary_large_image",
+    "twitterUrl": "https://thezalmimarketing.com/about",
+    "twitterTitle": "About Us | The Zalmi Marketing",
+    "twitterDescription": "Learn about The Zalmi Marketing, a premier real estate agency in Lahore led by Ch. Sajid Mahmood.",
+    "twitterImage": "https://thezalmimarketing.com/Zalmi Marketing Logo Black.webp",
+    "canonical": "https://thezalmimarketing.com/about"
+  },
+  "hero": {
+    "badge": "Corporate Profile & Legacy",
+    "headingPre": "Redefining Luxury Real Estate & Investment in ",
+    "headingHighlight": "Pakistan",
+    "description": "Founded by Ch. Sajid Mahmood, The Zalmi Marketing has evolved into Pakistan's most trusted authority for DHA luxury villas, verified plot files, and elite commercial portfolios.",
+    "whatsappText": "Consult CEO on WhatsApp",
+    "visitOfficeText": "Visit DHA Phase 6 Office"
+  },
+  "stats": [
+    { "label": "Years of Excellence", "value": "5+ Years", "icon": "Trophy" },
+    { "label": "Successful Transactions", "value": "1,500+", "icon": "TrendingUp" },
+    { "label": "Verified Plot Files", "value": "100%", "icon": "ShieldCheck" },
+    { "label": "Satisfied Clients", "value": "5,000+", "icon": "Users" }
+  ],
+  "founder": {
+    "name": "Ch. Sajid Mahmood",
+    "role": "Founder & Chief Executive Officer",
+    "image": "/final Ch sajid.webp",
+    "address": "67MB Commercial, 2nd Floor, Phase 6, DHA Lahore"
+  },
+  "story": {
+    "badge": "Leadership Vision",
+    "heading": "Our Story & Core Commitment",
+    "content": "The Zalmi Marketing is a premier, trusted, and dynamic real estate agency passionately committed to delivering an unparalleled standard of excellence in property services across Pakistan. Established in 2020 under the visionary leadership of Ch. Sajid Mahmood, we have built our reputation on uncompromised integrity, professional rigor, and in-depth market mastery.",
+    "specializesIn": [
+      "Luxury Bungalows & Modern Villas",
+      "Premium Portions & Apartments",
+      "Commercial Plots & Plaza Hubs",
+      "Verified Residential Plots"
+    ],
+    "advisoryServices": [
+      "Strategic Investment Portfolioing",
+      "Accurate Property Valuation",
+      "Exclusive Plot File Trading",
+      "Seamless Title Verification"
+    ]
+  },
+  "mission": {
+    "title": "Our Mission",
+    "description": "To empower our clients by safeguarding their investments and maximizing returns. We facilitate seamless, transparent property transactions underpinned by profound market expertise, data-driven insights, and unwavering ethical principles."
+  },
+  "vision": {
+    "title": "Our Vision",
+    "description": "To be universally recognized as the most trusted, innovative, and client-centric real estate service provider in Pakistan, setting new benchmarks for professionalism, technological integration, and customer satisfaction."
+  },
+  "timeline": [
+    { "year": "2020", "title": "Foundation", "desc": "Established in DHA Lahore with a vision of transparent and secure real estate advisory." },
+    { "year": "2022", "title": "Expansion", "desc": "Expanded operations across all DHA phases and top Lahore housing societies with dedicated plot file desks." },
+    { "year": "2024", "title": "Digital Innovation", "desc": "Launched state-of-the-art digital inventory, society master plan maps, and real-time market watch tools." },
+    { "year": "2026", "title": "Industry Leader", "desc": "Recognized among Pakistan's premier agencies managing multi-billion PKR portfolios for local and overseas clients." }
+  ],
+  "nationalCoverage": {
+    "badge": "Nationwide Footprint",
+    "heading": "Our National Coverage",
+    "description": "Operating across major DHA branches and top premium societies in Pakistan with expert local desks.",
+    "cities": [
+      "DHA Lahore",
+      "DHA Islamabad",
+      "DHA Karachi",
+      "DHA Multan",
+      "DHA Peshawar",
+      "DHA Quetta",
+      "Top Lahore Housing Societies"
+    ]
+  }
+}

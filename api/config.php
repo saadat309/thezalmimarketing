@@ -9,6 +9,7 @@ $DB_PASS = 'Iamkhan@309';
 
 define('FRONTEND_URL', 'http://localhost:5173');
 define('APP_ENV', 'development'); // Change to 'production' in prod
+define('AI_INTERNAL_SECRET', 'dev_secret_zalmi_12345');
 // ---------------------------
 
 // Production error reporting

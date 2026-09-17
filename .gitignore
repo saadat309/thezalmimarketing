@@ -1,13 +1,19 @@
 .env
 .tanstack
 MISC
-GEMINI.md
+
 public/pdf_docs/**
 public/images/**
 public/mapsMedia/**
 public/videos/**
 
 
+workers/
+
+
+.kilo/
+
+api/config.php
 # Logs
 logs
 *.log

@@ -638,26 +638,41 @@ const transformProperty = (p) => {
 };
 
 export const fetchProperties = async (filters = {}) => {
-  const params = new URLSearchParams();
-  if (filters.query) params.append('query', filters.query);
-  if (filters.category) params.append('category', filters.category);
-  if (filters.city) params.append('city', filters.city);
-  if (filters.beds) params.append('beds', filters.beds);
-  if (filters.baths) params.append('baths', filters.baths);
-  if (filters.property_type) params.append('property_type', filters.property_type);
-  if (filters.priceType) params.append('priceType', filters.priceType);
-  if (filters.societyName) params.append('societyName', filters.societyName);
-  if (filters.phase) params.append('phase', filters.phase);
-  if (filters.area) params.append('area', filters.area);
-  if (filters.areaUnit) params.append('areaUnit', filters.areaUnit);
-  if (filters.is_file !== undefined) params.append('is_file', filters.is_file ? '1' : '0');
-  else params.append('is_file', '0'); // Default to properties
+  try {
+    const params = new URLSearchParams();
+    if (filters.query) params.append('query', filters.query);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.city) params.append('city', filters.city);
+    if (filters.beds) params.append('beds', filters.beds);
+    if (filters.baths) params.append('baths', filters.baths);
+    if (filters.property_type) params.append('property_type', filters.property_type);
+    if (filters.priceType) params.append('priceType', filters.priceType);
+    if (filters.societyName) params.append('societyName', filters.societyName);
+    if (filters.phase) params.append('phase', filters.phase);
+    if (filters.area) params.append('area', filters.area);
+    if (filters.areaUnit) params.append('areaUnit', filters.areaUnit);
+    if (filters.is_file !== undefined) params.append('is_file', filters.is_file ? '1' : '0');
+    else params.append('is_file', '0'); // Default to properties
 
-  const response = await fetch(`/api/properties?${params.toString()}`);
-  if (!response.ok) throw new Error('Failed to fetch properties');
-  const data = await response.json();
-  
-  return data.map(transformProperty);
+    const response = await fetch(`/api/properties?${params.toString()}`);
+    if (!response.ok) throw new Error('Failed to fetch properties');
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) throw new Error("Not JSON");
+    const data = await response.json();
+    return data.map(transformProperty);
+  } catch (error) {
+    await sleep(200);
+    const isFile = filters.is_file;
+    let list = propertyCardVariants.filter(p => isFile ? p.is_file : !p.is_file);
+    if (filters.query) {
+      const q = filters.query.toLowerCase();
+      list = list.filter(p => p.title.toLowerCase().includes(q) || (p.location && p.location.toLowerCase().includes(q)));
+    }
+    if (filters.category) {
+      list = list.filter(p => p.category && p.category.toLowerCase() === filters.category.toLowerCase());
+    }
+    return list;
+  }
 };
 
 export const fetchFilterOptions = async () => {
@@ -698,25 +713,37 @@ export const fetchProperty = async (id) => {
 }
 
 export const fetchMaps = async (filters = {}) => {
-  const params = new URLSearchParams();
-  if (filters.query) params.append('query', filters.query);
-  if (filters.city) params.append('city', filters.city);
-  if (filters.societyName) params.append('societyName', filters.societyName);
-  if (filters.phase) params.append('phase', filters.phase);
+  try {
+    const params = new URLSearchParams();
+    if (filters.query) params.append('query', filters.query);
+    if (filters.city) params.append('city', filters.city);
+    if (filters.societyName) params.append('societyName', filters.societyName);
+    if (filters.phase) params.append('phase', filters.phase);
 
-  const response = await fetch(`/api/maps?${params.toString()}`);
-  if (!response.ok) throw new Error('Failed to fetch maps');
-  const data = await response.json();
-  return data.map(m => ({
-    ...m,
-    id: String(m.id),
-    image: m.map_pic,
-    thumb: m.map_thumb,
-    pdfPath: m.pdf,
-    societyName: m.society_name,
-    cityName: m.city_name,
-    phaseName: m.phase_name
-  }));
+    const response = await fetch(`/api/maps?${params.toString()}`);
+    if (!response.ok) throw new Error('Failed to fetch maps');
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) throw new Error("Not JSON");
+    const data = await response.json();
+    return data.map(m => ({
+      ...m,
+      id: String(m.id),
+      image: m.map_pic,
+      thumb: m.map_thumb,
+      pdfPath: m.pdf,
+      societyName: m.society_name,
+      cityName: m.city_name,
+      phaseName: m.phase_name
+    }));
+  } catch (error) {
+    await sleep(200);
+    let list = mapsData;
+    if (filters.query) {
+      const q = filters.query.toLowerCase();
+      list = list.filter(m => m.title.toLowerCase().includes(q) || (m.description && m.description.toLowerCase().includes(q)));
+    }
+    return list;
+  }
 };
 
 export const fetchMapFilterOptions = async () => {
@@ -740,17 +767,24 @@ export const fetchMapFilterOptions = async () => {
 };
 
 export const fetchCategories = async () => {
-  const response = await fetch('/api/categories');
-  if (!response.ok) throw new Error('Failed to fetch categories');
-  const data = await response.json();
-  return data.map(c => ({
-    ...c,
-    id: String(c.id),
-    title: c.name,
-    src: c.pic,
-    thumb: c.thumb,
-    count: c.properties_count || 0
-  }));
+  try {
+    const response = await fetch('/api/categories');
+    if (!response.ok) throw new Error('Failed to fetch categories');
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) throw new Error("Not JSON");
+    const data = await response.json();
+    return data.map(c => ({
+      ...c,
+      id: String(c.id),
+      title: c.name,
+      src: c.pic,
+      thumb: c.thumb,
+      count: c.properties_count || 0
+    }));
+  } catch (error) {
+    await sleep(200);
+    return categoryCardData;
+  }
 };
 
 export const fetchPersonalizedCards = async () => {
@@ -785,10 +819,17 @@ export const fetchLandingSections = async (token) => {
             } : {}
         });
         if (!response.ok) throw new Error('Failed to fetch landing sections');
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) throw new Error("Not JSON");
         return await response.json();
     } catch (error) {
-        console.error('Error fetching landing sections:', error);
-        return [];
+        return [
+            { collection_type: 'properties', slug: 'featured-properties', title: 'Featured Properties', subtitle: 'Explore our handpicked selection of premier residential villas, luxury apartments, and elite estates.', selected_items: propertyCardVariants.filter(p => !p.is_file).map(p => p.id), visibility: 1 },
+            { collection_type: 'categories', slug: 'categories', title: 'Property Categories', subtitle: 'Explore properties by type.', selected_items: categoryCardData.map(c => c.id), visibility: 1 },
+            { collection_type: 'files', slug: 'files', title: 'Available Files', subtitle: 'Explore available property files.', selected_items: propertyCardVariants.filter(p => p.is_file).map(p => p.id), visibility: 1 },
+            { collection_type: 'maps', slug: 'maps', title: 'Location Maps', subtitle: 'Find properties in prime locations.', selected_items: mapsData.map(m => m.id), visibility: 1 },
+            { collection_type: 'video', slug: 'video-section', title: 'Featured Video', subtitle: 'Watch our latest property showcase.', video_input_method: 'upload', video_path: '/videos/property.mp4', visibility: 1 },
+        ];
     }
 };
 
@@ -911,56 +952,6 @@ export const fetchHomeData = async () => {
         dynamicSections: activeSections
     }
 }
-        
-        export const fetchGlobalSearch = async (query) => {
-          await sleep(200); // Simulate network delay
-          if (!query) {
-            return { properties: [], files: [], maps: [], categories: [], cities: [], societies: [], phases: [], labels: [], propertyTypes: [], priceTypes: [], fileTypes: [] };
-          }
-        
-          const lowerCaseQuery = query.toLowerCase();
-  
-          const [properties, files, maps, filterOptions, mapFilterOptions, fileFilterOptions, allCategories] = await Promise.all([
-    fetchProperties({ query }),
-    fetchFileProperties({ query }),
-    fetchMaps({ query }),
-    fetchFilterOptions(),
-            fetchMapFilterOptions(),
-    fetchFileFilterOptions(),
-            fetchCategories()
-  ]);
-
-          const categories = allCategories.filter(c => c.title.toLowerCase().includes(lowerCaseQuery));
-        
-          // Combine and deduplicate filter options
-          const allCities = [...new Set([...filterOptions.cities, ...mapFilterOptions.cities, ...fileFilterOptions.cities])];
-          const cities = allCities.filter(c => c.toLowerCase().includes(lowerCaseQuery));
-          
-          const allSocieties = [...new Set([...filterOptions.societyNames, ...mapFilterOptions.societyNames, ...fileFilterOptions.societyNames])];
-          const societies = allSocieties.filter(s => s.toLowerCase().includes(lowerCaseQuery));
-        
-          const allPhases = [...new Set([...filterOptions.phases, ...mapFilterOptions.phases, ...fileFilterOptions.phases])];
-          const phases = allPhases.filter(p => p.toLowerCase().includes(lowerCaseQuery));
-          
-          const labels = filterOptions.labels.filter(l => l.toLowerCase().includes(lowerCaseQuery));
-          const propertyTypes = filterOptions.propertyTypes.filter(pt => pt.toLowerCase().includes(lowerCaseQuery));
-          const priceTypes = filterOptions.priceTypes.filter(pt => pt.toLowerCase().includes(lowerCaseQuery));
-          const fileTypes = fileFilterOptions.fileTypes.filter(ft => ft.toLowerCase().includes(lowerCaseQuery));
-
-  return {
-    properties,
-    files,
-    maps,
-            categories,
-            cities,
-            societies,
-            phases,
-            labels,
-            propertyTypes,
-            priceTypes,
-            fileTypes
-  };
-};
 
 export const submitQuery = async (queryData) => {
   const response = await fetch('/api/queries', {
