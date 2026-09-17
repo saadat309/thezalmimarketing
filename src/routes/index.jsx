@@ -118,9 +118,8 @@ function RouteComponent() {
       <HeroSection categories={categoriesSection?.items} items={allFileProperties} />
 
       {/* Group 1 (Intro, ShapeShifter, Categories, Services Overview) */}
-      <div className="w-full relative overflow-hidden bg-transparent text-foreground py-0">
+      <div className="w-full relative overflow-hidden bg-background text-foreground py-0">
         <div className="absolute inset-0 opacity-60 dark:opacity-30 bg-group1-pattern pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(245,166,35,0.35),transparent_60%),radial-gradient(circle_at_80%_80%,rgba(212,175,55,0.3),transparent_60%)] pointer-events-none" />
 
         {/* 1. Intro Section (Responsive Brand Intro) */}
         <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto py-10 sm:py-16">

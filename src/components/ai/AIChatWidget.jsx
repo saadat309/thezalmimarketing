@@ -38,6 +38,20 @@ export default function AIChatWidget() {
   const widgetRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // Sync AI chat open state globally and disable DHA assistance popup when opened
+  useEffect(() => {
+    if (isOpen) {
+      window.__aiChatWidgetOpen = true;
+      window.dispatchEvent(new CustomEvent('ai-chat-opened'));
+      try {
+        sessionStorage.setItem('dha_popup_disabled', '1');
+      } catch {}
+    } else {
+      window.__aiChatWidgetOpen = false;
+      window.dispatchEvent(new CustomEvent('ai-chat-closed'));
+    }
+  }, [isOpen]);
+
   // Click outside to auto-close
   useEffect(() => {
     if (!isOpen) return;

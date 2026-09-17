@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation } from "@tanstack/react-router";
 import { 
   Dialog, 
   DialogContent, 
@@ -11,6 +12,9 @@ import { FaWhatsapp } from "react-icons/fa";
 import { PROBLEM_CATEGORIES } from "@/data/dhaAssistanceData";
 
 export default function DhaAssistancePopup() {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
   const [isOpen, setIsOpen] = useState(false);
   const [sessionCategory, setSessionCategory] = useState(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -32,8 +36,23 @@ export default function DhaAssistancePopup() {
   };
 
   // Initialize shuffled categories once in memory on mount and schedule Popup 1
-  // ensuring it waits if global Popup is pending or active and appears exactly 2.5s after its closure.
   useEffect(() => {
+    if (!isHomePage || window.__aiChatWidgetOpen || sessionStorage.getItem('dha_popup_disabled') === '1') {
+      clearTimer();
+      setIsOpen(false);
+      return;
+    }
+
+    const handleAiChatOpened = () => {
+      clearTimer();
+      setIsOpen(false);
+      try {
+        sessionStorage.setItem('dha_popup_disabled', '1');
+      } catch {}
+    };
+
+    window.addEventListener('ai-chat-opened', handleAiChatOpened);
+
     const validCategories = PROBLEM_CATEGORIES.filter(c => !c.isCustom);
     const arr = [...validCategories];
     // Fisher-Yates shuffle
@@ -48,10 +67,12 @@ export default function DhaAssistancePopup() {
     }
 
     const scheduleFirstPopup = () => {
+      if (!isHomePage || window.__aiChatWidgetOpen || sessionStorage.getItem('dha_popup_disabled') === '1') return;
       clearTimer();
       timerRef.current = setTimeout(() => {
+        if (!isHomePage || window.__aiChatWidgetOpen || sessionStorage.getItem('dha_popup_disabled') === '1') return;
         setIsOpen(true);
-      }, 2500);
+      }, 30000); // Increased initial delay to 30 seconds
     };
 
     if (window.__globalPopupPending || window.__globalPopupOpen) {
@@ -76,13 +97,15 @@ export default function DhaAssistancePopup() {
       return () => {
         clearTimer();
         clearTimeout(checkTimer);
+        window.removeEventListener('ai-chat-opened', handleAiChatOpened);
       };
     }
 
     return () => {
       clearTimer();
+      window.removeEventListener('ai-chat-opened', handleAiChatOpened);
     };
-  }, []);
+  }, [isHomePage]);
 
   const handleOpenChange = (open) => {
     setIsOpen(open);
@@ -91,6 +114,10 @@ export default function DhaAssistancePopup() {
       setCurrentStepIndex(0);
       setAnswers({});
       setIsCompleted(false);
+
+      if (!isHomePage || window.__aiChatWidgetOpen || sessionStorage.getItem('dha_popup_disabled') === '1') {
+        return;
+      }
 
       const nextIndex = currentIndex + 1;
       if (nextIndex >= shuffledCategories.length) {
@@ -102,21 +129,22 @@ export default function DhaAssistancePopup() {
       const nextCat = shuffledCategories[nextIndex];
       setSessionCategory(nextCat);
 
-      // Determine delay based on nextIndex:
-      // nextIndex === 1 (Popup 2): 30 seconds after Popup 1 closed
-      // nextIndex === 2 (Popup 3): 45 seconds after Popup 2 closed
-      // nextIndex >= 3 (Popup 4+): 90 seconds (1 min 30 sec) after previous closed
-      let delayMs = 90000;
+      // Increased delays for subsequent popups:
+      // nextIndex === 1 (Popup 2): 60 seconds after Popup 1 closed
+      // nextIndex === 2 (Popup 3): 90 seconds after Popup 2 closed
+      // nextIndex >= 3 (Popup 4+): 120 seconds after previous closed
+      let delayMs = 120000;
       if (nextIndex === 1) {
-        delayMs = 30000;
+        delayMs = 60000;
       } else if (nextIndex === 2) {
-        delayMs = 45000;
-      } else {
         delayMs = 90000;
+      } else {
+        delayMs = 120000;
       }
 
       clearTimer();
       timerRef.current = setTimeout(() => {
+        if (!isHomePage || window.__aiChatWidgetOpen || sessionStorage.getItem('dha_popup_disabled') === '1') return;
         setIsOpen(true);
       }, delayMs);
     }
@@ -148,7 +176,7 @@ export default function DhaAssistancePopup() {
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
   };
 
-  if (!sessionCategory || sequenceCompleted) return null;
+  if (!isHomePage || !sessionCategory || sequenceCompleted || sessionStorage.getItem('dha_popup_disabled') === '1' || window.__aiChatWidgetOpen) return null;
 
   const currentQ = sessionCategory.questions[currentStepIndex];
 
