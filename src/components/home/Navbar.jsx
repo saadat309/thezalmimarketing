@@ -63,11 +63,11 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`fixed top-0 z-50 w-full transition-all duration-500  ${scrolled ? "py-3 px-3 sm:px-6" : "py-5 px-3 sm:px-8"}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 box-border transition-all duration-500 px-3 sm:px-6 ${scrolled ? "py-3" : "py-5"}`}>
         <div className="mx-auto max-w-7xl">
               <div className={`transition-all duration-500  ${
                 scrolled
-                  ? "bg-slate-950/90 dark:bg-slate-950/90 bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/30 shadow-[0_10px_35px_rgba(0,0,0,0.35),0_0_30px_rgba(212,175,55,0.18)] rounded-full px-4 sm:px-6 py-2.5"
+                  ? "bg-slate-950/90 dark:bg-slate-950/90 bg-white/95 backdrop-blur-2xl border border-[#D4AF37]/30 shadow-[0_10px_35px_rgba(0,0,0,0.35),0_0_30px_rgba(212,175,55,0.18)] rounded-full px-3 sm:px-6 py-2.5"
                   : "bg-transparent rounded-none px-2 sm:px-4 py-2"
               }`}>
                 <nav className="flex items-center justify-between w-full">
@@ -75,7 +75,7 @@ export default function Navbar() {
                     <img
                       src={showDarkLogo ? "/Zalmi Marketing Logo Black.webp" : "/Zalmi Marketing Logo White.webp"}
                       alt="The Zalmi Marketing Logo"
-                      className="object-contain w-auto h-10 sm:h-12 transition-all duration-300 group-hover:scale-105"
+                      className="object-contain w-auto h-9 sm:h-12 transition-all duration-300 group-hover:scale-105"
                     />
                   </Link>
 
@@ -176,7 +176,7 @@ export default function Navbar() {
                     </li>
                   </ul>
 
-                  <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4">
                     {/* Theme Toggle */}
                     <Button
                       variant="outline"

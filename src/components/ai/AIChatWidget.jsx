@@ -34,6 +34,18 @@ export default function AIChatWidget() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isBeating, setIsBeating] = useState(false);
+
+  // Trigger beating vibration once when attention grabber appears on scroll
+  useEffect(() => {
+    if (showAttention) {
+      setIsBeating(true);
+      const timer = setTimeout(() => {
+        setIsBeating(false);
+      }, 900);
+      return () => clearTimeout(timer);
+    }
+  }, [showAttention]);
   
   const widgetRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -180,7 +192,7 @@ export default function AIChatWidget() {
   return (
     <div 
       ref={widgetRef} 
-      className={`fixed bottom-6 right-6 z-50 touch-none select-none ${!isOpen ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`fixed bottom-6 right-4 sm:right-6 z-50 touch-none select-none ${!isOpen ? 'cursor-grab active:cursor-grabbing' : ''}`}
       style={!isOpen ? { transform: `translate(${position.x}px, ${position.y}px)` } : undefined}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -236,10 +248,9 @@ export default function AIChatWidget() {
 
           <button
             onClick={handleOpenToggle}
-            className="group relative flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-[#F5A623] via-[#E09612] to-[#D4AF37] hover:from-[#F5A623]/90 hover:to-[#D4AF37]/90 text-slate-950 shadow-[0_15px_40px_rgba(245,166,35,0.5)] hover:scale-110 active:scale-95 transition-all duration-300 focus:outline-none"
+            className={`group relative flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-[#F5A623] via-[#E09612] to-[#D4AF37] hover:from-[#F5A623]/90 hover:to-[#D4AF37]/90 text-slate-950 shadow-[0_15px_40px_rgba(245,166,35,0.5)] hover:scale-110 active:scale-95 transition-all duration-300 focus:outline-none ${isBeating ? 'animate-beat-vibration' : ''}`}
             aria-label="Open AI Assistant"
           >
-            <span className="absolute inset-0 rounded-full bg-[#F5A623] animate-ping opacity-30 group-hover:opacity-50 pointer-events-none" />
             <BsRobot className="w-9 h-9 sm:w-10 sm:h-10 z-10 group-hover:rotate-12 transition-transform text-slate-950" />
             <span className="absolute top-2.5 right-2.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-950 z-20 animate-pulse shadow-md" />
 
@@ -250,7 +261,7 @@ export default function AIChatWidget() {
           </button>
         </div>
       ) : (
-        <div data-lenis-prevent className="w-[92vw] sm:w-[420px] h-[580px] max-h-[85vh] bg-card border border-border rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+        <div data-lenis-prevent className="w-[calc(100vw-2rem)] sm:w-[420px] max-w-[420px] h-[580px] max-h-[85vh] bg-card border border-border rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white flex items-center justify-between border-b border-border/40">
             <div className="flex items-center gap-3">

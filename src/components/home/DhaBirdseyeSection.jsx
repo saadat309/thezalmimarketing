@@ -27,13 +27,12 @@ export default function DhaBirdseyeSection({ children, className = "" }) {
         >
           <div className="relative py-2 sm:py-4 px-1 w-full flex justify-center">
             <h2 
-              className="uppercase text-center select-none leading-none sm:whitespace-nowrap"
+              className="uppercase text-center select-none leading-none sm:whitespace-nowrap tracking-[0.01em] sm:tracking-[0.05em]"
               style={{
                 fontFamily: '"Impact", "Arial Black", sans-serif',
                 fontSize: 'clamp(4.2rem, 14vw, 10.5rem)',
-                letterSpacing: '0.05em',
                 lineHeight: 0.85,
-                transform: 'scaleY(1.3)',
+                transform: 'scaleX(0.88) scaleY(1.3)',
                 transformOrigin: 'center',
                 color: 'rgba(255, 255, 255, 0.18)',
                 WebkitTextFillColor: 'rgba(255, 255, 255, 0.18)',

@@ -74,7 +74,7 @@ export default function BottomLeftWidgets() {
 
   return (
     <div 
-      className="fixed bottom-6 left-6 z-40 flex flex-col items-center gap-3 touch-none select-none cursor-grab active:cursor-grabbing"
+      className="fixed bottom-6 left-4 sm:left-6 z-40 flex flex-col items-center gap-3 touch-none select-none cursor-grab active:cursor-grabbing"
       style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -127,7 +127,6 @@ export default function BottomLeftWidgets() {
         className="group relative flex items-center justify-center w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_10px_25px_rgba(16,185,129,0.4)] hover:scale-110 active:scale-95 transition-all duration-300"
         aria-label="Chat on WhatsApp"
       >
-        <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-25 group-hover:opacity-45" />
         <FaWhatsapp className="w-7 h-7 z-10 group-hover:rotate-12 transition-transform" />
         
         {/* Tooltip */}

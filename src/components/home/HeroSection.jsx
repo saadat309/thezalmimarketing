@@ -114,7 +114,7 @@ export default function HeroSection({ categories = [], items = [] }) {
       }));
 
   return (
-    <section className="relative w-full min-h-[calc(100vh+200px)] sm:min-h-[calc(100vh+250px)] flex flex-col justify-between overflow-hidden pt-28 sm:pt-36 lg:pt-32 pb-0">
+    <section className="relative w-full flex flex-col overflow-hidden bg-[#0B0F19]">
       {/* Background with cinematic luxury overlay */}
       <div
         className="absolute inset-0 bg-center bg-cover"
@@ -124,114 +124,214 @@ export default function HeroSection({ categories = [], items = [] }) {
         aria-hidden
       />
 
-      {/* Subtle geometric pattern overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-        aria-hidden
-      />
+      {/* Mobile First View: Exactly 100vh, showing only headline and statistics with space to breathe */}
+      <div className="relative z-10 w-full min-h-screen flex flex-col justify-start items-center px-4 sm:px-6 pt-34 sm:pt-4 pb-20 lg:hidden text-center">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <AnimatedBadge />
 
-      {/* Content container in a side-by-side grid */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-          
-          {/* Left Side: Headline, Value Proposition, Trust Badges */}
-          <div className="lg:col-span-6 text-center lg:text-left space-y-6">
-            <AnimatedBadge />
+          <h1 className="text-3xl sm:text-5xl font-extrabold leading-12 text-white font-display tracking-tight">
+            {content.hero.headlineMain} <br />
+            <RotatingHeadline /> <br />
+            {content.hero.headlineEnd}
+          </h1>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-white font-display tracking-tight">
-              {content.hero.headlineMain} <br />
-              <RotatingHeadline /> <br />
-              {content.hero.headlineEnd}
-            </h1>
-
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-[#D4AF37]/20 max-w-lg mx-auto lg:mx-0">
-              {content.hero.trustBadges.map((badge, i) => {
-                const IconComponent = iconMap[badge.icon] || ShieldCheck;
-                return (
-                  <div key={i} className="space-y-1 flex flex-col items-center lg:items-start text-center lg:text-left">
-                    <div className="flex items-center justify-center lg:justify-start text-[#D4AF37] font-bold text-sm sm:text-lg lg:text-xl">
-                      <IconComponent className="w-3.5 h-3.5 sm:w-5 sm:h-5 mr-1.5 shrink-0" /> <Counter value={badge.value} />
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-luxury-muted">{badge.label}</div>
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-[#D4AF37]/20 max-w-md mx-auto">
+            {content.hero.trustBadges.map((badge, i) => {
+              const IconComponent = iconMap[badge.icon] || ShieldCheck;
+              return (
+                <div key={i} className="space-y-1 flex flex-col items-center text-center">
+                  <div className="flex items-center justify-center text-[#D4AF37] font-bold text-sm sm:text-lg">
+                    <IconComponent className="w-4 h-4 mr-1.5 shrink-0" /> <Counter value={badge.value} />
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right Side: Interactive Search Console in Floating Glass Card */}
-          <div className="lg:col-span-6 w-full">
-            <div className="p-4 sm:p-8 rounded-3xl bg-white/5 border border-white/15 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-6 text-left">
-
-              {/* Multi-Tab Switcher */}
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white/5 border border-[#D4AF37]/20">
-                {content.hero.tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`py-2 px-1 sm:px-3 rounded-xl text-[11px] sm:text-sm font-semibold truncate transition-all duration-300 ${
-                      activeTab === tab.id
-                        ? 'bg-[#D4AF37] text-slate-950 shadow-[0_0_20px_rgba(212,175,55,0.4)]'
-                        : 'text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              <form onSubmit={handleSearch} className="space-y-4">
-                <SearchField
-                  icon={Search}
-                  placeholder={`Search ${activeTab === 'properties' ? 'properties, locations...' : activeTab === 'files' ? 'plot files, phases...' : 'master plans...'}`}
-                  className="w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-slate-950 font-bold rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] text-sm sm:text-base"
-                >
-                  <Search className="w-5 h-5 mr-2" />
-                  Search {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-                </Button>
-              </form>
-
-              {/* Quick Filter Pills (Dynamic from CategoriesSection) */}
-              <div className="pt-2 text-left">
-                <span className="text-xs text-luxury-muted uppercase tracking-wider block mb-3">Trending Shortcuts:</span>
-                <div className="flex flex-wrap gap-2">
-                  {shortcutsToDisplay.map((shortcut, i) => {
-                    const IconComp = typeof shortcut.icon === 'function' ? shortcut.icon : (iconMap[shortcut.icon] || Home);
-                    return (
-                      <Link key={i} to={shortcut.to} search={shortcut.search}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-3 text-xs border-[#D4AF37]/20 bg-white/5 text-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/40 hover:text-[#D4AF37] transition-all duration-300 rounded-full"
-                        >
-                          <IconComp className="w-3 h-3 mr-1.5" />
-                          {shortcut.label}
-                        </Button>
-                      </Link>
-                    );
-                  })}
+                  <div className="text-[11px] sm:text-xs text-luxury-muted">{badge.label}</div>
                 </div>
-              </div>
-
-            </div>
+              );
+            })}
           </div>
+        </div>
 
+        {/* Scroll down indicator */}
+        <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/50 animate-bounce">
+          <span className="text-[10px] uppercase tracking-widest mb-1">Scroll to Explore</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
         </div>
       </div>
 
-      {/* File Marquee positioned at the bottom of the Hero Section (outside first 100vh viewport) */}
-      <div className="relative z-20 w-full mt-auto pt-16 sm:pt-28 pb-4 sm:pb-6">
+      {/* Desktop View: Side-by-side grid */}
+      <div className="hidden lg:flex relative z-10 w-full min-h-[calc(100vh+10px)] flex-col justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-0">
+        <div className="my-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            
+            {/* Left Side: Headline, Value Proposition, Trust Badges */}
+            <div className="lg:col-span-6 text-center lg:text-left space-y-6">
+              <AnimatedBadge />
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-white font-display tracking-tight">
+                {content.hero.headlineMain} <br />
+                <RotatingHeadline /> <br />
+                {content.hero.headlineEnd}
+              </h1>
+
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-[#D4AF37]/20 max-w-lg mx-auto lg:mx-0">
+                {content.hero.trustBadges.map((badge, i) => {
+                  const IconComponent = iconMap[badge.icon] || ShieldCheck;
+                  return (
+                    <div key={i} className="space-y-1 flex flex-col items-center lg:items-start text-center lg:text-left">
+                      <div className="flex items-center justify-center lg:justify-start text-[#D4AF37] font-bold text-sm sm:text-lg lg:text-xl">
+                        <IconComponent className="w-3.5 h-3.5 sm:w-5 sm:h-5 mr-1.5 shrink-0" /> <Counter value={badge.value} />
+                      </div>
+                      <div className="text-[11px] sm:text-xs text-luxury-muted">{badge.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Side: Interactive Search Console in Floating Glass Card */}
+            <div className="lg:col-span-6 w-full">
+              <div className="p-4 sm:p-8 rounded-3xl bg-white/5 border border-white/15 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-6 text-left">
+
+                {/* Multi-Tab Switcher */}
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white/5 border border-[#D4AF37]/20">
+                  {content.hero.tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`py-2 px-1 sm:px-3 rounded-xl text-[11px] sm:text-sm font-semibold truncate transition-all duration-300 ${
+                        activeTab === tab.id
+                          ? 'bg-[#D4AF37] text-slate-950 shadow-[0_0_20px_rgba(212,175,55,0.4)]'
+                          : 'text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <form onSubmit={handleSearch} className="space-y-4">
+                  <SearchField
+                    icon={Search}
+                    placeholder={`Search ${activeTab === 'properties' ? 'properties, locations...' : activeTab === 'files' ? 'plot files, phases...' : 'master plans...'}`}
+                    className="w-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-slate-950 font-bold rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] text-sm sm:text-base"
+                  >
+                    <Search className="w-5 h-5 mr-2" />
+                    Search {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                  </Button>
+                </form>
+
+                {/* Quick Filter Pills (Dynamic from CategoriesSection) */}
+                <div className="pt-2 text-left">
+                  <span className="text-xs text-luxury-muted uppercase tracking-wider block mb-3">Trending Shortcuts:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {shortcutsToDisplay.map((shortcut, i) => {
+                      const IconComp = typeof shortcut.icon === 'function' ? shortcut.icon : (iconMap[shortcut.icon] || Home);
+                      return (
+                        <Link key={i} to={shortcut.to} search={shortcut.search}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs border-[#D4AF37]/20 bg-white/5 text-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/40 hover:text-[#D4AF37] transition-all duration-300 rounded-full"
+                          >
+                            <IconComp className="w-3 h-3 mr-1.5" />
+                            {shortcut.label}
+                          </Button>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* File Marquee positioned at the bottom of the Hero Section */}
+        {/* (Moved to full-width section bottom) */}
+      </div>
+
+      {/* Mobile Below First View Content: Search Console & File Marquee */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-12 lg:hidden">
+        {/* Search Console for Mobile */}
+        <div className="w-full">
+          <div className="p-4 sm:p-8 rounded-3xl bg-white/5 border border-white/15 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-6 text-left">
+
+            {/* Multi-Tab Switcher */}
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white/5 border border-[#D4AF37]/20">
+              {content.hero.tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-2 px-1 sm:px-3 rounded-xl text-[11px] sm:text-sm font-semibold truncate transition-all duration-300 ${
+                    activeTab === tab.id
+                      ? 'bg-[#D4AF37] text-slate-950 shadow-[0_0_20px_rgba(212,175,55,0.4)]'
+                      : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSearch} className="space-y-4">
+              <SearchField
+                icon={Search}
+                placeholder={`Search ${activeTab === 'properties' ? 'properties, locations...' : activeTab === 'files' ? 'plot files, phases...' : 'master plans...'}`}
+                className="w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+
+              <Button
+                type="submit"
+                className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-slate-950 font-bold rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] text-sm sm:text-base"
+              >
+                <Search className="w-5 h-5 mr-2" />
+                Search {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              </Button>
+            </form>
+
+            {/* Quick Filter Pills */}
+            <div className="pt-2 text-left">
+              <span className="text-xs text-luxury-muted uppercase tracking-wider block mb-3">Trending Shortcuts:</span>
+              <div className="flex flex-wrap gap-2">
+                {shortcutsToDisplay.map((shortcut, i) => {
+                  const IconComp = typeof shortcut.icon === 'function' ? shortcut.icon : (iconMap[shortcut.icon] || Home);
+                  return (
+                    <Link key={i} to={shortcut.to} search={shortcut.search}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs border-[#D4AF37]/20 bg-white/5 text-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]/40 hover:text-[#D4AF37] transition-all duration-300 rounded-full"
+                      >
+                        <IconComp className="w-3 h-3 mr-1.5" />
+                        {shortcut.label}
+                      </Button>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      {/* Full width File Marquee for both mobile and desktop below respective content */}
+      <div className="relative z-20 w-full pt-8 pb-6">
         <FileMarquee items={items} />
       </div>
     </section>
