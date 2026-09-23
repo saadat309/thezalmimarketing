@@ -77,5 +77,45 @@
     "buttonText": "Open Zalmi Calculator",
     "buttonLink": "/calculator",
     "disclaimer": "Estimates use configured schedules; verify final charges with the relevant authority."
+  },
+  "featuredFeatureSection": {
+    "badge": "In the press",
+    "heading": "Recent press coverage",
+    "features": [
+      {
+        "publication": "Trendset Pakistan",
+        "publicationUrl": "https://www.trendsetpakistan.com",
+        "postUrl": "https://www.facebook.com/share/p/1ExqFUnQtb/",
+        "image": "/ch sajid.jpg",
+        "imageWidth": 1080,
+        "imageHeight": 1350,
+        "imageAlt": "Trendset Pakistan feature on Ch. Sajid Mahmood, CEO of The Zalmi Marketing",
+        "headline": "Meet Sajid Mahmood Ch, CEO of Zalmi Estate & Marketing",
+        "standfirst": "A DHA Lahore real estate consultant specializing in residential, commercial and investment opportunities.",
+        "body": "Trendset Pakistan profiled our founder on how a decade of ground-level DHA experience turned into a practice built on verified files, transparent pricing and long-term investment advice — for clients in Lahore and for overseas Pakistanis buying from six time zones away.",
+        "highlights": [
+          "Investment advisor & DHA Lahore specialist",
+          "Residential, commercial & plot file advisory",
+          "Founder, The Zalmi Marketing — since 2020"
+        ]
+      },
+      {
+        "publication": "ISP News Pakistan",
+        "publicationUrl": "https://www.ispnews.com.pk",
+        "postUrl": "https://www.facebook.com/photo?fbid=122314326308237781&set=a.122107349600237781",
+        "image": "/ch-sajid-isp.jpg",
+        "imageWidth": 1080,
+        "imageHeight": 1350,
+        "imageAlt": "ISP News recognised Ch. Sajid Mahmood as a leading authority in DHA Lahore real estate, spotlighting his role as CEO of Zalmi Estate & Marketing.",
+        "headline": "Sajid Mahmood Ch — Trusted Real Estate Consultant in DHA Lahore, CEO of Zalmi Estate & Marketing",
+        "standfirst": "ISP News recognised Ch. Sajid Mahmood as a leading authority in DHA Lahore real estate, spotlighting his role as CEO of Zalmi Estate & Marketing.",
+        "body": "The feature highlights his track record of guiding investors through residential, commercial, and plot-file transactions — with a reputation built on verified documentation, transparent pricing, and personalised guidance for both local and overseas clients.",
+        "highlights": [
+          "Trusted DHA Lahore real estate consultant",
+          "CEO, Zalmi Estate & Marketing",
+          "Residential, commercial & plot file advisory"
+        ]
+      }
+    ]
   }
 }

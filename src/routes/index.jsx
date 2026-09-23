@@ -3,8 +3,6 @@ import { queryOptions } from '@tanstack/react-query';
 import { fetchHomeData } from "@/lib/api";
 import HeroSection from "@/components/home/HeroSection";
 import DhaBirdseyeSection from "@/components/home/DhaBirdseyeSection";
-import CategoryCard from "@/components/home/CategoryCard";
-import PropertyCard from "@/components/global/PropertyCard";
 import CategoriesSection from "@/components/home/CategoriesSection";
 import ServicesOverviewSection from "@/components/home/ServicesOverviewSection";
 import CalculatorFeatureSection from "@/components/home/CalculatorFeatureSection";
@@ -267,7 +265,7 @@ function RouteComponent() {
         {/* Featured Feature Section (Full Width, Fixed BG with Reviews) */}
         <div className="w-full relative z-10">
           <Reveal className="w-full">
-            <FeaturedFeature />
+            <FeaturedFeature {...content.featuredFeatureSection} />
           </Reveal>
         </div>
       </div>

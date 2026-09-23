@@ -16,6 +16,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { submitQuery } from "@/lib/api";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import content from "@/content/pages/contact.json";
 
@@ -475,11 +476,7 @@ function ContactInformation() {
     Whatsapp: FaWhatsapp,
   };
 
-  const detailMap = {
-    MapPin: MapPin,
-    Mail: Mail,
-    Phone: Phone,
-  };
+
 
   const socialLinks = content.contactInformation.socialLinks.map(s => ({
     ...s,
@@ -561,13 +558,13 @@ function ContactInformation() {
 
         <div className="overflow-hidden rounded-3xl border border-amber-500/30 shadow-2xl relative group">
           <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3402.728744153906!2d74.4473597!3d31.476647200000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391909217dd18527%3A0x293c36dfe672bbde!2sThe%20Zalmi%20Marketing!5e0!3m2!1sen!2s!4v1765237335126!5m2!1sen!2s" 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3402.7289332270793!2d74.447327!3d31.476642!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391909217dd18527%3A0x293c36dfe672bbde!2sThe%20Zalmi%20Marketing!5e0!3m2!1sen!2s!4v1790128019939!5m2!1sen!2s" 
             width="100%" 
             height="420" 
             style={{ border: 0 }} 
             allowFullScreen="" 
             loading="lazy" 
-            referrerPolicy="no-referrer-when-downgrade"
+            referrerPolicy="strict-origin-when-cross-origin"
             className="filter contrast-105"
           />
         </div>
