@@ -8,6 +8,18 @@ This folder is the working roadmap for migrating The Zalmi Marketing website fro
 2. [Architecture direction and decisions](01-architecture-direction.md) — approved constraints, recommended target, alternatives, and decisions still to settle.
 3. [Grand migration roadmap](02-grand-migration-roadmap.md) — what to do first, sequencing, completion gates, and production rollback approach.
 
+## Cross-session handoff
+
+The repository root [AGENTS.md](../AGENTS.md) defines what every new session or agent reads and how work must be tracked. Read in this order:
+
+1. `AGENTS.md` — stable safety rules and workflow.
+2. [Current project state](PROJECT-STATE.md) — short, replaceable checkpoint; verify its branch/status against Git.
+3. [Decision register](DECISIONS.md) — accepted constraints and open choices.
+4. [Latest work log](CHANGELOG.md) — completed tasks, paths, verification, and Git references.
+5. The architecture, inspection, or roadmap document relevant to the task.
+
+After each completed task, append the work log and refresh the current state. Record only verified outcomes; do not put credentials or production personal data in handoff files. The full history and diffs remain in Git on `Website-migration`.
+
 ## Decisions already given
 
 - Zero monthly hosting cost is a hard requirement. Typical traffic is a few hundred visitors, but capacity and resource usage still need measurement.
