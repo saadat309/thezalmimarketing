@@ -3,7 +3,7 @@
 **Updated:** 2026-10-17
 **Workstream:** website migration planning
 **Expected branch:** `Website-migration` (verify with Git at session start)
-**Phase:** inspection and architecture planning; no application implementation started.
+**Phase:** Phase 1 discovery in progress; no application implementation started.
 
 ## Current position
 
@@ -14,6 +14,10 @@
 - Planning documents: `agent-plans/00-inspection-and-baseline.md`, `01-architecture-direction.md`, and `02-grand-migration-roadmap.md`.
 - The repository contains a 30-table MySQL structure dump with no production rows and an eight-table calculator schema file with seed inserts. No live DB connection or production data export was used.
 - A browser baseline was recorded for the live homepage. See the inspection document; treat it as a single dated baseline, not a universal performance guarantee.
+- A repository-derived route/API/table inventory now records the current client surface, PHP resources, source data domains, and discovery gaps. See `agent-plans/03-route-api-data-inventory.md`; it is not yet a production URL or API contract.
+- Local Wrangler authentication was verified on 2026-10-17 using a read-only `whoami` check. Account identity, credential location, and permission details are intentionally not recorded here. No Cloudflare resource was changed.
+- A handler-level inventory now records observed API access behavior, special action paths, and contract work still needed. See `agent-plans/04-handler-contract-inventory.md`; it is evidence for design, not approval to reproduce the legacy API/security behavior.
+- A read-only live homepage observation recorded the public route patterns and an apex/`www` canonical-host mismatch. See `agent-plans/05-live-url-observations.md`; sitemap, robots, redirects, and non-homepage URLs are still unverified.
 
 ## Production and security boundaries
 
@@ -25,7 +29,7 @@
 ## Next safe actions
 
 1. For the next session, verify actual branch/status and read `AGENTS.md`, this file, `DECISIONS.md`, and the latest `CHANGELOG.md` entry.
-2. Continue Phase 0/1 of `02-grand-migration-roadmap.md`: coordinate credential rotation; map routes/endpoints/tables; inventory production record counts and cPanel media safely without connecting staging to production.
+2. Continue Phase 0/1 of `02-grand-migration-roadmap.md`: coordinate credential rotation; have the owner provide safe aggregate record/media reports; complete the read-only public URL/redirect/crawl-directive test sheet; then turn the documented handler findings into approved per-domain contracts.
 3. Before creating Cloudflare resources, get approval for the detailed runtime spike, resource layout, and zero-cost usage guards.
 4. Do not start frontend/backend code work until the user requests the next implementation slice.
 
@@ -36,5 +40,6 @@
 - R2 total usage and operation budgets need a hard application cap to prevent charges above free allowances.
 - Authentication/session migration, password-hash compatibility, transactional email provider, redirects, and exact route/API mapping remain to be designed.
 - Worker Node.js API compatibility and selected package compatibility need a JavaScript-only spike.
+- Production URL variants, redirects, canonical hostname behavior, endpoint response contracts, and media lifecycle rules are not verified yet.
 
 Always verify Git's live branch/status and the latest commit rather than relying only on this snapshot.
