@@ -139,3 +139,35 @@ This is the durable record of decisions that affect migration work. It is append
 - **Boundaries:** No D1/R2 binding or resource, production data, cPanel/MySQL connection, Cloudflare deployment, DNS, or live-site change.
 - **Consequences:** Preserve identical API behavior when adding later adapters; test adapter semantics with synthetic fixtures, especially ordering, cursor continuation, publication visibility, and current reads.
 - **Source:** User approved the proposed JavaScript repository interface and synthetic in-memory implementation.
+
+### ADR-018 — Complete local homepage and existing static-page parity slice
+
+- **Status:** Accepted by the user on 2026-10-18 for local implementation only.
+- **Decision:** Reuse existing repository components/content to complete the staging homepage and recreate existing static informational pages (About, Contact, Privacy Policy) in `apps/staging-web/`. Keep dynamic listing/media sections visibly synthetic or deferred. The repository has no Terms page/route to migrate in this slice.
+- **Boundaries:** Contact form remains local presentation-only and must not transmit or store values. Do not connect staging to production APIs/data, add media storage, change the cPanel site, provision Cloudflare resources, or deploy/push as part of this decision.
+- **Consequences:** Continue dynamic listing/detail implementation as a separate next slice using synthetic staged API data; match the checked-in design/components and keep noindex staging metadata until a separately approved release.
+- **Source:** User approved completing the whole homepage and all existing static pages, with dynamic pages deferred to the following task.
+
+### ADR-019 — Connect staging property listing/detail pages to the synthetic API
+
+- **Status:** Accepted by the user on 2026-10-18 for isolated local implementation.
+- **Decision:** Add JavaScript TanStack Start listing and slug-detail routes in `apps/staging-web/`, reading only the existing public synthetic property API through server-side GET server functions. Keep the visual structure aligned with the current source homepage and use only a clearly labeled local image placeholder; media storage remains deferred. Complete the source-style footer, while keeping email collection and sending disabled.
+- **Boundaries:** No production API/data, cPanel/MySQL, Cloudflare resource, deployment, DNS, `workers/ai-worker`, or live-site change. No email form submission. Do not commit or push without an explicit request.
+- **Consequences:** The current synthetic API contains Homes/Houses examples only; other homepage categories must be shown as not yet populated, not represented by fabricated API results. Non-success or redirected API responses fail closed to the staging unavailable state. Revisit only when the synthetic API adds those categories.
+- **Source:** User approved the next dynamic listing/detail slice using synthetic staged API data and reminded that the full website footer must be included.
+
+### ADR-020 — Keep the staging dashboard to two synthetic Admin accounts
+
+- **Status:** Accepted by the user on 2026-10-18 for local synthetic implementation.
+- **Decision:** The staging dashboard has exactly two synthetic accounts and one hardcoded role, `Admin`. Do not reproduce the legacy role catalog, role editor, invitation flow, or general user CRUD. Keep credentials local-only and out of source, Git history, plans, logs, and any deployment configuration.
+- **Boundaries:** This does not approve production credential/password migration, email delivery, Cloudflare resource provisioning, deployment, or access to production systems. Production authentication and account provisioning remain a separate release-readiness task.
+- **Consequences:** Keep one server-side authorization check for every protected dashboard API; frontend route guards are presentation behavior only. Local session persistence is not a deployable implementation.
+- **Source:** User instruction that only two users manage the dashboard and both can share a simple hardcoded Admin role.
+
+### ADR-021 — Use a repository seam for the synthetic dashboard data
+
+- **Status:** Accepted direction for local staging implementation; no persistent store authorized.
+- **Decision:** Use deterministic synthetic in-memory repositories behind versioned API contracts for the first dashboard slice. Keep the route/API projection separate from storage so a later Cloudflare D1 adapter can replace the in-memory adapter without changing the frontend contracts. Keep object/media storage as a separate future R2 adapter decision.
+- **Boundaries:** No local/remote database binding, D1/R2 resource, Cloudflare deployment, production data, or live-site change. In-memory edits are temporary and are explicitly not suitable for a deployed multi-user dashboard.
+- **Consequences:** Before any deployment, replace the in-memory repository and session adapter with durable, approved stores, check free-tier limits/usage guards, and rotate all credentials. The two local synthetic accounts must never be enabled on a public endpoint.
+- **Source:** User asked to select the approach that best supports a fast later Cloudflare-storage transition after the assistant recommended an adapter seam.
