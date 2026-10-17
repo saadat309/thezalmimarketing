@@ -162,6 +162,7 @@ This is the durable record of decisions that affect migration work. It is append
 - **Decision:** The staging dashboard has exactly two synthetic accounts and one hardcoded role, `Admin`. Do not reproduce the legacy role catalog, role editor, invitation flow, or general user CRUD. Keep credentials local-only and out of source, Git history, plans, logs, and any deployment configuration.
 - **Boundaries:** This does not approve production credential/password migration, email delivery, Cloudflare resource provisioning, deployment, or access to production systems. Production authentication and account provisioning remain a separate release-readiness task.
 - **Consequences:** Keep one server-side authorization check for every protected dashboard API; frontend route guards are presentation behavior only. Local session persistence is not a deployable implementation.
+- **Supersedes:** The initial Admin/Content Manager role sketch in ADR-010; this single-role decision is the accepted model for staging.
 - **Source:** User instruction that only two users manage the dashboard and both can share a simple hardcoded Admin role.
 
 ### ADR-021 — Use a repository seam for the synthetic dashboard data

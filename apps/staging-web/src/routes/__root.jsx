@@ -4,6 +4,7 @@ import {
   Link,
   Outlet,
   Scripts,
+  useRouterState,
 } from '@tanstack/react-router';
 import { ExternalLink, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import StagingNavbar from '../components/StagingNavbar.jsx';
@@ -36,15 +37,17 @@ export const Route = createRootRoute({
 });
 
 function RootDocument() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isAdminPage = pathname === '/login' || pathname.startsWith('/dashboard')
   return (
     <html lang="en" className="dark">
       <head><HeadContent /></head>
       <body>
         <a className="staging-skip-link" href="#main">Skip to content</a>
-        <StagingNavbar />
-        <div className="staging-preview-banner" role="status">Staging preview · synthetic sample content · no inquiries are sent</div>
+        {!isAdminPage && <StagingNavbar />}
+        {!isAdminPage && <div className="staging-preview-banner" role="status">Staging preview · synthetic sample content · no inquiries are sent</div>}
         <div id="main"><Outlet /></div>
-        <StagingFooter />
+        {!isAdminPage && <StagingFooter />}
         <Scripts />
       </body>
     </html>

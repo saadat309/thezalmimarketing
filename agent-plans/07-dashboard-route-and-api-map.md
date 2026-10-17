@@ -1,6 +1,6 @@
 # Dashboard and dynamic-route migration map
 
-**Status:** Repository audit complete; synthetic public Maps/Files API and staging pages implemented locally. Dashboard/auth implementation remains next. No production credentials, records, APIs, or storage are in scope.
+**Status:** Repository audit complete; synthetic public Maps/Files and local admin auth/dashboard implementation are present. Main mapped route families have generic schema-driven synthetic CRUD; Users/Profile are read-only. Property, File, and Map admin CRUD shares its transient fixtures with public reads. Taxonomy/CMS/query/calculator data remains isolated. Rich media forms and calculator semantics/imports are incomplete. No production credentials, records, APIs, or storage are in scope.
 
 ## Existing route ownership
 
@@ -46,9 +46,10 @@ The dashboard shell is in `src/routes/dashboard.jsx` and `src/components/dashboa
 ## Recommended implementation slices
 
 1. **Complete locally:** Add public synthetic Maps and Files list/filter APIs and replace their staging placeholders.
-2. Add local-only synthetic login/session, a protected dashboard shell/home, and the two-admin account view. Verify unauthenticated redirect, valid login, logout, and direct-route denial.
-3. Port Property, File, and Map dashboard pages/forms to the staging API with synthetic CRUD. Keep media fields as local fixture references and disable upload controls.
-4. Port taxonomy pages and landing-page configuration against synthetic endpoints.
-5. Port query management with fabricated non-personal examples and no outbound notifications; defer profile editing and calculator admin/import pages until those contracts and calculation semantics are explicitly scoped.
+2. **Implemented locally:** Added loopback-only two-admin login/session/logout, a protected dashboard shell/home, a read-only two-admin account view, and versioned synthetic API auth/session gates. Direct API tests verify credential checks, cookies, CSRF, throttling, and local-host gating.
+3. **Implemented as generic synthetic CRUD:** Properties, Files, Maps, Cities, Categories, Societies, Phases, Queries, Landing Page, and all calculator route families use allowlisted schema-driven create/edit/delete. User/Profile views are read-only. Uploads, CSV import/export, formula parity, and outbound notifications are disabled.
+4. **Next:** Configure local-only passwords and test the complete authenticated browser flow; connect taxonomy editing to public filter fixtures. Then port specialized property/map/file forms and calculator business rules with acceptance cases.
+
+The property/file/map and public directory paths share transient fixture arrays, so local visibility and field edits affect subsequent public reads in the same Worker process. Taxonomy/CMS/query/calculator persistence and deeper workflow semantics are still local previews. The route labels and basic edit controls are intentionally generic rather than a visual/form parity claim for every legacy module.
 
 This sequence creates testable routes early without implying that the entire legacy dashboard has been ported. No route in this document authorizes deployment.
