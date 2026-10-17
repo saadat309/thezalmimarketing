@@ -27,4 +27,3 @@ This repository contains a live website and a staged migration. Follow these ins
 - Keep the state file concise and current. Keep the change log append-only. Do not rewrite historical decisions; supersede them with a new linked decision entry.
 - When feasible, include the relevant tracking updates in the same commit as the migration changes. Commit and push only to `Website-migration` when the user has asked for publishing. Git history is authoritative for commit IDs.
 - At task end, report the files changed, branch/commit, verification performed, remaining decisions, and any production or cost implications.
-

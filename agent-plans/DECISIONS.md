@@ -64,4 +64,3 @@ This is the durable record of decisions that affect migration work. It is append
 - Email delivery provider and current free limits remain open.
 - Production hostname, redirect map, DNS/cutover timing, and stabilization window remain open and require explicit release approval.
 - A sanitized production snapshot is not approved.
-

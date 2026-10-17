@@ -21,4 +21,3 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Verification:** Review document consistency and links; run `git diff --check`; verify branch and status before publishing.
 - **Git reference:** This changeset is recorded in Git history on `Website-migration`; verify exact HEAD with `git log`.
 - **Risk/follow-up:** This adds no application code or Cloudflare configuration. Reconcile the state file after each subsequent task.
-

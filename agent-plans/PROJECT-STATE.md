@@ -1,8 +1,8 @@
 # Current Project State
 
-**Updated:** 2026-10-17  
-**Workstream:** website migration planning  
-**Expected branch:** `Website-migration` (verify with Git at session start)  
+**Updated:** 2026-10-17
+**Workstream:** website migration planning
+**Expected branch:** `Website-migration` (verify with Git at session start)
 **Phase:** inspection and architecture planning; no application implementation started.
 
 ## Current position
@@ -38,4 +38,3 @@
 - Worker Node.js API compatibility and selected package compatibility need a JavaScript-only spike.
 
 Always verify Git's live branch/status and the latest commit rather than relying only on this snapshot.
-
