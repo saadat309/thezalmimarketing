@@ -92,6 +92,22 @@ This is the durable record of decisions that affect migration work. It is append
 - **Consequences:** Supersedes ADR-002 only to this limited extent. Generated TypeScript artifacts should normally remain untracked. Reassess the exception if the framework no longer requires them.
 - **Source:** User feedback on the SSR-spike compatibility issue.
 
+### ADR-013 — Property public-read contract design direction
+
+- **Status:** Accepted for contract design only; implementation not approved.
+- **Recorded:** 2026-10-18.
+- **Decision:** Design the successor property public-read API around minimal page-consumed public fields, `/api/v1`, slug-only detail lookup, stable taxonomy slugs (IDs remain internal), newest-first bounded cursor pagination with a stable tie-breaker, and short public caching invalidated on publish/update. Public property media reads include non-hidden images in position order with one explicit thumbnail and no internal storage keys. Prices are whole PKR rupees with no lakh/crore scaling; area values are interpreted in their accompanying stored unit with no API conversion.
+- **Consequences:** These preferences constrain the proposal only; they do not approve routes, code, data stores, Cloudflare resources, a live-site change, or deployment. Safe defaults for pagination and cache duration/mechanism remain proposals pending synthetic validation and runtime/free-budget checks. Video visibility, description sanitization, redirect/canonical behavior, and price-period/null semantics remain open. The candidate field allowlist is derived from consumer review and still needs final verification.
+- **Source:** User-selected options in the 2026-10-18 public-property contract questionnaire and explicit clarification of price and area semantics.
+
+### ADR-014 — Property video, rich text, pagination bounds, and freshness
+
+- **Status:** Accepted by user for contract design only; implementation not approved.
+- **Recorded:** 2026-10-18.
+- **Decision:** Public property detail may show an attached video only when both the property and video are explicitly public. Long descriptions may preserve formatting only through server-side sanitization against an explicit safe HTML allowlist; raw unsanitized HTML must not be rendered. Public property listing uses cursor pagination with default page size 20 and maximum 50. Published/updated property content must be immediately current; no stale response is acceptable.
+- **Consequences:** Supersedes the pagination-bound and cache/freshness open points in ADR-013. Until a reliable immediate invalidation mechanism is verified within the zero-monthly-cost constraint, bypass shared caching for the property API. A cache must not use stale-while-revalidate or an unexpired fallback that violates the freshness requirement. The exact HTML tag/attribute allowlist and sanitizer implementation require security review before coding; synthetic tests must verify ordering, bounds, and freshness. This design decision does not authorize implementation, provisioning, deployment, or production changes.
+- **Source:** User-selected options in the 2026-10-18 property contract follow-up questionnaire.
+
 ## Proposed or pending decisions
 
 - Whether successor `/api/*` handlers ship in the same Worker as SSR is pending the JavaScript runtime spike.
@@ -100,3 +116,26 @@ This is the durable record of decisions that affect migration work. It is append
 - Email delivery provider and current free limits remain open.
 - Production hostname, redirect map, DNS/cutover timing, and stabilization window remain open and require explicit release approval.
 - A sanitized production snapshot is not approved.
+
+### ADR-015 — Property freshness without stale responses (proposed)
+
+- **Status:** Proposed by the assistant; not user-approved.
+- **Recorded:** 2026-10-18.
+- **Proposal:** Prefer `Cache-Control: no-cache, must-revalidate` and an ETag/version validator over `no-store`, if the validator synchronously detects every committed public-content change. Unchanged content may return `304` after revalidation; changed content returns `200`. This can preserve a body to reduce transfer but does not avoid the Worker request and may still require a cheap current-version/data check. If the guarantee cannot be validated, use `no-store` for the dynamic property response. Keep fingerprinted static assets independently cacheable.
+- **Consequences:** Do not enable Cloudflare Workers Cache without confirming the standard-request quota effect; current Cloudflare docs state cache hits and normally-free static asset requests count at the standard Workers request rate when Workers Cache is enabled. The proposal preserves ADR-014's no-stale requirement and is not implementation authorization.
+
+### ADR-016 — Implement an isolated synthetic public-property API prototype
+
+- **Status:** Accepted by the user on 2026-10-18 for local implementation and synthetic testing only.
+- **Decision:** Implement the bounded `/api/v1/properties` list and slug-detail prototype inside `apps/ssr-spike/`, using fabricated fixtures only. The initial slice covers public visibility, taxonomy filters, bounded cursor pagination, safe media projection, sanitizer behavior, and ETag mandatory revalidation. Property freshness means the next navigation/refetch is current; no push/poll is required in this slice.
+- **Boundaries:** No D1/R2 or other Cloudflare resources, production data/credentials/domain, deployment, production DNS, cPanel/MySQL, or `workers/ai-worker` changes. This does not approve production persistence, admin writes, upload handling, or deployment.
+- **Consequences:** Keep the prototype clearly synthetic. Before replacing fixtures with a store, validate the version/ETag against committed writes and review sanitizer behavior and free-tier request/CPU budgets. Shared Workers Cache remains disabled.
+- **Source:** User's explicit “go ahead” following the distinction between refining design and separately authorizing API implementation, plus the clarification that next request/refetch freshness is sufficient.
+
+### ADR-017 — Separate property HTTP contract from its data source
+
+- **Status:** Accepted by the user on 2026-10-18 for a local JavaScript adapter using synthetic data.
+- **Decision:** Keep HTTP validation, public-field projection, sanitization, and ETags in the property API layer. Read taxonomy membership, list/filter/order/page, and slug detail through a repository interface. The current adapter is in-memory and synthetic; D1 is a possible future implementation of the interface, not authorized by this decision.
+- **Boundaries:** No D1/R2 binding or resource, production data, cPanel/MySQL connection, Cloudflare deployment, DNS, or live-site change.
+- **Consequences:** Preserve identical API behavior when adding later adapters; test adapter semantics with synthetic fixtures, especially ordering, cursor continuation, publication visibility, and current reads.
+- **Source:** User approved the proposed JavaScript repository interface and synthetic in-memory implementation.

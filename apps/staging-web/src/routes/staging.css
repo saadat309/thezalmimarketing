@@ -1,0 +1,60 @@
+.staging-header,
+.staging-follow-up,
+.staging-not-found,
+.staging-footer { font-family: 'Inter', 'Plus Jakarta Sans', sans-serif; }
+
+.staging-skip-link {
+  position: absolute;
+  z-index: 100;
+  top: -4rem;
+  left: 1rem;
+  padding: .75rem 1rem;
+  color: #0b0f19;
+  background: #f5a623;
+}
+
+.staging-skip-link:focus { top: 1rem; }
+
+.staging-header {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem clamp(1rem, 4vw, 3rem);
+  color: white;
+}
+
+.staging-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  color: white;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.staging-brand em { color: #d4af37; font-style: normal; }
+.staging-brand-mark { display: grid; width: 2.4rem; aspect-ratio: 1; place-items: center; border: 1px solid #d4af37; border-radius: 50%; color: #f5a623; font-family: var(--font-display); }
+.staging-header nav { display: flex; align-items: center; gap: clamp(.65rem, 2vw, 1.5rem); }
+.staging-header nav a { color: rgba(255,255,255,.88); font-size: .86rem; text-decoration: none; transition: color .2s ease; }
+.staging-header nav a:hover { color: #f5a623; }
+.staging-badge { padding: .4rem .65rem; border: 1px solid rgba(212,175,55,.45); border-radius: 999px; color: #f3e5ab; font-size: .62rem; font-weight: 800; letter-spacing: .12em; white-space: nowrap; }
+.staging-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1.3rem clamp(1rem, 4vw, 3rem); background: #0a0f1d; color: #94a3b8; font-size: .8rem; }
+.staging-footer strong { color: #f8fafc; }
+.staging-follow-up, .staging-not-found { max-width: 72rem; margin: 0 auto; padding: clamp(4rem, 9vw, 7rem) 1.5rem; color: #f8fafc; }
+.staging-follow-up h2, .staging-not-found h1 { max-width: 52rem; margin: 0; font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 4.5rem); line-height: 1.05; }
+.staging-follow-up > p:not(.staging-eyebrow), .staging-not-found > p:not(.staging-eyebrow) { max-width: 42rem; color: #cbd5e1; line-height: 1.7; }
+.staging-follow-up > a, .staging-not-found > a { color: #f3c55b; font-weight: 700; }
+.staging-eyebrow { color: #d4af37; font-size: .7rem; font-weight: 800; letter-spacing: .16em; }
+
+@media (max-width: 680px) {
+  .staging-header { flex-wrap: wrap; padding-top: .8rem; }
+  .staging-header nav { order: 3; width: 100%; justify-content: center; }
+  .staging-badge { font-size: .55rem; }
+  .staging-footer { flex-direction: column; }
+}

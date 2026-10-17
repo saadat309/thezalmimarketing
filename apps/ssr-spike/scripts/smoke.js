@@ -76,4 +76,91 @@ const postChecks = {
 if (Object.values(postChecks).some((passed) => !passed)) failed = true
 console.log(JSON.stringify({ path: '/api/health', method: 'POST', status: postResponse.status, checks: postChecks }))
 
+const propertiesUrl = new URL('/api/v1/properties/', origin)
+const listResponse = await fetch(propertiesUrl)
+const listBody = await listResponse.json()
+const listedJson = JSON.stringify(listBody)
+const listChecks = {
+  status: listResponse.status === 200,
+  defaultPageSize: listBody.items.length === 20,
+  hasContinuation: listBody.page.hasMore && Boolean(listBody.page.nextCursor),
+  hiddenAndFileOnlyExcluded: !listedJson.includes('hidden-home') && !listedJson.includes('sample-file'),
+  noInternalKeysOrIds: !listedJson.includes('synthetic-private-key') && !/"id"\s*:/.test(listedJson),
+  noStoreKeys: listBody.items.every((item) => item.media.images.every((image) => !('key' in image))),
+  revalidationHeader: listResponse.headers.get('cache-control') === 'no-cache, must-revalidate',
+  etag: Boolean(listResponse.headers.get('etag')),
+}
+if (Object.values(listChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: propertiesUrl.pathname, status: listResponse.status, checks: listChecks }))
+
+const unchangedResponse = await fetch(propertiesUrl, {
+  headers: { 'If-None-Match': listResponse.headers.get('etag') },
+})
+const validationChecks = {
+  status: unchangedResponse.status === 304,
+  emptyBody: (await unchangedResponse.text()) === '',
+}
+if (Object.values(validationChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: propertiesUrl.pathname, method: 'GET If-None-Match', status: unchangedResponse.status, checks: validationChecks }))
+
+const cursorUrl = new URL(propertiesUrl)
+cursorUrl.searchParams.set('cursor', listBody.page.nextCursor)
+const nextPage = await (await fetch(cursorUrl)).json()
+const cursorChecks = {
+  size: nextPage.items.length === 20,
+  noDuplicates: nextPage.items.every((item) => !listBody.items.some((first) => first.slug === item.slug)),
+}
+if (Object.values(cursorChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: cursorUrl.pathname, method: 'GET cursor', status: 200, checks: cursorChecks }))
+
+const oversizedResponse = await fetch(new URL('/api/v1/properties/?limit=51', origin))
+const oversizedBody = await oversizedResponse.json()
+const oversizedChecks = {
+  status: oversizedResponse.status === 400,
+  fieldError: oversizedBody.error?.fields?.limit !== undefined,
+}
+if (Object.values(oversizedChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: '/api/v1/properties/?limit=51', status: oversizedResponse.status, checks: oversizedChecks }))
+
+const maximumPage = await (await fetch(new URL('/api/v1/properties/?limit=50', origin))).json()
+const maximumChecks = { pageSize: maximumPage.items.length === 50, stillHasMore: maximumPage.page.hasMore }
+if (Object.values(maximumChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: '/api/v1/properties/?limit=50', status: 200, checks: maximumChecks }))
+
+const filterResponse = await fetch(new URL('/api/v1/properties/?category=houses&city=sample-city&purchase_type=sale&min_beds=3&min_baths=2&min_area=1000&area_unit=sqft', origin))
+const filterBody = await filterResponse.json()
+const filterChecks = { status: filterResponse.status === 200, results: filterBody.items.length > 0 }
+if (Object.values(filterChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: '/api/v1/properties/?category=houses&city=sample-city', status: filterResponse.status, checks: filterChecks }))
+const invalidFilter = await fetch(new URL('/api/v1/properties/?purchase_type=unknown', origin))
+const invalidFilterBody = await invalidFilter.json()
+const invalidFilterChecks = { status: invalidFilter.status === 400, fieldError: Boolean(invalidFilterBody.error?.fields?.purchase_type) }
+if (Object.values(invalidFilterChecks).some((passed) => !passed)) failed = true
+console.log(JSON.stringify({ path: '/api/v1/properties/?purchase_type=unknown', status: invalidFilter.status, checks: invalidFilterChecks }))
+
+for (const slug of ['sample-residence', 'private-video-home', 'hidden-home', '123456']) {
+  const detailResponse = await fetch(new URL(`/api/v1/properties/${slug}`, origin))
+  const isVisible = slug === 'sample-residence' || slug === 'private-video-home'
+  const detailBody = await detailResponse.json()
+  const html = detailBody.descriptionHtml ?? ''
+  const detailChecks = {
+    status: detailResponse.status === (isVisible ? 200 : 404),
+    cachePolicy: detailResponse.headers.get('cache-control') === (isVisible ? 'no-cache, must-revalidate' : 'no-store'),
+    sanitizedDescription: !isVisible || (
+      html.includes('<strong>formatting</strong>') &&
+      html.includes('<a href="/details">Safe relative link</a>') &&
+      !/<script\b|<iframe\b|\son[a-z]+=|javascript:|href="\/\\evil/i.test(html)
+    ),
+    videoRequiresBothPublicFlags: slug !== 'private-video-home' || detailBody.media?.video === null,
+    explicitThumbnailAndOrderedPublicImages: slug !== 'sample-residence' || (
+      detailBody.media.thumbnail.url.endsWith('sample-main.jpg') &&
+      detailBody.media.images.map((image) => image.url).join(',').endsWith('sample-main.jpg,https://images.example.invalid/sample-secondary.jpg')
+    ),
+    publicVideoIncluded: slug !== 'sample-residence' || detailBody.media.video?.url === 'https://video.example.invalid/sample.mp4',
+    internalFieldsHidden: !('id' in detailBody) && !JSON.stringify(detailBody).includes('synthetic-private-key'),
+  }
+  if (Object.values(detailChecks).some((passed) => !passed)) failed = true
+  console.log(JSON.stringify({ path: `/api/v1/properties/${slug}`, status: detailResponse.status, checks: detailChecks }))
+}
+
 if (failed) process.exitCode = 1

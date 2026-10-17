@@ -1,19 +1,34 @@
 {
   "name": "zalmi-staging-web",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "node scripts/run-vite.js dev --host 127.0.0.1 --port 4174",
+    "build": "node scripts/run-vite.js build",
+    "preview": "node scripts/run-vite.js preview --host 127.0.0.1 --port 4174"
   },
   "dependencies": {
+    "@tanstack/react-start": "1.169.3",
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.553.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "1.64.0",
+    "@tailwindcss/vite": "^4.1.17",
     "@vitejs/plugin-react": "^5.1.0",
-    "vite": "npm:rolldown-vite@7.2.2"
+    "tailwindcss": "^4.1.17",
+    "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "^1.4.0",
+    "vite": "8.3.4"
+  },
+  "allowScripts": {
+    "workerd@1.20261012.1": true
   }
 }

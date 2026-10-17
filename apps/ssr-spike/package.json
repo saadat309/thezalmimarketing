@@ -8,6 +8,7 @@
     "build": "node scripts/run-vite.js build",
     "preview": "node scripts/run-vite.js preview --host 127.0.0.1 --port 4175",
     "smoke": "node scripts/smoke.js",
+    "test:property": "node scripts/test-property-api.js",
     "cf:whoami": "wrangler whoami"
   },
   "dependencies": {

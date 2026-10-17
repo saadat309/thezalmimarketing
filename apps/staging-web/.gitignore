@@ -1,3 +1,5 @@
 node_modules/
 .local-node/
 dist/
+src/routeTree.gen.ts
+src/routeTree.gen.js

@@ -18,7 +18,7 @@ function AppLink({ href, children, className = '' }) {
 function Layout({ children }) {
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
-    <header className="site-header"><AppLink className="brand" href="/"><span className="brand-mark">Z</span><span>Zalmi <em>Staging</em></span></AppLink><nav aria-label="Primary navigation">{navItems.map(([label, href]) => <AppLink key={href} href={href}>{label}</AppLink>)}</nav></header>
+    <header className={`site-header ${window.location.pathname === '/' ? 'site-header-home' : ''}`}><AppLink className="brand" href="/"><span className="brand-mark">Z</span><span>The Zalmi <em>Marketing</em></span></AppLink><nav aria-label="Primary navigation">{navItems.map(([label, href]) => <AppLink key={href} href={href}>{label}</AppLink>)}</nav><span className="staging-pill">STAGING</span></header>
     <main id="main">{children}</main>
     <footer><strong>Zalmi Staging</strong><span>Synthetic public migration environment. No production listings, media, or services.</span></footer>
   </>;
@@ -35,9 +35,53 @@ function PropertyCard({ property }) {
 
 function Home() {
   const featured = listProperties().slice(0, 3);
+  const [activeSearch, setActiveSearch] = useState('properties');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [headlineState, setHeadlineState] = useState({ current: 0, previous: null });
+  const [rotationPaused, setRotationPaused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const headlineWords = ['Dream Property', 'Luxury Villa', 'Prime Plot File', 'Commercial Plaza', 'Modern Penthouse', 'DHA Estate', 'Elite Residence'];
+  const searchRoutes = { properties: '/properties/', files: '/files/', maps: '/maps/' };
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateMotionPreference = () => setPrefersReducedMotion(media.matches);
+    updateMotionPreference();
+    media.addEventListener('change', updateMotionPreference);
+    return () => media.removeEventListener('change', updateMotionPreference);
+  }, []);
+  useEffect(() => {
+    if (prefersReducedMotion || rotationPaused) return undefined;
+    const interval = window.setInterval(() => {
+      setHeadlineState(({ current }) => ({ previous: current, current: (current + 1) % headlineWords.length }));
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, [prefersReducedMotion, rotationPaused, headlineWords.length]);
+  useEffect(() => {
+    if (headlineState.previous === null) return undefined;
+    const exitingIndex = headlineState.previous;
+    const timeout = window.setTimeout(() => {
+      setHeadlineState((state) => state.previous === exitingIndex ? { ...state, previous: null } : state);
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [headlineState.previous]);
+  const submitSearch = (event) => {
+    event.preventDefault();
+    const query = searchTerm.trim();
+    navigate(`${searchRoutes[activeSearch]}${query ? `?query=${encodeURIComponent(query)}` : ''}`);
+  };
   return <Layout><PageMeta title="Zalmi Staging | Deliberate real estate decisions" description="Synthetic staging environment for the Zalmi public migration." canonicalPath="/" />
-    <section className="hero"><div><p className="eyebrow">A PUBLIC-MIGRATION PROTOTYPE</p><h1>Find the next move with <i>clarity.</i></h1><p className="lede">A calm, quick starting point for the future Zalmi Marketing public experience—built with synthetic records only.</p><div className="hero-actions"><AppLink className="button" href="/properties/">Browse sample properties</AppLink><AppLink className="text-link" href="/maps/">Explore map records →</AppLink></div></div><div className="hero-panel"><span>01 / STAGING</span><p>Useful information, clear routes, and deliberate search behavior.</p><div className="sun" /></div></section>
-    <section className="section"><div className="section-head"><p className="eyebrow">CURATED SAMPLE INVENTORY</p><h2>Space to consider.</h2><AppLink className="text-link" href="/properties/">View all sample listings →</AppLink></div><div className="grid">{featured.map((property) => <PropertyCard key={property.slug} property={property} />)}</div></section>
+    <section className="zalmi-hero" onFocusCapture={(event) => { if (!event.target.closest('.rotation-control')) setRotationPaused(true); }}>
+      <div className="hero-backdrop" aria-hidden="true" />
+      <div className="hero-content">
+        <div className="hero-copy"><p className="hero-kicker">THE ZALMI STANDARD · DHA SPECIALISTS</p><div className="headline-wrap"><h1>Discover Your<br /><span className="rotating-headline" aria-live="off"><span key={`current-${headlineState.current}`} className="rotating-word">{headlineWords[headlineState.current]}</span>{headlineState.previous !== null && <span key={`previous-${headlineState.previous}`} className="rotating-word rotating-word-exit" aria-hidden="true">{headlineWords[headlineState.previous]}</span>}</span><br />With Total Confidence</h1><button className="rotation-control" type="button" aria-pressed={rotationPaused} aria-label={rotationPaused ? 'Resume headline rotation' : 'Pause headline rotation'} onClick={() => setRotationPaused((paused) => !paused)}><span aria-hidden="true">{rotationPaused ? '▶' : 'Ⅱ'}</span></button></div><p className="hero-note">A clearer way to explore property, plot files, and society maps.</p>
+          <div className="trust-row" aria-label="Why choose Zalmi"><div><strong>100%</strong><span>Verified Files</span></div><div><strong>2020+</strong><span>Established Trust</span></div><div><strong>DHA</strong><span>Specialized Experts</span></div></div>
+        </div>
+        <form className="hero-search" onSubmit={submitSearch} aria-label="Search staging content"><div className="search-tabs" role="tablist" aria-label="Search category">{[['properties', 'Properties'], ['files', 'Plot Files'], ['maps', 'Society Maps']].map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={activeSearch === key} className={activeSearch === key ? 'selected' : ''} onClick={() => setActiveSearch(key)}>{label}</button>)}</div><label className="search-label" htmlFor="hero-search-input">Find what you are looking for</label><div className="search-entry"><input id="hero-search-input" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={`Search ${activeSearch}...`} /><button type="submit">Search <span aria-hidden="true">→</span></button></div><p className="search-disclaimer">Search uses synthetic staging content only.</p></form>
+      </div>
+      <a className="scroll-cue" href="#featured">SCROLL TO EXPLORE <span aria-hidden="true">↓</span></a>
+      <div className="hero-staging-note">ISOLATED PREVIEW · SAMPLE DATA</div>
+    </section>
+    <section id="featured" className="section"><div className="section-head"><div><p className="eyebrow">CURATED SAMPLE INVENTORY</p><h2>Space to consider.</h2></div><AppLink className="text-link" href="/properties/">View all sample listings →</AppLink></div><div className="grid">{featured.map((property) => <PropertyCard key={property.slug} property={property} />)}</div></section>
     <section className="value-band"><p>Designed for a future that is fast, legible, and respectful of search intent.</p><div><span>Clear routes</span><span>Synthetic data</span><span>Staged safely</span></div></section>
   </Layout>;
 }
