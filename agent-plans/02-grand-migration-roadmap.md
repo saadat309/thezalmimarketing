@@ -131,4 +131,3 @@ This phase is not authorized by approving the plan. It requires a new explicit r
 ## First implementation slice after plan approval
 
 Start with Phase 0 and Phase 1 only: secure credentials, confirm branch/deploy isolation, finish route/API/data/media inventory, and record a repeatable performance baseline. Then review the resulting technical-spike design before creating Cloudflare resources or replacing any application code.
-

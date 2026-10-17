@@ -34,4 +34,3 @@ Current Cloudflare documentation consulted on 2026-10-17:
 - [D1 limits](https://developers.cloudflare.com/d1/platform/limits/)
 - [Workers static asset billing and limits](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/)
 - [R2 pricing](https://developers.cloudflare.com/r2/pricing/)
-

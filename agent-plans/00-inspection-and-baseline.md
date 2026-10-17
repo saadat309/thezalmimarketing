@@ -1,7 +1,7 @@
 # Inspection and Performance Baseline
 
-**Inspected:** 2026-10-17  
-**Repository branch:** `Website-migration`  
+**Inspected:** 2026-10-17
+**Repository branch:** `Website-migration`
 **Scope:** read-only inspection of the current checkout, provided documentation/SQL, and the live public homepage. No application code, database, Cloudflare configuration, production data, or AI Worker was changed.
 
 ## Current repository shape
@@ -45,4 +45,3 @@ The initial response had metadata/OG tags but no meaningful rendered page conten
 - The current checkout contains credentials in PHP configuration and prior history was already identified as containing a local Worker secrets file. Do not copy any secret values into these plans, logs, examples, or new Worker bindings. Rotate affected credentials and move secrets into environment bindings before a deployment is considered safe.
 - A sanitized or sample-only staging database must be separate from production. Initially, use generated sample records and the calculator seed rules only. A sanitized production snapshot is a later optional validation step, only if the user approves and a safe export exists.
 - Existing cPanel hosting, database and domain remain authoritative during migration. No production DNS updates, dual writes, migration scripts against production, or writes to the live site are part of the current planning phase.
-

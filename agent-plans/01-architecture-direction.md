@@ -1,6 +1,6 @@
 # Architecture Direction and Decisions
 
-**Status:** direction approved for planning; implementation choices remain subject to the gates below.  
+**Status:** direction approved for planning; implementation choices remain subject to the gates below.
 **Updated:** 2026-10-17
 
 ## Approved requirements
@@ -67,4 +67,3 @@ No code or configuration in `workers/ai-worker/` is to be modified as part of th
 - [D1 import/export: MySQL is not directly importable](https://developers.cloudflare.com/d1/best-practices/import-export-data/)
 - [Workers static asset billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/)
 - [R2 free allowance and overage pricing](https://developers.cloudflare.com/r2/pricing/)
-
