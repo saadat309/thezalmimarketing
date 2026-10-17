@@ -1,0 +1,40 @@
+﻿{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "thezalmi-ai-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "caab5e755465633ad482c8208ce61787",
+  "ai": {
+    "binding": "AI"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "env": {
+    "development": {
+      "ai": {
+        "binding": "AI"
+      },
+      "vars": {
+        "PHP_API_BASE_URL": "http://localhost:8000/ai-tools"
+      }
+    },
+    "production": {
+      "account_id": "caab5e755465633ad482c8208ce61787",
+      "ai": {
+        "binding": "AI"
+      },
+      "routes": [
+        {
+          "pattern": "ai.thezalmimarketing.com",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "PHP_API_BASE_URL": "https://thezalmimarketing.com/api"
+      }
+    }
+  }
+}
