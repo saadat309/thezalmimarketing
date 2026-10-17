@@ -15,4 +15,10 @@ export default defineConfig({
     }),
     react(),
   ],
+  server: {
+    cors: {
+      origin: /^http:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/,
+      credentials: true,
+    },
+  },
 })
