@@ -56,11 +56,39 @@ This is the durable record of decisions that affect migration work. It is append
 - **Decision:** Use root `AGENTS.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/DECISIONS.md`, and `agent-plans/CHANGELOG.md`, linked from the agent-plans index.
 - **Consequences:** Every new agent/session reads the handoff material and verifies actual Git state; decisions and completed work are recorded without relying on chat history.
 
+### ADR-008 — Keep the replacement staging app isolated from the existing Vite/PHP app
+
+- **Status:** Accepted by user for the first staging design slice; implementation remains separately authorized.
+- **Recorded:** 2026-10-17.
+- **Decision:** Plan a separate JavaScript/JSX application at `apps/staging-web/`. Do not alter the root Vite app, whose development configuration proxies to the existing PHP API.
+- **Consequences:** The replacement can use synthetic fixtures without a production dependency. Adding the directory, packages, Worker configuration, or deployment remains a later implementation task.
+
+### ADR-009 — Define successor public URLs independently; do not change the live domain now
+
+- **Status:** Accepted by user for successor design.
+- **Recorded:** 2026-10-17.
+- **Decision:** The future staging/replacement app uses an environment-configured canonical origin, trailing-slash canonical public routes, no filtered-query URLs in its sitemap, and a real HTTP 404 response. The apex host is the intended production target only at a separately approved cutover; live hostname, redirects, and DNS remain untouched now.
+- **Consequences:** The staging app can test its own correct URL behavior without changing the presently inconsistent live behavior. A complete redirect map remains required before cutover.
+
+### ADR-010 — Use a server-session/RBAC boundary for the later admin slice; defer email and password migration
+
+- **Status:** Accepted by user for successor design.
+- **Recorded:** 2026-10-17.
+- **Decision:** Later admin work will target Secure, HttpOnly, SameSite server sessions with CSRF validation and initial Admin/Content Manager roles. Use synthetic development accounts. Defer transactional email, production password migration/reset policy, and provider selection to production readiness.
+- **Consequences:** The first public staging slice does not need email or production credentials. A detailed RBAC matrix and implementation review remain required before auth code.
+
+### ADR-011 — Do not create a legacy frontend-to-successor API compatibility layer
+
+- **Status:** Accepted by user.
+- **Recorded:** 2026-10-17.
+- **Decision:** Keep the legacy cPanel site operational and build the successor independently; do not require the old frontend to call a new API.
+- **Consequences:** Compatibility is handled through a later cutover/redirect plan, not a duplicate API bridge.
+
 ## Proposed or pending decisions
 
-- The exact app directory and whether `/api/*` handlers ship in the same Worker as SSR are pending the JavaScript runtime spike.
+- Whether successor `/api/*` handlers ship in the same Worker as SSR is pending the JavaScript runtime spike.
 - D1/R2 are the leading storage candidates, not permission to provision them. Real media volume and free quota guard design must be reviewed first.
-- Authentication/session/cookie/CSRF policy, password migration, and whether password resets are required remain open.
+- The detailed RBAC matrix, password migration, and whether password resets are required remain open.
 - Email delivery provider and current free limits remain open.
 - Production hostname, redirect map, DNS/cutover timing, and stabilization window remain open and require explicit release approval.
 - A sanitized production snapshot is not approved.

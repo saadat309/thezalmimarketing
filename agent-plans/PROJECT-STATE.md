@@ -3,7 +3,7 @@
 **Updated:** 2026-10-17
 **Workstream:** website migration planning
 **Expected branch:** `Website-migration` (verify with Git at session start)
-**Phase:** Phase 1 discovery in progress; no application implementation started.
+**Phase:** Phase 1 discovery/design complete for the first public staging slice; no application implementation started.
 
 ## Current position
 
@@ -15,9 +15,11 @@
 - The repository contains a 30-table MySQL structure dump with no production rows and an eight-table calculator schema file with seed inserts. No live DB connection or production data export was used.
 - A browser baseline was recorded for the live homepage. See the inspection document; treat it as a single dated baseline, not a universal performance guarantee.
 - A repository-derived route/API/table inventory now records the current client surface, PHP resources, source data domains, and discovery gaps. See `agent-plans/03-route-api-data-inventory.md`; it is not yet a production URL or API contract.
-- Local Wrangler authentication was verified on 2026-10-17 using a read-only `whoami` check. Account identity, credential location, and permission details are intentionally not recorded here. No Cloudflare resource was changed.
+- A prior read-only Wrangler authentication check is recorded in the work log. In this terminal session, `wrangler` was not resolvable, so no new authentication verification was possible and no Cloudflare action was attempted.
 - A handler-level inventory now records observed API access behavior, special action paths, and contract work still needed. See `agent-plans/04-handler-contract-inventory.md`; it is evidence for design, not approval to reproduce the legacy API/security behavior.
-- A read-only live homepage observation recorded the public route patterns and an apex/`www` canonical-host mismatch. See `agent-plans/05-live-url-observations.md`; sitemap, robots, redirects, and non-homepage URLs are still unverified.
+- Read-only public checks now confirm HTTP-to-HTTPS redirects on both hosts, `robots.txt`, an apex-host sitemap (31 URLs), public primary routes, duplicate HTTPS apex/`www` accessibility, sitemap-to-canonical trailing-slash mismatches, missing About/Contact canonicals, and an SPA-shell HTTP `200` for an unknown URL that renders a client-side 404. See `agent-plans/05-live-url-observations.md`.
+- `agent-plans/06-phase-0-1-owner-actions-and-proposed-contracts.md` contains a secret-safe owner rotation/inventory request and proposed per-domain contracts. It makes no implementation decision.
+- The user approved the isolated staging-app design direction, successor URL policy, later session/RBAC boundary, deferred email/password migration, and no legacy API bridge. The reviewable design is `docs/superpowers/specs/2026-10-17-isolated-staging-web-design.md`; implementation is paused for user review.
 
 ## Production and security boundaries
 
@@ -29,17 +31,17 @@
 ## Next safe actions
 
 1. For the next session, verify actual branch/status and read `AGENTS.md`, this file, `DECISIONS.md`, and the latest `CHANGELOG.md` entry.
-2. Continue Phase 0/1 of `02-grand-migration-roadmap.md`: coordinate credential rotation; have the owner provide safe aggregate record/media reports; complete the read-only public URL/redirect/crawl-directive test sheet; then turn the documented handler findings into approved per-domain contracts.
-3. Before creating Cloudflare resources, get approval for the detailed runtime spike, resource layout, and zero-cost usage guards.
-4. Do not start frontend/backend code work until the user requests the next implementation slice.
+2. User reviews `docs/superpowers/specs/2026-10-17-isolated-staging-web-design.md`. After approval, create the detailed implementation plan; do not implement code before that approval.
+3. Have the owner complete the aggregate record/media report before media/storage design; do not request records or secret values.
+4. Before creating Cloudflare resources, get approval for the runtime spike, resource layout, and zero-cost usage guards.
 
 ## Open questions
 
 - Actual production table counts, media/PDF size, and media growth rate are not present in this checkout.
 - D1 capacity and rewritten query row usage need validation against representative sample data.
 - R2 total usage and operation budgets need a hard application cap to prevent charges above free allowances.
-- Authentication/session migration, password-hash compatibility, transactional email provider, redirects, and exact route/API mapping remain to be designed.
+- Detailed RBAC, password-hash compatibility, transactional email provider, final redirect map, and exact route/API mapping remain to be designed.
 - Worker Node.js API compatibility and selected package compatibility need a JavaScript-only spike.
-- Production URL variants, redirects, canonical hostname behavior, endpoint response contracts, and media lifecycle rules are not verified yet.
+- Canonical hostname, permanent redirect map, real 404 behavior, endpoint response contracts, and media lifecycle rules are not decided; authenticated/admin route checks remain out of scope for public verification.
 
 Always verify Git's live branch/status and the latest commit rather than relying only on this snapshot.

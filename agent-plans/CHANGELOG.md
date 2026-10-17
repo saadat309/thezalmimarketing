@@ -57,3 +57,30 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Files:** `agent-plans/05-live-url-observations.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/CHANGELOG.md`.
 - **Verification:** Read-only live homepage navigation and DOM metadata/link inspection in an isolated browser context; `git diff --check`. No production content, data, DNS, Cloudflare resource, or AI Worker was changed.
 - **Risk/follow-up:** The observation does not verify robots, sitemap, redirect chains, 404s, or non-homepage pages; complete the documented read-only URL test sheet before treating the list as a redirect contract.
+
+## 2026-10-17 — Complete safe public crawler checks and draft proposed domain contracts
+
+- **Type:** Read-only production observation and planning.
+- **Summary:** Recorded secret-safe owner actions for credential rotation and aggregate-only production/media reporting; drafted proposed per-domain data/API/auth contracts without approving an implementation. Public GET checks confirmed HTTP-to-HTTPS redirects, `robots.txt`, a 31-URL apex sitemap, primary public routes, duplicate HTTPS apex/`www` accessibility, trailing-slash duplication, and an SPA-shell `200` for an intentionally missing path.
+- **Decision records:** Reaffirmed ADR-001 through ADR-006. No new decision was made or approved; canonical hostname, 404/redirect policy, auth/RBAC, email, media limits, calculator rules, and legacy API compatibility remain pending.
+- **Files:** `agent-plans/05-live-url-observations.md`, `agent-plans/06-phase-0-1-owner-actions-and-proposed-contracts.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/CHANGELOG.md`.
+- **Verification:** Confirmed `Website-migration` and baseline HEAD `2385b76` with a clean starting worktree; used public GET retrievals only; static review of repository API/frontend/schema inventories. Attempted required read-only `wrangler whoami`, but `wrangler` was not resolvable in this terminal, so no Cloudflare action was taken. No production data, cPanel setting, DNS record, Cloudflare resource, deployment, or AI Worker was changed.
+- **Risk/follow-up:** Owner action is required for rotation status and aggregate report. Do not implement or provision until the documented pending decisions receive explicit approval.
+
+## 2026-10-17 — Complete rendered sitemap canonical verification
+
+- **Type:** Read-only production observation.
+- **Summary:** In an isolated browser context, verified all 31 public sitemap URLs return `200` on the apex host and recorded their rendered metadata. The sitemap's no-slash forms conflict with rendered trailing-slash canonicals for listing, map, file, all 18 property-detail, and six category-query URLs; About and Contact have no rendered canonical. An unknown route renders a client-side 404 but still has HTTP `200`.
+- **Decision records:** No new decision was made or approved. Canonical hostname, slash/query policy, sitemap composition, and HTTP 404 behavior remain pending release decisions.
+- **Files:** `agent-plans/05-live-url-observations.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/CHANGELOG.md`.
+- **Verification:** Public browser navigation and read-only DOM metadata inspection only, in an isolated context; no console errors were observed during the sitemap audit. No form, authenticated route, cookie, storage value, API mutation, production data, cPanel setting, DNS record, Cloudflare resource, deployment, or AI Worker was accessed or changed.
+- **Risk/follow-up:** Browser-rendered metadata does not meet the successor SSR/prerender requirement by itself. Obtain the documented URL-policy decision before implementing redirects, metadata, sitemap, or not-found behavior.
+
+## 2026-10-17 — Record isolated staging-web design and approved directions
+
+- **Type:** Architecture/design documentation.
+- **Summary:** Recorded the user-approved first-slice direction: a separate JavaScript/JSX `apps/staging-web/` app using synthetic fixtures; successor trailing-slash canonical routes, filtered-query sitemap exclusion, real HTTP 404 behavior, future server-session/RBAC boundary, deferred email/password migration, and no legacy frontend-to-successor API bridge. Wrote a reviewable design document and intentionally did not create application code.
+- **Decision records:** ADR-008 through ADR-011; reaffirmed ADR-001 through ADR-006.
+- **Files:** `docs/superpowers/specs/2026-10-17-isolated-staging-web-design.md`, `agent-plans/DECISIONS.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/CHANGELOG.md`.
+- **Verification:** Read repository Vite configuration, package manifest, route layout, prior inventory/design records, and `git diff --check`. No app directory, runtime dependency, Cloudflare resource, deployment, cPanel setting, production data, DNS record, PHP handler, or AI Worker was changed.
+- **Risk/follow-up:** The design must be reviewed by the user before creating an implementation plan or code. Email, production password migration, full RBAC, storage guard values, calculator rules, and cutover remain deferred.
