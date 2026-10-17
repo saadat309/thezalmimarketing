@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.wrangler/
+.wrangler-local-config/
+.tanstack/
+/src/routeTree.gen.js
+/src/routeTree.gen.ts

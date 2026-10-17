@@ -84,6 +84,14 @@ This is the durable record of decisions that affect migration work. It is append
 - **Decision:** Keep the legacy cPanel site operational and build the successor independently; do not require the old frontend to call a new API.
 - **Consequences:** Compatibility is handled through a later cutover/redirect plan, not a duplicate API bridge.
 
+### ADR-012 — Keep migration code JavaScript-first with a TanStack-generated TypeScript exception
+
+- **Status:** Accepted by user on 2026-10-17; narrow exception only.
+- **Recorded:** 2026-10-17.
+- **Decision:** Keep handwritten application and business logic in JavaScript/JSX. Permit TypeScript only for TanStack-generated route-tree/type-registration files when required by the framework; do not convert the broader application to TypeScript or use TanStack throughout unrelated code.
+- **Consequences:** Supersedes ADR-002 only to this limited extent. Generated TypeScript artifacts should normally remain untracked. Reassess the exception if the framework no longer requires them.
+- **Source:** User feedback on the SSR-spike compatibility issue.
+
 ## Proposed or pending decisions
 
 - Whether successor `/api/*` handlers ship in the same Worker as SSR is pending the JavaScript runtime spike.

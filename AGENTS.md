@@ -12,11 +12,11 @@ This repository contains a live website and a staged migration. Follow these ins
 ## Project constraints and safety
 
 - All migration-related changes belong on `Website-migration`. Never push migration work to `main`. Do not switch branches with uncommitted work unless its owner has explicitly directed how to handle it.
-- Migration code must use JavaScript (`.js`/`.jsx`); do not add TypeScript (`.ts`/`.tsx`). Cloudflare Workers use the Workers JavaScript runtime with only supported Node.js compatibility APIs, not a general-purpose Node.js server. Check dependencies against the runtime before adopting them.
+- Migration code should prefer JavaScript (`.js`/`.jsx`). A narrowly scoped TypeScript exception is allowed only for TanStack-generated route-tree/type files where the framework requires it; keep application and business logic in JavaScript/JSX and do not spread TypeScript through the project. Cloudflare Workers use the Workers JavaScript runtime with only supported Node.js compatibility APIs, not a general-purpose Node.js server. Check dependencies against the runtime before adopting them.
 - Zero monthly cost is a hard requirement. Do not enable paid plans, paid services, or usage that can incur charges. Check current vendor limits before provisioning; define usage guards before relying on metered services. If the free budget is at risk, stop and report the choice needed rather than enabling billing.
 - Keep the current cPanel site, production MySQL, and production DNS unchanged during staging. Never point staging at production data or write from staging to production. Use sample data unless the user explicitly approves a sanitized snapshot and its handling.
 - Do not modify, redeploy, rename, or change routes/secrets for `workers/ai-worker`. If AI migration is requested, create a separate Worker in a new directory with separate config, secrets, and staging endpoint; a production route change requires explicit approval.
-- Credentials have been found in project files and prior Git history. Do not print, copy, or log secret values. Treat those credentials as needing rotation before any deployment.
+- Credentials have been found in project files and prior Git history. Do not print, copy, or log secret values. Treat those credentials as needing rotation before any production deployment. An isolated synthetic preview that does not use those credentials is permitted with explicit user approval; production secrets must not be reused there.
 - Do not include personal production records or credentials in plans, fixtures, logs, screenshots, commits, or agent handoffs.
 
 ## Decision and work tracking
