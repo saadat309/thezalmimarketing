@@ -1,0 +1,95 @@
+import { useEffect, useState } from 'react';
+import { findProperty, listCategories, listFiles, listMaps, listProperties } from './data/repository.js';
+import { setPageMetadata } from './lib/seo.js';
+
+const navItems = [
+  ['Home', '/'], ['Properties', '/properties/'], ['Maps', '/maps/'], ['Files', '/files/'], ['Calculator', '/calculator/'],
+];
+
+function navigate(path) {
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+function AppLink({ href, children, className = '' }) {
+  return <a className={className} href={href} onClick={(event) => { event.preventDefault(); navigate(href); }}>{children}</a>;
+}
+
+function Layout({ children }) {
+  return <>
+    <a className="skip-link" href="#main">Skip to content</a>
+    <header className="site-header"><AppLink className="brand" href="/"><span className="brand-mark">Z</span><span>Zalmi <em>Staging</em></span></AppLink><nav aria-label="Primary navigation">{navItems.map(([label, href]) => <AppLink key={href} href={href}>{label}</AppLink>)}</nav></header>
+    <main id="main">{children}</main>
+    <footer><strong>Zalmi Staging</strong><span>Synthetic public migration environment. No production listings, media, or services.</span></footer>
+  </>;
+}
+
+function PageMeta({ title, description, canonicalPath, robots }) {
+  useEffect(() => setPageMetadata({ title, description, canonicalPath, robots }), [title, description, canonicalPath, robots]);
+  return null;
+}
+
+function PropertyCard({ property }) {
+  return <article className="property-card"><div className="property-art" aria-hidden="true"><span>{property.category}</span></div><div className="card-copy"><small>{property.tag}</small><h2><AppLink href={`/properties/${property.slug}/`}>{property.title}</AppLink></h2><p>{property.location}</p><div className="property-facts"><b>{property.price}</b><span>{property.size}</span>{property.beds ? <span>{property.beds} beds</span> : null}</div></div></article>;
+}
+
+function Home() {
+  const featured = listProperties().slice(0, 3);
+  return <Layout><PageMeta title="Zalmi Staging | Deliberate real estate decisions" description="Synthetic staging environment for the Zalmi public migration." canonicalPath="/" />
+    <section className="hero"><div><p className="eyebrow">A PUBLIC-MIGRATION PROTOTYPE</p><h1>Find the next move with <i>clarity.</i></h1><p className="lede">A calm, quick starting point for the future Zalmi Marketing public experience—built with synthetic records only.</p><div className="hero-actions"><AppLink className="button" href="/properties/">Browse sample properties</AppLink><AppLink className="text-link" href="/maps/">Explore map records →</AppLink></div></div><div className="hero-panel"><span>01 / STAGING</span><p>Useful information, clear routes, and deliberate search behavior.</p><div className="sun" /></div></section>
+    <section className="section"><div className="section-head"><p className="eyebrow">CURATED SAMPLE INVENTORY</p><h2>Space to consider.</h2><AppLink className="text-link" href="/properties/">View all sample listings →</AppLink></div><div className="grid">{featured.map((property) => <PropertyCard key={property.slug} property={property} />)}</div></section>
+    <section className="value-band"><p>Designed for a future that is fast, legible, and respectful of search intent.</p><div><span>Clear routes</span><span>Synthetic data</span><span>Staged safely</span></div></section>
+  </Layout>;
+}
+
+function Properties() {
+  const category = new URLSearchParams(window.location.search).get('category');
+  const visibleProperties = listProperties(category);
+  return <Layout><PageMeta title="Sample properties | Zalmi Staging" description="Synthetic property records for the Zalmi migration staging environment." canonicalPath="/properties/" />
+    <section className="page-intro"><p className="eyebrow">SYNTHETIC INVENTORY</p><h1>Sample properties.</h1><p>Filter behavior is locally fixture-backed. Filter URLs canonicalize to this base listing page.</p></section><section className="section filter-section"><div className="filters" aria-label="Property category filters"><AppLink className={!category ? 'filter active' : 'filter'} href="/properties/">All</AppLink>{listCategories().map((item) => <AppLink key={item} className={category === item ? 'filter active' : 'filter'} href={`/properties/?category=${encodeURIComponent(item)}`}>{item}</AppLink>)}</div><p className="result-count">{visibleProperties.length} sample {visibleProperties.length === 1 ? 'record' : 'records'}</p><div className="grid">{visibleProperties.map((property) => <PropertyCard key={property.slug} property={property} />)}</div></section>
+  </Layout>;
+}
+
+function PropertyDetail({ property }) {
+  return <Layout><PageMeta title={`${property.title} | Zalmi Staging`} description={property.summary} canonicalPath={`/properties/${property.slug}/`} /><section className="detail-hero"><div className="detail-art" aria-hidden="true"><span>{property.category}</span></div><div><p className="eyebrow">{property.tag}</p><h1>{property.title}</h1><p className="location">{property.location}</p><p className="price">{property.price}</p><dl><div><dt>Size</dt><dd>{property.size}</dd></div><div><dt>Bedrooms</dt><dd>{property.beds ?? 'Not applicable'}</dd></div><div><dt>Status</dt><dd>Synthetic sample</dd></div></dl></div></section><section className="section detail-copy"><p className="eyebrow">ABOUT THIS SAMPLE</p><h2>Built to validate the route, not to represent a live listing.</h2><p>{property.summary}</p><AppLink className="text-link" href="/properties/">← Back to properties</AppLink></section></Layout>;
+}
+
+function DirectoryPage({ kind }) {
+  const isMaps = kind === 'maps';
+  const records = isMaps ? listMaps() : listFiles();
+  const label = isMaps ? 'Maps & master plans' : 'Files & guides';
+  return <Layout><PageMeta title={`${label} | Zalmi Staging`} description={`Synthetic ${label.toLowerCase()} for staging navigation.`} canonicalPath={`/${kind}/`} /><section className="page-intro"><p className="eyebrow">SYNTHETIC DIRECTORY</p><h1>{label}.</h1><p>These records establish information architecture without copying production documents.</p></section><section className="section directory">{records.map((record) => <article key={record.title}><span>{isMaps ? record.type : record.format}</span><h2>{record.title}</h2><p>{isMaps ? record.location : record.note}</p><button type="button" disabled>{isMaps ? 'Map preview deferred' : 'Download deferred'}</button></article>)}</section></Layout>;
+}
+
+function Calculator() {
+  return <Layout><PageMeta title="Calculator information | Zalmi Staging" description="Placeholder information architecture for the future calculator migration." canonicalPath="/calculator/" /><section className="page-intro"><p className="eyebrow">CALCULATOR MIGRATION</p><h1>Fees deserve precision.</h1><p>The calculator engine is intentionally deferred until its business rules and rounding examples are validated. This page preserves the future public information route only.</p><AppLink className="button" href="/properties/">Explore synthetic listings</AppLink></section></Layout>;
+}
+
+function NotFound() {
+  return <Layout><PageMeta title="Page not found | Zalmi Staging" description="The requested staging route does not exist." canonicalPath="/404/" robots="noindex, nofollow" /><section className="not-found"><p className="eyebrow">404</p><h1>This route is not part of staging.</h1><p>The future Worker/hosting runtime will return the matching HTTP 404 status.</p><AppLink className="button" href="/">Return home</AppLink></section></Layout>;
+}
+
+function resolvePage() {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/') return <Home />;
+  if (path === '/properties') return <Properties />;
+  if (path === '/maps') return <DirectoryPage kind="maps" />;
+  if (path === '/files') return <DirectoryPage kind="files" />;
+  if (path === '/calculator') return <Calculator />;
+  const match = path.match(/^\/properties\/([^/]+)$/);
+  if (match) {
+    const property = findProperty(match[1]);
+    return property ? <PropertyDetail property={property} /> : <NotFound />;
+  }
+  return <NotFound />;
+}
+
+export default function App() {
+  const [, setLocationVersion] = useState(0);
+  useEffect(() => {
+    const onPopState = () => setLocationVersion((value) => value + 1);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+  return resolvePage();
+}

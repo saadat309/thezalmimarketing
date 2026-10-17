@@ -84,3 +84,12 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Files:** `docs/superpowers/specs/2026-10-17-isolated-staging-web-design.md`, `agent-plans/DECISIONS.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/CHANGELOG.md`.
 - **Verification:** Read repository Vite configuration, package manifest, route layout, prior inventory/design records, and `git diff --check`. No app directory, runtime dependency, Cloudflare resource, deployment, cPanel setting, production data, DNS record, PHP handler, or AI Worker was changed.
 - **Risk/follow-up:** The design must be reviewed by the user before creating an implementation plan or code. Email, production password migration, full RBAC, storage guard values, calculator rules, and cutover remain deferred.
+
+## 2026-10-17 — Implement isolated synthetic public staging slice
+
+- **Type:** Local application implementation.
+- **Summary:** Added `apps/staging-web/`, an independent JavaScript/JSX Vite + React public staging application. It has synthetic fixture/repository modules, Home, Properties/filter, Property Detail, Maps, Files, Calculator-information, and rendered not-found views; trailing-slash canonical routing behavior; static robots, sitemap, and host-compatible `404.html` artifacts. The root Vite/PHP app was not modified.
+- **Decision records:** Implemented the first-slice direction in ADR-008 through ADR-011. No Cloudflare, storage, auth, email, calculator, or cutover decision was made.
+- **Files:** `apps/staging-web/**`, `agent-plans/07-isolated-staging-web-implementation-plan.md`, `agent-plans/PROJECT-STATE.md`, `agent-plans/CHANGELOG.md`.
+- **Verification:** Static inspection confirmed JavaScript/JSX-only staging source and no production-origin/database/credential pattern. A portable, ignored Node toolchain supplied local dependencies; the staging production build completed successfully. Isolated-browser checks passed for Home, filtered Properties, Property Detail, Maps, and rendered not-found metadata; the mobile accessibility tree includes a skip link, labelled navigation, logical headings, and useful links; no browser console errors/warnings were observed. `robots.txt` and the eight-entry sitemap were retrieved locally; sitemap `<loc>` values contain no query URLs. `git diff --check` passed.
+- **Risk/follow-up:** The local Vite SPA returns HTTP `200` with rendered not-found content for unknown routes; a future Worker/host runtime must return the actual HTTP `404` status. No deployment or Cloudflare resource was created.

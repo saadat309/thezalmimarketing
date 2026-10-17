@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /forgot-password/
+Disallow: /reset-password/
+Disallow: /accept-invite/
+Allow: /
+
+Sitemap: http://localhost:4174/sitemap.xml
