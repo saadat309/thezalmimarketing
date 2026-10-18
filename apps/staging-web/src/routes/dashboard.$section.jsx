@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3, Copy, FileDown, MoreHorizontal, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3, Copy, FileDown, GripVertical, MoreHorizontal, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-react'
 import { createAdminRecord, deleteAdminRecord, readAdminCollection, updateAdminRecord } from '../data/admin-api.js'
 import QueriesWorkspace from '../components/dashboard/QueriesWorkspace.jsx'
 import LandingPageWorkspace from '../components/dashboard/LandingPageWorkspace.jsx'
@@ -197,8 +197,17 @@ function OrderedLabelControl({ options, value, onChange }) {
   }
   return <div className="dashboard-label-control">
     <div className="dashboard-label-selected" aria-label="Selected labels">
-      {selected.length ? selected.map((slug, index) => <div className="dashboard-label-row" key={slug}>
-        <span className="dashboard-label-chip">{labelsByValue.get(slug) || slug}</span>
+      {selected.length ? selected.map((slug, index) => <div className="dashboard-label-row" key={slug} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
+        event.preventDefault()
+        const draggedSlug = event.dataTransfer.getData('text/plain')
+        const from = selected.indexOf(draggedSlug)
+        if (from < 0 || from === index) return
+        const next = [...selected]
+        next.splice(from, 1)
+        next.splice(index, 0, draggedSlug)
+        onChange(next)
+      }}>
+        <div className="dashboard-label-item"><button type="button" className="dashboard-label-drag" draggable aria-label={`Drag ${labelsByValue.get(slug) || slug} to reorder`} onDragStart={(event) => { event.dataTransfer.setData('text/plain', slug); event.dataTransfer.effectAllowed = 'move' }}><GripVertical size={16} aria-hidden="true" /></button><span className="dashboard-label-chip">{labelsByValue.get(slug) || slug}</span></div>
         <div className="dashboard-label-actions">
           <button type="button" aria-label={`Move ${labelsByValue.get(slug) || slug} up`} disabled={index === 0} onClick={() => move(index, -1)}>↑</button>
           <button type="button" aria-label={`Move ${labelsByValue.get(slug) || slug} down`} disabled={index === selected.length - 1} onClick={() => move(index, 1)}>↓</button>

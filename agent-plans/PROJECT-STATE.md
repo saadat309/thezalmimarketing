@@ -44,7 +44,7 @@
 
 ## Next safe actions
 
-1. Complete authenticated source-to-staging visual review for Property/File/Map forms and continue remaining source comparisons (notably badge-label semantics and media lifecycle) only within the approved synthetic boundary. Label selection and display ordering are now implemented; no global label CRUD or media operation was added. Do not claim pixel-perfect parity until visual comparison is complete.
+1. Complete authenticated source-to-staging visual review for Property/File/Map forms and continue remaining source comparisons (notably badge-label semantics and media lifecycle) only within the approved synthetic boundary. Label selection, drag ordering, and keyboard-operable ordering are now implemented; no global label CRUD or media operation was added. Do not claim pixel-perfect parity until visual comparison is complete.
 2. Continue source-to-staging review of remaining dashboard forms and workflows; Rates/Transfer Fees CSV imports are implemented synthetically. Do not add a Fee Rules import or calculator PDF workflow absent from the source; its legacy PDF button is toast-only. Keep media/storage disabled.
 3. Keep hosted test traffic modest within the confirmed Workers Free limit; do not activate a paid plan or add metered bindings/services.
 4. Obtain only the owner's safe aggregate data/media inventory before any storage design; never request records or secret values.
