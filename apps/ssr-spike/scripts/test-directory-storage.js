@@ -8,6 +8,7 @@ import { createDirectoryApi } from '../src/lib/directory-api.js'
 import { createD1DirectoryRepository, directorySeedSql } from '../src/lib/directory-repository.js'
 import { createD1TaxonomyRepository, taxonomySeedSql } from '../src/lib/taxonomy-repository.js'
 import { createD1LandingRepository } from '../src/lib/landing-repository.js'
+import { createD1QueryRepository, syntheticQuerySeedSql } from '../src/lib/query-repository.js'
 import { syntheticFiles } from '../src/lib/directory-fixtures.js'
 import { syntheticTaxonomy } from '../src/lib/taxonomy-fixtures.js'
 
@@ -48,6 +49,8 @@ database.sqlite.exec(taxonomySeedSql(syntheticTaxonomy))
 database.sqlite.exec(directorySeedSql(syntheticFiles.map((record) => ({ kind: 'files', record }))))
 database.sqlite.exec(readFileSync(new URL('../migrations/0008_backfill_files_to_properties.sql', import.meta.url), 'utf8'))
 database.sqlite.exec(readFileSync(new URL('../migrations/0010_schema_aligned_landing_sections.sql', import.meta.url), 'utf8'))
+database.sqlite.exec(readFileSync(new URL('../migrations/0011_schema_aligned_queries.sql', import.meta.url), 'utf8'))
+database.sqlite.exec(syntheticQuerySeedSql)
 const cityColumns = new Set(database.sqlite.prepare('PRAGMA table_info(cities)').all().map((column) => column.name))
 for (const column of ['id', 'name', 'pic', 'thumb', 'created_at', 'updated_at', 'hide', 'slug']) assert.ok(cityColumns.has(column))
 database.sqlite.prepare('INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)').run(41, 'Imported Synthetic Category', 'imported-synthetic-category')
@@ -87,7 +90,8 @@ const environment = {
 const auth = createAdminAuth(environment, createMemoryAdminStorage())
 const taxonomyRepository = createD1TaxonomyRepository(database)
 const landingRepository = createD1LandingRepository(database)
-const api = createAdminDataApi(createMemoryAdminRepository(), auth, createMemoryAdminStorage(), null, directoryRepository, taxonomyRepository, landingRepository)
+const queryRepository = createD1QueryRepository(database)
+const api = createAdminDataApi(createMemoryAdminRepository(), auth, createMemoryAdminStorage(), null, directoryRepository, taxonomyRepository, landingRepository, queryRepository)
 const base = 'http://127.0.0.1:4175/api/v1/admin'
 const origin = 'http://127.0.0.1:4182'
 assert.equal((await api.collection(request(`${base}/maps`), 'maps')).status, 401)
@@ -124,6 +128,9 @@ assert.deepEqual(landingRecord.selectedItems, ['57', '1'])
 assert.equal(database.sqlite.prepare('SELECT COUNT(*) AS count FROM landing_section_items WHERE section_id = 3').get().count, 2)
 assert.equal(database.sqlite.prepare('SELECT title FROM landing_sections WHERE id = 3').get().title, 'Synthetic Featured Homes')
 assert.equal((await landingRepository.listPublic()).some((section) => section.slug === 'featured-properties'), false)
+const reorderedLanding = await api.item(request(`${base}/landing-page/3`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: ['1', '57'] }) }), 'landing-page', '3')
+assert.deepEqual((await reorderedLanding.json()).item.selectedItems, ['1', '57'])
+assert.deepEqual(await landingRepository.find('3').then((item) => item.selectedItems), ['1', '57'])
 const mapSelection = await api.item(request(`${base}/landing-page/5`, {
   method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: [String(adminMapItems[0].source_id)] }),
 }), 'landing-page', '5')
@@ -135,6 +142,21 @@ const fileSelection = await api.item(request(`${base}/landing-page/6`, {
 assert.equal(fileSelection.status, 200)
 assert.deepEqual((await fileSelection.json()).item.selectedItems, [String(adminFileItems[0].source_id)])
 assert.equal((await landingRepository.listPublic()).some((section) => section.slug === 'available-files'), false)
+
+const queriesBefore = await api.collection(request(`${base}/queries`, { headers: { Origin: origin, Cookie: cookie } }), 'queries')
+assert.equal(queriesBefore.status, 200)
+assert.equal((await queriesBefore.json()).count, 2)
+assert.equal(database.sqlite.prepare('SELECT COUNT(*) AS count FROM queries WHERE ip_address IS NOT NULL OR user_agent IS NOT NULL OR processed_by IS NOT NULL').get().count, 0)
+const createdQueryResponse = await api.collection(request(`${base}/queries`, { method: 'POST', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic API Visitor', email: 'api@example.invalid', phone: '+92 300 0000002', message: 'Synthetic-only staging record.', is_read: false }) }), 'queries')
+assert.equal(createdQueryResponse.status, 201)
+const createdQuery = (await createdQueryResponse.json()).item
+assert.ok(/^\d+$/.test(createdQuery.id))
+assert.equal(database.sqlite.prepare('SELECT ip_address FROM queries WHERE id = ?').get(Number(createdQuery.id)).ip_address, null)
+const readQuery = await api.item(request(`${base}/queries/${createdQuery.id}`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ is_read: true }) }), 'queries', createdQuery.id)
+assert.equal((await readQuery.json()).item.is_read, true)
+assert.equal((await createD1QueryRepository(database).find(createdQuery.id)).is_read, true)
+assert.equal((await api.item(request(`${base}/queries/${createdQuery.id}`, { method: 'DELETE', headers: writeHeaders }), 'queries', createdQuery.id)).status, 200)
+assert.equal(await queryRepository.find(createdQuery.id), null)
 const rejectedLandingStructure = await api.item(request(`${base}/landing-page/3`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ order: 1 }) }), 'landing-page', '3')
 assert.equal(rejectedLandingStructure.status, 400)
 const rejectedLandingCreate = await api.collection(request(`${base}/landing-page`, { method: 'POST', headers: writeHeaders, body: '{}' }), 'landing-page')

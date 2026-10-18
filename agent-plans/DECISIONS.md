@@ -249,3 +249,17 @@ This is the durable record of decisions that affect migration work. It is append
 - **Media boundary:** Do not accept uploads or copy/store media paths. Source media/video columns remain nullable; embed text is stored only for an explicitly embed-mode section.
 - **Boundaries:** Local D1 (`remote: false`) and synthetic content only. No production export, remote storage, deployment, DNS, live site/cPanel/MySQL, credentials, or `workers/ai-worker` changes.
 - **Source:** User clarified that section display order must remain unchanged and only content and visibility need editing, within the previously approved local D1/schema-alignment work.
+
+### ADR-031 — Reorder cards within fixed Landing Page sections
+
+- **Status:** Accepted by the user on 2026-10-18.
+- **Decision:** Keep the six Landing Page sections, their identities, and section order fixed. Admins may choose and reorder selected Property, Category, Map, and File cards within each corresponding section. Preserve card order through `landing_section_items.item_order`; popup/video sections have no card ordering controls.
+- **Boundaries:** Local synthetic D1 only; no production content, media upload, or section-structure editing.
+- **Source:** User explicitly asked that cards shown in the four collection sections be reorderable while section order remains fixed.
+
+### ADR-032 — Persist synthetic-only Query admin records in local D1
+
+- **Status:** Accepted by the user on 2026-10-18 for staging-only synthetic records.
+- **Decision:** Translate the source `queries` table into local D1 and use it for the protected admin list/create/edit/read-state/delete workflow. Seed fictional examples only. Keep `ip_address`, `user_agent`, and `processed_by` NULL; add no public contact submission or email behavior. A property relation may reference only an existing local synthetic Property; property title is joined from that row.
+- **Unresolved:** Production Query import/retention, actual visitor PII handling, rate limits/spam controls, and mapping `processed_by` to persisted dashboard users require separate decisions. `processed_by` remains nullable without an FK because staging admin identities are not mapped to source `users` rows.
+- **Source:** User approved synthetic admin-only D1 persistence with these exclusions; this is not approval to process or import actual visitor submissions.

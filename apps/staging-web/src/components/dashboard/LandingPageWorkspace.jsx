@@ -39,6 +39,14 @@ export default function LandingPageWorkspace() {
     patchSection(section.id, { selectedItems: selectedItems.includes(key) ? selectedItems.filter((id) => id !== key) : [...selectedItems, key] })
   }
 
+  function moveItem(section, index, direction) {
+    const selectedItems = [...(section.selectedItems || [])]
+    const destination = index + direction
+    if (destination < 0 || destination >= selectedItems.length) return
+    ;[selectedItems[index], selectedItems[destination]] = [selectedItems[destination], selectedItems[index]]
+    patchSection(section.id, { selectedItems })
+  }
+
   async function save() {
     setBusy(true); setError(''); setNotice('')
     try {
@@ -67,7 +75,7 @@ export default function LandingPageWorkspace() {
             {section.collection === 'popup' && <label>Display delay (ms)<input type="number" min="0" max="60000" value={section.delayMs} onChange={(event) => patchSection(section.id, { delayMs: Math.min(60000, Math.max(0, Number(event.target.value))) })} /></label>}
             {section.mediaMode === 'embed' && <label>{section.collection === 'popup' ? 'YouTube/Vimeo URL' : 'Video embed URL'}<input type="url" placeholder="https://…" value={section.mediaUrl} onChange={(event) => patchSection(section.id, { mediaUrl: event.target.value })} /></label>}
             {section.mediaMode === 'upload' && <p className="landing-upload-placeholder">Uploads are disabled in this local migration preview; no files are accepted or stored.</p>}
-          </div> : <div className="landing-items-config"><div className="landing-items-title"><div><h4>Available Items</h4><p>Select items to display in this section.</p></div><span>{selected.length} selected</span></div><input className="landing-items-search" aria-label={`Search ${section.collection}`} placeholder={`Search ${section.collection}…`} value={itemSearch[section.id] || ''} onChange={(event) => setItemSearch((current) => ({ ...current, [section.id]: event.target.value }))} /><div className="landing-available-items">{visibleOptions.map((item) => { const id = itemKey(item); const label = item.title || item.name || id; return <label key={id}><input type="checkbox" checked={(section.selectedItems || []).includes(id)} onChange={() => toggleItem(section, id)} /><span>{label}</span></label> })}{!options.length && <p>No public synthetic {section.collection} records available.</p>}{options.length > 0 && !visibleOptions.length && <p>No matching items.</p>}</div><h4 className="landing-selected-title">Selected Items</h4><ol className="landing-selected-items">{selected.map((item) => <li key={itemKey(item)}><span>{item.title || item.name || item.id}</span></li>)}</ol></div>}
+          </div> : <div className="landing-items-config"><div className="landing-items-title"><div><h4>Available Items</h4><p>Select items and arrange their display order.</p></div><span>{selected.length} selected</span></div><input className="landing-items-search" aria-label={`Search ${section.collection}`} placeholder={`Search ${section.collection}…`} value={itemSearch[section.id] || ''} onChange={(event) => setItemSearch((current) => ({ ...current, [section.id]: event.target.value }))} /><div className="landing-available-items">{visibleOptions.map((item) => { const id = itemKey(item); const label = item.title || item.name || id; return <label key={id}><input type="checkbox" checked={(section.selectedItems || []).includes(id)} onChange={() => toggleItem(section, id)} /><span>{label}</span></label> })}{!options.length && <p>No public synthetic {section.collection} records available.</p>}{options.length > 0 && !visibleOptions.length && <p>No matching items.</p>}</div><h4 className="landing-selected-title">Selected Items</h4><ol className="landing-selected-items">{selected.map((item, index) => <li key={itemKey(item)}><span>{item.title || item.name || item.id}</span><div className="landing-selected-actions"><button type="button" aria-label={`Move ${item.title || item.name || item.id} up`} disabled={index === 0 || busy} onClick={() => moveItem(section, index, -1)}>↑</button><button type="button" aria-label={`Move ${item.title || item.name || item.id} down`} disabled={index === selected.length - 1 || busy} onClick={() => moveItem(section, index, 1)}>↓</button></div></li>)}</ol></div>}
         </div>
       </article>
     })}</div>

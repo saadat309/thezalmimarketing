@@ -88,6 +88,9 @@ Calculator schema and decimal-preservation checks can be run with
 `npm run test:calculator-storage`. Test password
 values are generated in memory and are not fixed or printed. The D1 storage
 test uses Node's built-in SQLite module and requires Node.js 22.5 or later.
+The local seed command also inserts two fictional admin-only Query examples.
+Query IP address, user agent, and processed-admin fields remain empty; this
+staging slice has no public contact-submission endpoint or email delivery.
 
 The canonical origin is a reserved `.invalid` placeholder. Fixture content is
 fabricated and must not be replaced with production records or media.

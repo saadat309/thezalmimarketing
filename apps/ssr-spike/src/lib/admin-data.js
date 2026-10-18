@@ -1013,7 +1013,7 @@ export function createMemoryAdminRepository() {
   }
 }
 
-export function createAdminDataApi(repository, auth, profileStorage = createMemoryAdminStorage(), propertyRepository = null, directoryRepository = null, taxonomyRepository = null, landingRepository = null) {
+export function createAdminDataApi(repository, auth, profileStorage = createMemoryAdminStorage(), propertyRepository = null, directoryRepository = null, taxonomyRepository = null, landingRepository = null, queryRepository = null) {
   return {
     async collection(request, domain) {
       if (domain === 'labels') return await handleLabelCollection(request, auth, propertyRepository)
@@ -1064,6 +1064,8 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       if (request.method === 'GET') {
         const items = domain === 'landing-page' && landingRepository
           ? await landingRepository.list()
+          : domain === 'queries' && queryRepository
+          ? await queryRepository.list()
           : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
           ? await taxonomyRepository.list(domain)
           : domain === 'properties' && propertyRepository
@@ -1138,6 +1140,7 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value)
             : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value)
               : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value) : validateFields(domain, body.value, taxonomyFields)
+      if (domain === 'queries' && result.property_id && queryRepository && !await queryRepository.propertyExists(result.property_id)) errors.property_id = 'Choose an existing local staging property.'
       const mapConflict = !Object.keys(errors).length && (taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain)
         ? await taxonomyRepository.hasMapConflict(domain, result.map_ids || [])
         : taxonomyMapConflict(domain, result.map_ids))
@@ -1152,6 +1155,14 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
         const source = await propertyRepository.listAllProperties()
         const stored = await propertyRepository.insertPropertyRecord(buildPropertyRecord(result, source))
         return stored ? json(request, { item: toAdminRecord('properties', stored) }, 201) : json(request, { error: { code: 'write_failed' } }, 500)
+      }
+      if (domain === 'queries' && queryRepository) {
+        try {
+          const item = await queryRepository.insert(result)
+          return item ? json(request, { item }, 201) : json(request, { error: { code: 'write_failed' } }, 500)
+        } catch {
+          return json(request, { error: { code: 'write_failed' } }, 400)
+        }
       }
       if (['files', 'maps'].includes(domain) && directoryRepository) {
         const existing = await directoryRepository.listAll(domain)
@@ -1221,6 +1232,8 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
         const directoryItem = ['files', 'maps'].includes(domain) && directoryRepository ? await directoryRepository.find(domain, id) : null
         const item = domain === 'landing-page' && landingRepository
           ? await landingRepository.find(id)
+          : domain === 'queries' && queryRepository
+          ? await queryRepository.find(id)
           : domain === 'properties' && propertyRepository
           ? property ? toAdminRecord('properties', property) : null
           : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
@@ -1232,6 +1245,7 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       }
       if (request.method === 'DELETE') {
         if (['calculator-fees', 'calculator-tax-rates', 'calculator-property-types'].includes(domain)) return json(request, { error: { code: 'read_only_action' } }, 405)
+        if (domain === 'queries' && queryRepository) return await queryRepository.delete(id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
         if (domain === 'properties' && propertyRepository) return await propertyRepository.deletePropertyRecord(id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
         if (['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository) return await taxonomyRepository.delete(domain, id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
         if (['files', 'maps'].includes(domain) && directoryRepository) return await directoryRepository.delete(domain, id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
@@ -1245,6 +1259,8 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       const currentDirectory = ['files', 'maps'].includes(domain) && directoryRepository ? await directoryRepository.find(domain, id) : null
       const currentAdminProperty = domain === 'landing-page' && landingRepository
         ? await landingRepository.find(id)
+        : domain === 'queries' && queryRepository
+        ? await queryRepository.find(id)
         : domain === 'properties' && propertyRepository
         ? currentProperty ? toAdminRecord('properties', currentProperty) : null
         : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
@@ -1262,6 +1278,7 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
             : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value, { updating: true })
               : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value, { updating: true }) : validateFields(domain, body.value,
                 taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain) ? { map_ids: await taxonomyRepository.mapOptions() } : {})
+      if (domain === 'queries' && result.property_id && queryRepository && !await queryRepository.propertyExists(result.property_id)) errors.property_id = 'Choose an existing local staging property.'
       const updateMapConflict = !Object.keys(errors).length && (taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain)
         ? await taxonomyRepository.hasMapConflict(domain, result.map_ids || [], id)
         : taxonomyMapConflict(domain, result.map_ids, id))
@@ -1272,6 +1289,10 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
       if (domain === 'landing-page' && landingRepository) {
         const updated = await landingRepository.update(id, result)
+        return updated ? json(request, { item: updated }) : json(request, { error: { code: 'not_found' } }, 404)
+      }
+      if (domain === 'queries' && queryRepository) {
+        const updated = await queryRepository.update(id, result)
         return updated ? json(request, { item: updated }) : json(request, { error: { code: 'not_found' } }, 404)
       }
       if (domain === 'properties' && propertyRepository) {
