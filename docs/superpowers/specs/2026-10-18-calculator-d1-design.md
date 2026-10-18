@@ -1,6 +1,6 @@
 # Calculator D1 Adapter and Synthetic Data Design
 
-**Status:** Draft for owner review. The high-level local-D1 direction is approved; this detailed design is not yet approved for implementation.
+**Status:** Approved for local synthetic implementation by the user on 2026-10-18; implementation recorded in ADR-033.
 **Recorded:** 2026-10-18.
 **Scope:** `apps/ssr-spike/` local Worker + local D1 emulator and synthetic dashboard/API behavior only.
 
@@ -11,11 +11,11 @@ Replace the Calculator API/admin in-memory source of truth with the eight existi
 ## Approved boundaries
 
 - Use JavaScript only and the existing `STAGING_DB` binding with `remote: false`.
-- Keep the eight table/column meanings in migration 0009 aligned with `docs/property_transfer_calculator_schema.sql`; do not add production records or media.
+- Keep the eight table/column meanings aligned with the full checked-in database dump at `docs/zalmimarketing-schema.sql` and effective legacy PHP behavior; do not add production records or media.
 - Preserve numeric IDs and foreign-key relationships in D1. Continue emitting string IDs at current API/admin boundaries where the current UI expects them.
 - Preserve DECIMAL source values as canonical decimal text in D1; adapt to the existing numeric JSON/UI projection only at the boundary. Validate finite/range-safe values instead of silently returning non-finite numbers.
 - Keep the public calculator configuration `no-store`; the next fetch reads current local D1 values. Do not add polling or push updates.
-- Keep current public formulas, rounding, editable lines, and admin field behavior except for any explicitly approved decision below. CSV import remains limited to the existing Rates and Transfer Fees workflows.
+- Keep current public formulas, rounding, editable lines, and admin field behavior. CSV import remains limited to the existing Rates and Transfer Fees workflows.
 - No remote D1, resource provisioning, deployment, DNS, live-site/cPanel/MySQL connection, production export/import, email, or `workers/ai-worker` change.
 
 ## Proposed architecture
@@ -27,19 +27,12 @@ Replace the Calculator API/admin in-memory source of truth with the eight existi
 5. CSV preview validates against the current D1 configuration. Applying a fully valid Rates or Transfer Fees file creates missing phase/block records as currently supported and upserts rows by the existing logical scope. Apply a batch atomically so a rejected statement cannot leave a partially applied import. Keep upload size, row-count, duplicate detection, and CSRF bounds.
 6. Leave formulas and the frontend unchanged in this slice. Add storage/API/import tests first, then run the existing calculator golden tests against the D1-derived config to verify representative outputs remain unchanged.
 
-## Source compatibility and open decision
+## Fee Rule active-state compatibility
 
-The source `calculator_fee_rules` table has columns `id`, `fee_id`, `property_type`, `unit`, `min_area`, `max_area`, timestamps. It has no `is_active` column. However, the current synthetic Fee Rules API/form accepts and returns `is_active`, and the calculator golden tests include inactive fee-rule behavior.
+The dedicated `docs/property_transfer_calculator_schema.sql` excerpt omits `is_active`, but the full checked-in database dump at `docs/zalmimarketing-schema.sql` includes `calculator_fee_rules.is_active TINYINT(1) NOT NULL DEFAULT 1`. The legacy PHP confirms the effective schema/contract: `api/routes/calculator-fee-rules.php` ensures that column exists for older DBs; admin list returns both active and inactive rules; create defaults the flag to `1`; update preserves the current flag when omitted. `api/routes/calculator-config.php` includes only rules where `is_active = 1`.
 
-**Recommendation:** Preserve the import-ready source table unchanged and add a small local/staging extension table keyed by numeric `calculator_fee_rules.id` for the editor-only active flag. Missing extension rows mean active. Public calculator config joins this extension and retains the existing `is_active` JSON property. A future source-data export excludes this extension unless a separately approved export contract opts in. This preserves existing UI behavior without putting a non-source column into a source table, but it does mean the active toggle is staging-specific.
+**Design correction:** Keep `is_active` in the source-shaped D1 table. Migration 0009 has already been applied locally without it, so add it with the same default/boolean semantics in a forward-only migration; do not edit migration 0009. The full database dump and legacy PHP behavior are stronger evidence than the narrower standalone schema excerpt. No staging-only extension table is needed.
 
-Alternatives for owner selection:
-
-- **A (recommended):** Add a clearly named staging extension table for fee-rule active state. Source table remains unchanged; import/export tooling must keep the extension separate.
-- **B:** Treat every source fee rule as active and remove/ignore `is_active` from this domain's admin/API projection. This is simpler for import but changes current staging UI/API behavior and makes the inactive-rule golden case inapplicable.
-- **C:** Add `is_active` directly to `calculator_fee_rules`. This is not recommended because it diverges from the checked-in source schema and conflicts with the import-compatibility goal.
-
-Implementation is blocked on the user's choice of A or B (or another explicit direction). No extension migration or form behavior change is authorized by this draft.
 
 ## Validation and failure handling
 
@@ -64,16 +57,16 @@ Implementation is blocked on the user's choice of A or B (or another explicit di
 
 - Keeps the existing Calculator UI/formulas and current public contract as the default; it does not claim exact parity beyond the tested paths.
 - D1 remains local and synthetic; no data import, deployment, Cloudflare account mutation, or production cutover is included.
-- Source table definitions remain unchanged. The only proposed schema extension is isolated and pending explicit approval.
+- Preserve the full checked-in schema's Fee Rule active column. Migration 0009 needs a forward-only local follow-up because the narrower excerpt omitted it.
 - CSV changes must be transactional and use current DB state so previews and applications cannot drift to a fixture snapshot.
 - Numeric API projection is retained as previously approved, while exact source decimal strings remain in storage. Large imported values still need explicit boundary tests before any real import is planned.
-- Existing active-state semantics for fee rules are not silently selected; owner choice is required before implementation.
+- Fee Rule active-state behavior is confirmed by the full checked-in SQL dump and legacy PHP; the dedicated calculator SQL excerpt is incomplete on this column.
 
-## Implementation sequence after design approval
+## Implementation record
 
-1. Resolve Fee Rule active-state choice and record the accepted detail in a new linked ADR.
-2. Write a concise implementation plan and test inventory (the repository's referenced writing-plans skill is unavailable in this environment; use the repository spec as the source and a checked-in plan note if needed).
-3. Implement repository + synthetic seed + local migration only if option A is chosen.
-4. Wire public API/admin CRUD/CSV to D1, preserve current contracts, and add tests.
-5. Apply local migrations, seed synthetic data, run the test/build checks, refresh the route/API map, state, and changelog.
+- ADR-033 records user authorization, legacy evidence, and the local-only boundary.
+- Migration 0012 adds Fee Rule `is_active`; 0013 mirrors PHP duplicate guards for nullable/case-insensitive scopes. Applied migration 0009 remains immutable.
+- The Calculator repository, admin API, public route wiring, and deterministic local synthetic seed now use D1. CSV preview reads current D1 state and apply uses one transactional batch.
+- Existing calculator formulas were not changed. Public config keeps the current response envelope and `no-store`; active filtering and ordering match the checked-in PHP endpoint. Formula golden checks remain representative/source-derived rather than exhaustive execution of PHP.
+- Local migrations through 0013 and synthetic seeds were applied. Verification results are recorded in the append-only changelog.
 

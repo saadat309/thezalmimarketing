@@ -21,7 +21,7 @@ const propertyApi = createPropertyApi(createMemoryPropertyRepository(syntheticPr
 const directoryRepository = createMemoryDirectoryRepository({ maps: syntheticMaps, files: syntheticFiles })
 const mapsApi = createDirectoryApi(directoryRepository, 'maps')
 const filesApi = createDirectoryApi(directoryRepository, 'files')
-const calculatorConfigApi = async () => (await import('../src/lib/calculator-api.js')).handleCalculatorConfig(new Request('https://test.invalid/api/v1/calculator/config')).json()
+const calculatorConfigApi = async () => (await (await import('../src/lib/calculator-api.js')).handleCalculatorConfig(new Request('https://test.invalid/api/v1/calculator/config'))).json()
 const origin = 'http://127.0.0.1:4182'
 const base = 'http://127.0.0.1:4175/api/v1/admin'
 const response = await auth.login(new Request(`${base}/auth/login`, {
@@ -253,8 +253,7 @@ const updateRateResponse = await api.item(new Request(`${base}/calculator-rates/
 assert.equal(updateRateResponse.status, 200)
 liveConfig = await calculatorConfigApi()
 publicRate = liveConfig.calculator_rates.find((item) => item.id === newRate.id)
-assert.equal(publicRate.dc_per_sqft, 920)
-assert.equal(publicRate.is_active, false)
+assert.equal(publicRate, undefined, 'legacy public calculator config excludes inactive rates')
 const invalidRate = await api.collection(new Request(`${base}/calculator-rates`, {
   method: 'POST', headers: writeHeaders,
   body: JSON.stringify({ calculator_phase_id: 'missing-phase', calculator_block_id: '', calculator_property_type_id: 'type-res-plot', unit: 'sqft', dc_rate: -1, fbr_rate: 1000, is_active: true }),
@@ -305,7 +304,7 @@ const updateTransferFeeResponse = await api.item(new Request(`${base}/calculator
 }), 'calculator-transfer-fees', newTransferFee.id)
 assert.equal(updateTransferFeeResponse.status, 200)
 assert.equal((await updateTransferFeeResponse.json()).item.per_sqft_rate, 55.25)
-assert.equal((await calculatorConfigApi()).calculator_transfer_fees.find((item) => item.id === newTransferFee.id).is_active, false)
+assert.equal((await calculatorConfigApi()).calculator_transfer_fees.some((item) => item.id === newTransferFee.id), false, 'legacy public config excludes inactive transfer fees')
 const deleteTransferFeeResponse = await api.item(new Request(`${base}/calculator-transfer-fees/${newTransferFee.id}`, {
   method: 'DELETE', headers: writeHeaders,
 }), 'calculator-transfer-fees', newTransferFee.id)
@@ -338,8 +337,7 @@ const updateCalculatorFeeResponse = await api.item(new Request(`${base}/calculat
 }), 'calculator-fees', bianaFee.id)
 assert.equal(updateCalculatorFeeResponse.status, 200)
 const updatedBiana = (await calculatorConfigApi()).calculator_fees.find((item) => item.fee_key === 'biana')
-assert.equal(updatedBiana.amount, 4100)
-assert.equal(updatedBiana.is_active, false)
+assert.equal(updatedBiana, undefined, 'legacy public config excludes inactive fees')
 const forbiddenFeeKeyUpdate = await api.item(new Request(`${base}/calculator-fees/${bianaFee.id}`, {
   method: 'PATCH', headers: writeHeaders,
   body: JSON.stringify({ fee_key: 'renamed_biana' }),
@@ -375,8 +373,7 @@ const updateTaxRateResponse = await api.item(new Request(`${base}/calculator-tax
 }), 'calculator-tax-rates', filerTaxRate.id)
 assert.equal(updateTaxRateResponse.status, 200)
 const updatedTax = (await calculatorConfigApi()).calculator_tax_rates.find((item) => item.rate_key === 'seller_236c_filer')
-assert.equal(updatedTax.rate, 3.5)
-assert.equal(updatedTax.is_active, false)
+assert.equal(updatedTax, undefined, 'legacy public config excludes inactive tax rates')
 const forbiddenTaxKeyUpdate = await api.item(new Request(`${base}/calculator-tax-rates/${filerTaxRate.id}`, {
   method: 'PATCH', headers: writeHeaders,
   body: JSON.stringify({ rate_key: 'renamed_seller_tax' }),
@@ -419,7 +416,7 @@ const updateFeeRuleResponse = await api.item(new Request(`${base}/calculator-fee
   body: JSON.stringify({ fee_id: residentialRule.fee_id, property_type: residentialRule.property_type, unit: residentialRule.unit, min_area: 0, max_area: 10, fee_amount: 82000, is_active: false }),
 }), 'calculator-fee-rules', residentialRule.id)
 assert.equal(updateFeeRuleResponse.status, 200)
-assert.equal((await calculatorConfigApi()).calculator_fee_rules.find((item) => item.id === residentialRule.id).fee_amount, 82000)
+assert.equal((await calculatorConfigApi()).calculator_fee_rules.some((item) => item.id === residentialRule.id), false, 'legacy public calculator config excludes inactive fee rules')
 const deleteFeeRuleResponse = await api.item(new Request(`${base}/calculator-fee-rules/${newFeeRule.id}`, {
   method: 'DELETE', headers: writeHeaders,
 }), 'calculator-fee-rules', newFeeRule.id)

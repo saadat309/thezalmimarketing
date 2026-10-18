@@ -32,7 +32,7 @@ const template = await api.item(new Request(`${base}/calculator-rates/template`,
 assert.equal(template.status, 200)
 assert.match(template.headers.get('content-type'), /text\/csv/)
 assert.equal(template.headers.get('access-control-allow-origin'), origin)
-assert.match(await template.text(), /DHA Lahore \(Synthetic\)/)
+assert.match(await template.text(), /DHA Lahore/)
 assert.equal((await api.item(new Request(`${base}/calculator-fees/template`, { headers: readHeaders }), 'calculator-fees', 'template')).status, 404)
 
 async function importFile(domain, content, name = 'sample.csv', validateOnly = false, headers = writeHeaders) {

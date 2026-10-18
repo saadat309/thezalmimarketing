@@ -9,7 +9,7 @@ database.exec('PRAGMA foreign_keys = ON')
 for (const migration of [
   '0001_staging_admin_storage.sql', '0002_staging_properties.sql', '0003_staging_directories.sql',
   '0004_schema_aligned_text_taxonomy.sql', '0005_schema_aligned_properties.sql',
-  '0006_property_source_indexes.sql', '0009_schema_aligned_calculator.sql',
+  '0006_property_source_indexes.sql', '0009_schema_aligned_calculator.sql', '0012_calculator_fee_rule_active.sql', '0013_calculator_legacy_uniqueness.sql',
 ]) {
   if (migration === '0009_schema_aligned_calculator.sql') database.exec(taxonomySeedSql(syntheticTaxonomy))
   database.exec(readFileSync(new URL(`../migrations/${migration}`, import.meta.url), 'utf8'))
@@ -24,7 +24,7 @@ const expected = {
   calculator_transfer_fees: ['id', 'calculator_phase_id', 'calculator_block_id', 'category', 'reference_amount', 'reference_size', 'reference_unit', 'is_active', 'created_at', 'updated_at'],
   calculator_fees: ['id', 'fee_key', 'fee_name', 'amount', 'charge_unit', 'is_active', 'created_at', 'updated_at'],
   calculator_tax_rates: ['id', 'rate_key', 'rate_name', 'rate', 'rate_unit', 'is_active', 'created_at', 'updated_at'],
-  calculator_fee_rules: ['id', 'fee_id', 'property_type', 'unit', 'min_area', 'max_area', 'fee_amount', 'created_at', 'updated_at'],
+  calculator_fee_rules: ['id', 'fee_id', 'property_type', 'unit', 'min_area', 'max_area', 'fee_amount', 'is_active', 'created_at', 'updated_at'],
 }
 for (const [table, columns] of Object.entries(expected)) {
   const actual = tableColumns(table)

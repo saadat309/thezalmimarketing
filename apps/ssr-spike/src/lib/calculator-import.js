@@ -1,4 +1,4 @@
-import { syntheticCalculatorConfig as config } from './calculator-fixtures.js'
+import { syntheticCalculatorConfig as defaultConfig } from './calculator-fixtures.js'
 
 const MAX_CSV_BYTES = 512 * 1024
 const MAX_CSV_ROWS = 500
@@ -8,11 +8,11 @@ export const CALCULATOR_CSV_DOMAINS = Object.freeze(['calculator-rates', 'calcul
 const templates = {
   'calculator-rates': {
     filename: 'calculator_rates_sample.csv',
-    content: 'City,Society,Phase,Block,Category,Property Type,Unit,DC Rate,FBR Rate,Active\r\nLahore,DHA Lahore (Synthetic),Sample Phase,,Residential,Plot,Per Marla,425000,440000,1\r\nLahore,DHA Lahore (Synthetic),Sample Phase,Sample Block A,Residential,House,Per Sq. Ft.,2200,2500,1\r\n',
+    content: 'City,Society,Phase,Block,Category,Property Type,Unit,DC Rate,FBR Rate,Active\r\nLahore,DHA Lahore,Sample Phase,,Residential,Plot,Per Marla,425000,440000,1\r\nLahore,DHA Lahore,Sample Phase,Sample Block A,Residential,House,Per Sq. Ft.,2200,2500,1\r\n',
   },
   'calculator-transfer-fees': {
     filename: 'calculator_transfer_fees_sample.csv',
-    content: 'City,Society,Phase,Block,Category,Reference Size,Reference Unit,Reference Transfer Fee,Active\r\nLahore,DHA Lahore (Synthetic),Sample Phase,,Residential,5,Marla,42000,1\r\nLahore,DHA Lahore (Synthetic),Sample Phase,Sample Block A,Commercial,5,Marla,95000,1\r\n',
+    content: 'City,Society,Phase,Block,Category,Reference Size,Reference Unit,Reference Transfer Fee,Active\r\nLahore,DHA Lahore,Sample Phase,,Residential,5,Marla,42000,1\r\nLahore,DHA Lahore,Sample Phase,Sample Block A,Commercial,5,Marla,95000,1\r\n',
   },
 }
 
@@ -110,7 +110,13 @@ function activeValue(text) {
   return !['0', 'false', 'no'].includes(text.toLowerCase())
 }
 
-function summarize(domain, parsedRows) {
+function decimalTextFits(text, precision, scale) {
+  if (!/^\d+(?:\.\d+)?$/.test(text)) return false
+  const [whole, fraction = ''] = text.split('.')
+  return whole.replace(/^0+/, '').length <= precision - scale && fraction.length <= scale
+}
+
+function summarize(domain, parsedRows, config) {
   const cities = new Map(config.cities.map((item) => [item.name.trim().toLowerCase(), item]))
   const societies = new Map(config.societies.map((item) => [item.name.trim().toLowerCase(), item]))
   const propertyTypes = new Map()
@@ -147,8 +153,10 @@ function summarize(domain, parsedRows) {
       const dc = dcText !== '' && Number.isFinite(Number(dcText)) ? Number(dcText) : null
       const fbr = fbrText !== '' && Number.isFinite(Number(fbrText)) ? Number(fbrText) : null
       if ((dcText !== '' && dc === null) || (fbrText !== '' && fbr === null) || (dc === null && fbr === null)) errors.push('At least one DC Rate or FBR Rate must be numeric.')
+      const rateScale = unit === 'sqft' ? 4 : 2
+      if ((dcText && !decimalTextFits(dcText, 18, rateScale)) || (fbrText && !decimalTextFits(fbrText, 18, rateScale))) errors.push(`Rate values must fit the source DECIMAL(18,${rateScale}) precision.`)
       duplicateKey = [city.toLowerCase(), society.toLowerCase(), phase.toLowerCase(), block.toLowerCase(), type?.id || '0'].join('|')
-      normalized = { cityId: cityRecord?.id, societyId: societyRecord?.id, phaseName: phase, blockName: block, propertyTypeId: type?.id, unit, dcRate: dc ?? 0, fbrRate: fbr ?? 0, is_active: activeValue(value(row, 'active', 'is_active') || '1') }
+      normalized = { cityId: cityRecord?.id, societyId: societyRecord?.id, phaseName: phase, blockName: block, propertyTypeId: type?.id, propertyType: type?.property_type, category: type?.category, unit, dcRate: dc ?? 0, fbrRate: fbr ?? 0, dcText: dcText || '0', fbrText: fbrText || '0', is_active: activeValue(value(row, 'active', 'is_active') || '1') }
     } else {
       const phaseRecord = config.calculator_phases.find((item) => item.city_id === cityRecord?.id && item.society_id === societyRecord?.id && item.name.trim().toLowerCase() === phase.toLowerCase())
       if (cityRecord && societyRecord && phase && !phaseRecord) errors.push(`Phase '${phase}' does not exist for City '${city}' and Society '${society}'.`)
@@ -162,8 +170,10 @@ function summarize(domain, parsedRows) {
       const amount = amountText !== '' && Number.isFinite(Number(amountText)) ? Number(amountText) : 0
       if (size <= 0) errors.push('Reference size must be greater than 0.')
       if (amount <= 10500) errors.push('Reference transfer fee must exceed Rs. 10,500 (Sports Fund).')
+      if (!decimalTextFits(sizeText,18,4)) errors.push('Reference size must fit the source DECIMAL(18,4) precision.')
+      if (!decimalTextFits(amountText,18,2)) errors.push('Reference fee must fit the source DECIMAL(18,2) precision.')
       duplicateKey = [city.toLowerCase(), society.toLowerCase(), phase.toLowerCase(), block.toLowerCase(), category.toLowerCase()].join('|')
-      normalized = { phaseId: phaseRecord?.id, blockId: blockRecord?.id || null, category, reference_size: size, reference_unit: unit, reference_amount: amount, is_active: activeValue(value(row, 'active', 'is_active') || '1') }
+      normalized = { phaseId: phaseRecord?.id, blockId: blockRecord?.id || null, phaseName: phase, blockName: block, cityId: cityRecord?.id, societyId: societyRecord?.id, category, reference_size: size, reference_size_text: sizeText, reference_unit: unit, reference_amount: amount, reference_amount_text: amountText, is_active: activeValue(value(row, 'active', 'is_active') || '1') }
     }
     const isDuplicate = seen.has(duplicateKey)
     if (isDuplicate) { errors.push(domain === 'calculator-rates' ? 'Duplicate row inside uploaded file for this location and property type combination.' : 'Duplicate row inside uploaded file for this location and category combination.'); duplicateRows += 1 }
@@ -178,14 +188,15 @@ function summarize(domain, parsedRows) {
   }
 }
 
-export function prepareCalculatorCsvImport(domain, content) {
+export function prepareCalculatorCsvImport(domain, content, config = defaultConfig) {
   if (!CALCULATOR_CSV_DOMAINS.includes(domain)) return { error: 'unsupported_domain' }
   const parsed = parseCsv(content)
   if (parsed.error) return { error: parsed.error }
-  return summarize(domain, parsed.rows)
+  return summarize(domain, parsed.rows, config)
 }
 
 export function applyCalculatorCsvImport(domain, rows) {
+  const config = defaultConfig
   if (domain === 'calculator-rates') {
     let inserted = 0
     let updated = 0

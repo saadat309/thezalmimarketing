@@ -37,15 +37,17 @@ use the shared table while preserving the existing `/api/v1/files` projection.
 Neither bridge copies media rows or assets.
 Migration 0009 adds all eight normalized source-shaped Calculator tables and
 their indexes/foreign keys. Source `DECIMAL` fields use SQLite `TEXT` affinity
-to preserve exact imported values; the current Calculator API still uses
-in-memory fixtures and does not yet read or write those tables.
+to preserve exact imported values. Migrations 0012 and 0013 add the full-source
+Fee Rule active flag and case-insensitive/nullable-scope uniqueness needed to
+match the legacy PHP duplicate checks. The public `/api/v1/calculator/config`
+and protected Calculator admin CRUD now use these local D1 tables. The seed
+script adds deterministic fictional rows and does not replace existing data.
 
 This is a schema-alignment foundation, not a completed production import
-pipeline. The Calculator schema is present but its API adapter still uses
-in-memory data. Migration 0010 adds source-shaped CMS/Landing Page tables and a
-local D1 adapter; synthetic section identity/order are fixed while content and
-visibility are editable. Query persistence remains open pending
-privacy/retention handling for contact data and its legacy user FK.
+pipeline. Migration 0010 adds source-shaped CMS/Landing Page tables and a local
+D1 adapter; synthetic section identity/order are fixed while content and
+visibility are editable. Migration 0011 adds synthetic-only admin Query
+persistence; visitor submissions and retention remain out of scope.
 The staging-only
 Property `vat_amount` and `template` form controls have no columns in the
 checked-in source schema and are not persisted by the normalized tables; a
@@ -63,8 +65,8 @@ The only account names are `admin.one@staging.invalid` and
 management. Do not use production credentials. Property records (including
 their public visibility and API fields), session hashes, login-throttle
 counters, and profile name/bio are saved to local D1 and survive local Worker
-restarts. Other dashboard content and calculator edits still use synthetic
-in-memory fixtures and reset when their Worker restarts. Sessions expire after
+restarts. Calculator, Property/File, taxonomy, Landing Page, and synthetic Query
+edits also persist in local D1. Sessions expire after
 seven days, are independent across browsers, and are limited to 20 active
 sessions globally. The auth implementation also requires a loopback request
 host, so it remains disabled on a hosted Worker even if the local-auth variable
@@ -83,12 +85,14 @@ Restart the local API after changing `.dev.vars`. From the staging frontend,
 open `/login`; its dev build uses `http://127.0.0.1:4175` by default. Do not
 copy these passwords into tracked files or reuse any production credential.
 The helper checks can be run with `npm run test:admin-auth`; directory API and
-local-storage checks can be run with `npm run test:directory`; source-shaped
-Calculator schema and decimal-preservation checks can be run with
+local-storage checks can be run with `npm run test:directory`; Calculator D1,
+active-state, import, and decimal-preservation checks can be run with
 `npm run test:calculator-storage`. Test password
 values are generated in memory and are not fixed or printed. The D1 storage
 test uses Node's built-in SQLite module and requires Node.js 22.5 or later.
-The local seed command also inserts two fictional admin-only Query examples.
+The local seed command also inserts two fictional admin-only Query examples
+and synthetic Calculator configuration. Rates and Transfer Fees CSV preview
+uses the current D1 rows and a valid import runs as one transactional D1 batch.
 Query IP address, user agent, and processed-admin fields remain empty; this
 staging slice has no public contact-submission endpoint or email delivery.
 
