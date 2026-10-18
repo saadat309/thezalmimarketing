@@ -10,10 +10,10 @@ const DOMAIN_FIELDS = {
   },
   files: { title: 'text', city: 'text', society: 'text', phase: 'text', fileType: 'text', area: 'number', areaUnit: 'text', price: 'integer', visible: 'boolean' },
   maps: { title: 'text', city: 'text', society: 'text', phase: 'text', description: 'textarea', visible: 'boolean' },
-  cities: { name: 'text', slug: 'slug', active: 'boolean' },
-  categories: { name: 'text', slug: 'slug', active: 'boolean' },
-  societies: { name: 'text', slug: 'slug', city: 'text', active: 'boolean' },
-  phases: { name: 'text', slug: 'slug', society: 'text', active: 'boolean' },
+  cities: { name: 'text', map_ids: 'multiSelect' },
+  categories: { name: 'text' },
+  societies: { name: 'text', map_ids: 'multiSelect' },
+  phases: { name: 'text', map_ids: 'multiSelect' },
   queries: { property_id: 'optionalText', property_title: 'optionalText', name: 'text', email: 'optionalText', phone: 'optionalText', message: 'textarea', created_at: 'text', is_read: 'boolean' },
   'landing-page': { sectionName: 'text', title: 'text', subtitle: 'textarea', order: 'integer', active: 'boolean', collection: 'text', selectedItems: 'json', mediaMode: 'text', mediaUrl: 'optionalText', delayMs: 'integer' },
   'calculator-phases': { name: 'text', active: 'boolean' },
@@ -35,10 +35,10 @@ const DOMAIN_FIELDS = {
 }
 
 const initial = {
-  cities: [{ id: 'city-lahore', name: 'Lahore', slug: 'lahore', active: true }, { id: 'city-multan', name: 'Multan', slug: 'multan', active: true }],
-  categories: [{ id: 'category-homes', name: 'Homes', slug: 'homes', active: true }],
-  societies: [{ id: 'society-sample', name: 'Sample Garden Society', slug: 'sample-garden', city: 'Lahore', active: true }],
-  phases: [{ id: 'phase-sample', name: 'Sample Phase One', slug: 'sample-phase-one', society: 'Sample Garden Society', active: true }],
+  cities: [{ id: 'city-lahore', name: 'Lahore', map_ids: [], updated_at: '2026-10-18' }, { id: 'city-multan', name: 'Multan', map_ids: [], updated_at: '2026-10-18' }],
+  categories: [{ id: 'category-homes', name: 'Homes', pic: '', updated_at: '2026-10-18' }],
+  societies: [{ id: 'society-sample', name: 'Sample Garden Society', map_ids: [], updated_at: '2026-10-18' }],
+  phases: [{ id: 'phase-sample', name: 'Sample Phase One', map_ids: [], updated_at: '2026-10-18' }],
   queries: [
     { id: 'query-sample-1', property_id: '101', property_title: 'Synthetic Garden Home', name: 'Sample Visitor', email: 'visitor@example.invalid', phone: '+92 300 0000000', message: 'I would like more information about this sample listing.', created_at: '2026-10-17 11:30:00', is_read: false },
     { id: 'query-sample-2', property_id: null, property_title: '', name: 'Demo Customer', email: 'demo@example.invalid', phone: '+92 300 0000001', message: 'Please share the synthetic brochure and available viewing times.', created_at: '2026-10-15 15:45:00', is_read: true },
@@ -486,13 +486,27 @@ function validateFields(domain, input) {
     if (type === 'boolean' && typeof value === 'boolean') result[key] = value
     else if (type === 'number' && typeof value === 'number' && Number.isFinite(value) && value >= 0) result[key] = value
     else if (type === 'integer' && typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) result[key] = value
+    else if (type === 'multiSelect' && Array.isArray(value) && value.length <= 100 && value.every((entry) => typeof entry === 'string' && entry.length <= 100) && new Set(value).size === value.length) {
+      const availableMaps = new Set(syntheticMaps.map((item) => item.slug))
+      if (value.every((mapId) => availableMaps.has(mapId))) result[key] = value
+      else errors[key] = 'Choose only available synthetic maps.'
+    }
     else if (type === 'json' && Array.isArray(value) && value.length <= 100 && value.every((entry) => typeof entry === 'string' && entry.length <= 100) && new Set(value).size === value.length) result[key] = value
     else if (type === 'slug' && typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) result[key] = value
     else if (['text', 'textarea', 'optionalText'].includes(type) && typeof value === 'string' && (type !== 'text' || value.trim().length > 0) && value.length <= (type === 'textarea' ? 5000 : 300)) result[key] = value.trim()
     else errors[key] = 'Value is invalid.'
   }
+  if (['cities', 'categories', 'societies', 'phases'].includes(domain) && !result.name) errors.name ||= 'Name is required.'
   if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'
   return { result, errors }
+}
+
+function taxonomyMapConflict(domain, mapIds, ignoreId) {
+  if (!['cities', 'societies', 'phases'].includes(domain) || !Array.isArray(mapIds)) return false
+  const assignedElsewhere = new Set((records.get(domain) || [])
+    .filter((item) => item.id !== ignoreId)
+    .flatMap((item) => item.map_ids || []))
+  return mapIds.some((mapId) => assignedElsewhere.has(mapId))
 }
 
 export function createMemoryAdminRepository() {
@@ -551,7 +565,13 @@ export function createMemoryAdminRepository() {
         return calculatorFeeRuleRecord(rule)
       }
       if (publicSources[domain]) return createPublicSource(domain, fields)
-      const item = { id: `${domain.replaceAll('-', '').slice(0, 8)}-sample-${nextId++}`, ...fields }
+      const item = {
+        id: `${domain.replaceAll('-', '').slice(0, 8)}-sample-${nextId++}`,
+        ...(domain === 'cities' || domain === 'societies' || domain === 'phases' ? { map_ids: [] } : {}),
+        ...(domain === 'categories' ? { pic: '' } : {}),
+        updated_at: new Date().toISOString().slice(0, 10),
+        ...fields,
+      }
       records.get(domain).push(item)
       return { ...item }
     },
@@ -580,7 +600,7 @@ export function createMemoryAdminRepository() {
       const list = records.get(domain) || []
       const index = list.findIndex((item) => item.id === id)
       if (index < 0) return null
-      list[index] = { ...list[index], ...fields }
+      list[index] = { ...list[index], ...fields, updated_at: new Date().toISOString().slice(0, 10) }
       return { ...list[index] }
     },
     remove(domain, id) {
@@ -669,6 +689,11 @@ export function createAdminDataApi(repository, auth) {
             options: calculatorFeeRuleOptions(),
             columns: ['id', 'fee_name', 'fee_key', 'property_type', 'unit', 'min_area', 'max_area', 'fee_amount', 'is_active', 'updated_at'],
           } : {}),
+          ...(['cities', 'societies', 'phases'].includes(domain) ? {
+            options: { map_ids: syntheticMaps.map((item) => ({ value: item.slug, label: item.title })) },
+            columns: ['id', 'name', 'map_ids', 'updated_at'],
+          } : {}),
+          ...(domain === 'categories' ? { columns: ['id', 'name', 'pic', 'updated_at'] } : {}),
         })
       }
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
@@ -679,6 +704,7 @@ export function createAdminDataApi(repository, auth) {
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value)
             : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value)
               : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value) : validateFields(domain, body.value)
+      if (!Object.keys(errors).length && taxonomyMapConflict(domain, result.map_ids)) errors.map_ids = 'A map can be associated with only one record in this taxonomy.'
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (domain === 'calculator-fees' && !Object.keys(errors).length && syntheticCalculatorConfig.calculator_fees.some((item) => item.fee_key === result.fee_key)) errors.fee_key = 'A calculator fee with this key already exists.'
@@ -714,6 +740,7 @@ export function createAdminDataApi(repository, auth) {
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value, { updating: true })
             : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value, { updating: true })
               : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value, { updating: true }) : validateFields(domain, body.value)
+      if (!Object.keys(errors).length && taxonomyMapConflict(domain, result.map_ids, id)) errors.map_ids = 'A map can be associated with only one record in this taxonomy.'
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result, id)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result, id)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)

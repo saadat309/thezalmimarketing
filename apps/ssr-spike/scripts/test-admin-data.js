@@ -340,4 +340,62 @@ const deleteFeeRuleResponse = await api.item(new Request(`${base}/calculator-fee
 assert.equal(deleteFeeRuleResponse.status, 200)
 assert.ok(!(await calculatorConfigApi()).calculator_fee_rules.some((item) => item.id === newFeeRule.id))
 
+const taxonomyMapId = 'dha-lahore-phase-6-master-plan'
+const cityCollection = await api.collection(new Request(`${base}/cities`, { headers: readHeaders }), 'cities')
+const cities = await cityCollection.json()
+assert.deepEqual(Object.keys(cities.fields), ['name', 'map_ids'])
+assert.equal(cities.options.map_ids.length, 5)
+const newCityResponse = await api.collection(new Request(`${base}/cities`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ name: 'Synthetic Test City', map_ids: [taxonomyMapId] }),
+}), 'cities')
+assert.equal(newCityResponse.status, 201)
+const newCity = (await newCityResponse.json()).item
+assert.deepEqual(newCity.map_ids, [taxonomyMapId])
+const duplicateCityMapResponse = await api.collection(new Request(`${base}/cities`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ name: 'Another Synthetic City', map_ids: [taxonomyMapId] }),
+}), 'cities')
+assert.equal(duplicateCityMapResponse.status, 400)
+const updatedCityResponse = await api.item(new Request(`${base}/cities/${newCity.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ name: 'Updated Synthetic City', map_ids: ['bahria-town-lahore-sector-map'] }),
+}), 'cities', newCity.id)
+assert.equal(updatedCityResponse.status, 200)
+assert.equal((await updatedCityResponse.json()).item.name, 'Updated Synthetic City')
+const deleteCityResponse = await api.item(new Request(`${base}/cities/${newCity.id}`, { method: 'DELETE', headers: writeHeaders }), 'cities', newCity.id)
+assert.equal(deleteCityResponse.status, 200)
+
+for (const [domain, name] of [['societies', 'Synthetic Test Society'], ['phases', 'Synthetic Test Phase']]) {
+  const list = await api.collection(new Request(`${base}/${domain}`, { headers: readHeaders }), domain)
+  assert.equal((await list.json()).options.map_ids.length, 5)
+  const created = await api.collection(new Request(`${base}/${domain}`, {
+    method: 'POST', headers: writeHeaders,
+    body: JSON.stringify({ name, map_ids: [taxonomyMapId] }),
+  }), domain)
+  assert.equal(created.status, 201)
+  const item = (await created.json()).item
+  assert.deepEqual(item.map_ids, [taxonomyMapId])
+  const removed = await api.item(new Request(`${base}/${domain}/${item.id}`, { method: 'DELETE', headers: writeHeaders }), domain, item.id)
+  assert.equal(removed.status, 200)
+}
+
+const categoryListResponse = await api.collection(new Request(`${base}/categories`, { headers: readHeaders }), 'categories')
+const categories = await categoryListResponse.json()
+assert.deepEqual(Object.keys(categories.fields), ['name'])
+assert.ok(categories.columns.includes('pic'))
+assert.equal(categories.items[0].pic, '')
+const newCategoryResponse = await api.collection(new Request(`${base}/categories`, {
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic Test Category' }),
+}), 'categories')
+assert.equal(newCategoryResponse.status, 201)
+const newCategory = (await newCategoryResponse.json()).item
+assert.equal(newCategory.pic, '')
+const updateCategoryResponse = await api.item(new Request(`${base}/categories/${newCategory.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ name: 'Updated Synthetic Test Category' }),
+}), 'categories', newCategory.id)
+assert.equal(updateCategoryResponse.status, 200)
+assert.equal((await updateCategoryResponse.json()).item.pic, '')
+assert.equal((await api.item(new Request(`${base}/categories/${newCategory.id}`, { method: 'DELETE', headers: writeHeaders }), 'categories', newCategory.id)).status, 200)
+
 console.log('Synthetic admin API checks passed.')
