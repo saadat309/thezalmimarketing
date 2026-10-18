@@ -42,7 +42,8 @@ export function calculateStagingEstimate(config, input) {
     const isHiba = transferType === 'Hiba'
     const isPlotOrFile = ['Plot', 'File'].includes(propertyName)
     const sportsFund = fee('sports_fund', 10500)
-    const transferRef = (blockId && config.calculator_transfer_fees.find((item) => String(item.calculator_phase_id) === phaseId && String(item.calculator_block_id || '') === blockId && item.category.toLowerCase() === category.toLowerCase())) || config.calculator_transfer_fees.find((item) => String(item.calculator_phase_id) === phaseId && !item.calculator_block_id && item.category.toLowerCase() === category.toLowerCase())
+    const isActiveTransferFee = (item) => item.is_active !== false && item.is_active !== 0
+    const transferRef = (blockId && config.calculator_transfer_fees.find((item) => isActiveTransferFee(item) && String(item.calculator_phase_id) === phaseId && String(item.calculator_block_id || '') === blockId && item.category.toLowerCase() === category.toLowerCase())) || config.calculator_transfer_fees.find((item) => isActiveTransferFee(item) && String(item.calculator_phase_id) === phaseId && !item.calculator_block_id && item.category.toLowerCase() === category.toLowerCase())
     let baseTransfer
     let transferExplanation
     if (transferRef) {

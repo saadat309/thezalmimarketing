@@ -51,6 +51,10 @@ const plotRate = config.calculator_rates.find((item) => item.id === 'rate-demo-p
 plotRate.is_active = false
 assert.equal(estimate().rateFound, false)
 plotRate.is_active = true
+const transferFee = config.calculator_transfer_fees.find((item) => item.id === 'transfer-demo-residential')
+transferFee.is_active = false
+assert.equal(estimate().lines.find((line) => line.label === 'Base Transfer Fee').amount, 52_500)
+transferFee.is_active = true
 assert.equal(estimate({ customDcRate: '0' }).dcValue, 0)
 const edited = estimate({ overrides: { Biana: '0' }, customExpenses: [{ id: 'synthetic-extra', label: 'Sample fee', amount: 123 }] })
 assert.equal(edited.lines[0].amount, 0)

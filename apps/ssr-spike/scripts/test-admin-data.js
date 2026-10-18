@@ -180,4 +180,50 @@ const deleteRateResponse = await api.item(new Request(`${base}/calculator-rates/
 assert.equal(deleteRateResponse.status, 200)
 assert.ok(!(await calculatorConfigApi()).calculator_rates.some((item) => item.id === newRate.id))
 
+const transferFeeCollectionResponse = await api.collection(new Request(`${base}/calculator-transfer-fees`, { headers: readHeaders }), 'calculator-transfer-fees')
+assert.equal(transferFeeCollectionResponse.status, 200)
+const transferFeeCollection = await transferFeeCollectionResponse.json()
+assert.equal(transferFeeCollection.count, 3)
+const residentialFee = transferFeeCollection.items.find((item) => item.category === 'Residential')
+assert.equal(residentialFee.base_transfer_fee, 31500)
+assert.equal(residentialFee.per_marla_rate, 6300)
+assert.equal(residentialFee.per_sqft_rate, 28)
+assert.ok(transferFeeCollection.options.category.some((item) => item.value === 'Sector Shop'))
+const duplicateTransferFee = await api.collection(new Request(`${base}/calculator-transfer-fees`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: '', category: 'Residential', reference_amount: 110500, reference_size: 5, reference_unit: 'marla', is_active: true }),
+}), 'calculator-transfer-fees')
+assert.equal(duplicateTransferFee.status, 400)
+const invalidTransferFee = await api.collection(new Request(`${base}/calculator-transfer-fees`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-b', category: 'Unknown', reference_amount: 10500, reference_size: 0, reference_unit: 'hectare', is_active: true }),
+}), 'calculator-transfer-fees')
+assert.equal(invalidTransferFee.status, 400)
+const newTransferFeeResponse = await api.collection(new Request(`${base}/calculator-transfer-fees`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-b', category: 'Residential', reference_amount: 110500, reference_size: 5, reference_unit: 'sqft', is_active: true }),
+}), 'calculator-transfer-fees')
+assert.equal(newTransferFeeResponse.status, 201)
+const newTransferFee = (await newTransferFeeResponse.json()).item
+assert.equal(newTransferFee.base_transfer_fee, 100000)
+assert.equal(newTransferFee.per_marla_rate, 4500000)
+assert.equal(newTransferFee.per_sqft_rate, 20000)
+const duplicateTransferUpdate = await api.item(new Request(`${base}/calculator-transfer-fees/${newTransferFee.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: '', category: 'Residential', reference_amount: 121000, reference_size: 2000, reference_unit: 'sqft', is_active: true }),
+}), 'calculator-transfer-fees', newTransferFee.id)
+assert.equal(duplicateTransferUpdate.status, 400)
+const updateTransferFeeResponse = await api.item(new Request(`${base}/calculator-transfer-fees/${newTransferFee.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-b', category: 'Residential', reference_amount: 121000, reference_size: 2000, reference_unit: 'sqft', is_active: false }),
+}), 'calculator-transfer-fees', newTransferFee.id)
+assert.equal(updateTransferFeeResponse.status, 200)
+assert.equal((await updateTransferFeeResponse.json()).item.per_sqft_rate, 55.25)
+assert.equal((await calculatorConfigApi()).calculator_transfer_fees.find((item) => item.id === newTransferFee.id).is_active, false)
+const deleteTransferFeeResponse = await api.item(new Request(`${base}/calculator-transfer-fees/${newTransferFee.id}`, {
+  method: 'DELETE', headers: writeHeaders,
+}), 'calculator-transfer-fees', newTransferFee.id)
+assert.equal(deleteTransferFeeResponse.status, 200)
+assert.ok(!(await calculatorConfigApi()).calculator_transfer_fees.some((item) => item.id === newTransferFee.id))
+
 console.log('Synthetic admin API checks passed.')

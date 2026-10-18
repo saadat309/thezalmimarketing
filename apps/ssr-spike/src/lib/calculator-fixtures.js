@@ -24,9 +24,9 @@ export const syntheticCalculatorConfig = {
     { id: 'rate-demo-sector-shop', calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-sector-shop', dc_per_marla: 0, dc_per_sqft: 7800, fbr_per_marla: 0, fbr_per_sqft: 8400, is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_transfer_fees: [
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Residential', reference_amount: 42000, reference_size: 5, reference_unit: 'marla' },
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Commercial', reference_amount: 95000, reference_size: 5, reference_unit: 'marla' },
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Sector Shop', reference_amount: 65000, reference_size: 5, reference_unit: 'marla' },
+    { id: 'transfer-demo-residential', calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Residential', reference_amount: 42000, reference_size: 5, reference_unit: 'marla', is_active: true, updated_at: '2026-10-18' },
+    { id: 'transfer-demo-commercial', calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Commercial', reference_amount: 95000, reference_size: 5, reference_unit: 'marla', is_active: true, updated_at: '2026-10-18' },
+    { id: 'transfer-demo-sector-shop', calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Sector Shop', reference_amount: 65000, reference_size: 5, reference_unit: 'marla', is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_fees: [
     ['biana', 4000], ['verification', 5250], ['transfer_file_plot_file', 7000], ['transfer_file_other', 8000],
