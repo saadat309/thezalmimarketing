@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
-import { ArrowLeft, LogOut, ShieldCheck } from 'lucide-react'
-import { logoutAdmin, readAdminSession } from '../data/admin-api.js'
+import { createFileRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
+import { ArrowLeft, Menu, ShieldCheck, X } from 'lucide-react'
+import { StagingAppSidebar } from '../components/dashboard/StagingAppSidebar.jsx'
+import { readAdminSession } from '../data/admin-api.js'
 
-const sections = [
-  ['Overview', '/dashboard'], ['Properties', '/dashboard/properties'], ['Maps', '/dashboard/maps'], ['Files', '/dashboard/files'],
-  ['Cities', '/dashboard/cities'], ['Categories', '/dashboard/categories'], ['Societies', '/dashboard/societies'], ['Phases', '/dashboard/phases'],
-  ['Landing Page', '/dashboard/landing-page'], ['Queries', '/dashboard/queries'], ['Calculator Phases', '/dashboard/calculator-phases'],
-  ['Calculator Blocks', '/dashboard/calculator-blocks'], ['Calculator Property Types', '/dashboard/calculator-property-types'],
-  ['Calculator Rates', '/dashboard/calculator-rates'], ['Calculator Transfer Fees', '/dashboard/calculator-transfer-fees'],
-  ['Calculator Fees', '/dashboard/calculator-fees'], ['Calculator Tax Rates', '/dashboard/calculator-tax-rates'],
-  ['Calculator Fee Rules', '/dashboard/calculator-fee-rules'], ['Users', '/dashboard/users'], ['Profile', '/dashboard/profile'],
-]
+const titles = {
+  dashboard: 'Dashboard', properties: 'Properties', maps: 'Maps', files: 'Files', cities: 'Cities', categories: 'Categories', societies: 'Societies', phases: 'Phases',
+  'landing-page': 'Landing Page', queries: 'Queries', 'calculator-phases': 'Calculator Phases', 'calculator-blocks': 'Calculator Blocks',
+  'calculator-property-types': 'Calculator Property Types', 'calculator-rates': 'Calculator Rates', 'calculator-transfer-fees': 'Calculator Transfer Fees',
+  'calculator-fees': 'Calculator Fees', 'calculator-tax-rates': 'Calculator Tax Rates', 'calculator-fee-rules': 'Calculator Fee Rules', users: 'Users', profile: 'Profile',
+}
 
 export const Route = createFileRoute('/dashboard')({
   head: () => ({ meta: [{ title: 'Admin Dashboard | Zalmi Marketing Staging' }, { name: 'robots', content: 'noindex, nofollow' }] }),
@@ -40,27 +38,31 @@ function DashboardGuard() {
     return () => { active = false }
   }, [])
 
-  async function signOut() {
-    try {
-      await logoutAdmin()
-      window.location.replace('/login')
-    } catch (caught) { setError(caught.message) }
-  }
-
   if (status === 'checking') return <main className="admin-loading" role="status">Checking local admin session…</main>
   if (status === 'error') return <main className="admin-loading"><p className="admin-error" role="alert">{error}</p><Link to="/login">Return to sign in</Link></main>
+  return <DashboardFrame user={user} />
+}
 
-  return <div className="admin-app-shell">
-    <aside className="admin-sidebar">
-      <Link className="admin-brand" to="/dashboard"><span className="admin-brand-mark">ZM</span><span>Zalmi Marketing<small>STAGING ADMIN</small></span></Link>
-      <nav aria-label="Admin navigation">{sections.map(([label, href]) => <Link key={href} to={href} activeProps={{ className: 'is-active' }}>{label}</Link>)}</nav>
-      <Link className="admin-back-link" to="/"><ArrowLeft aria-hidden="true" size={16} /> Public staging site</Link>
-    </aside>
-    <div className="admin-main-column">
-      <header className="admin-topbar"><div><ShieldCheck size={17} aria-hidden="true" /><span>Authenticated as <strong>{user.name}</strong> · {user.role}</span></div><button type="button" onClick={signOut}><LogOut size={16} aria-hidden="true" />Sign out</button></header>
-      {error && <p className="admin-error admin-toast" role="alert">{error}</p>}
-      <main className="admin-page-content"><Outlet /></main>
-      <footer className="admin-footer">Local synthetic preview only. Changes are in-memory and reset when the API process restarts.</footer>
+function DashboardFrame({ user }) {
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const key = location.pathname.replace(/\/$/, '').split('/').at(-1) || 'dashboard'
+  const title = titles[key] || 'Dashboard'
+  const closeMobile = () => setMobileOpen(false)
+
+  return <>
+    <StagingAppSidebar user={user} mobileOpen={mobileOpen} desktopOpen={sidebarOpen} onNavigate={closeMobile} />
+    <div className={`dashboard-main${sidebarOpen ? ' is-sidebar-expanded' : ''}`}>
+      <header className="dashboard-header">
+        <button type="button" className="dashboard-menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) setMobileOpen((open) => !open); else setSidebarOpen((open) => !open) }}>
+          {mobileOpen ? <X aria-hidden="true" size={18} /> : <Menu aria-hidden="true" size={18} />}
+        </button>
+        <span className="dashboard-header-divider" aria-hidden="true" />
+        <h1>{title}</h1>
+      </header>
+      <main className="dashboard-content"><Outlet /></main>
+      <div className="dashboard-safety-footer"><span><ShieldCheck aria-hidden="true" size={14} />Staging preview · synthetic data only</span><Link to="/"><ArrowLeft aria-hidden="true" size={14} />Public site</Link></div>
     </div>
-  </div>
+  </>
 }

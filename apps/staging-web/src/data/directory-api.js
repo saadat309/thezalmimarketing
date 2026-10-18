@@ -40,3 +40,23 @@ export const listStagingMaps = createServerFn({ method: 'GET' })
 export const listStagingFiles = createServerFn({ method: 'GET' })
   .validator(validateDirectoryInput)
   .handler(({ data }) => readDirectory('/api/v1/files/', data));
+
+export const readStagingCalculatorConfig = createServerFn({ method: 'GET' })
+  .handler(async () => {
+    let response;
+    try {
+      response = await fetch(new URL('/api/v1/calculator/config', apiOrigin()), {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        redirect: 'manual',
+      });
+    } catch {
+      throw new Error('The synthetic staging calculator API is unavailable.');
+    }
+    if (!response.ok) throw new Error('The synthetic staging calculator API is unavailable.');
+    const config = await response.json();
+    const required = ['cities', 'societies', 'calculator_phases', 'calculator_blocks', 'calculator_property_types', 'calculator_rates', 'calculator_transfer_fees', 'calculator_fees', 'calculator_tax_rates', 'calculator_fee_rules'];
+    if (required.some((key) => !Array.isArray(config[key]))) throw new Error('The synthetic calculator returned an invalid response.');
+    return config;
+  });

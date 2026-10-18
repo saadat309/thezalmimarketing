@@ -2,15 +2,19 @@ import { syntheticFiles, syntheticMaps } from './directory-fixtures.js'
 import { syntheticProperties } from './property-fixtures.js'
 
 const DOMAIN_FIELDS = {
-  properties: { title: 'text', category: 'text', city: 'text', price: 'integer', visible: 'boolean' },
-  files: { title: 'text', city: 'text', fileType: 'text', visible: 'boolean' },
-  maps: { title: 'text', city: 'text', visible: 'boolean' },
+  properties: {
+    title: 'text', shortDescription: 'textarea', address: 'text', propertyType: 'text', purchaseType: 'text',
+    category: 'text', city: 'text', society: 'text', phase: 'text', price: 'integer', area: 'number', areaUnit: 'text', beds: 'integer', baths: 'integer',
+    isFurnished: 'boolean', isDiscounted: 'boolean', visible: 'boolean', description: 'textarea',
+  },
+  files: { title: 'text', city: 'text', society: 'text', phase: 'text', fileType: 'text', area: 'number', areaUnit: 'text', price: 'integer', visible: 'boolean' },
+  maps: { title: 'text', city: 'text', society: 'text', phase: 'text', description: 'textarea', visible: 'boolean' },
   cities: { name: 'text', slug: 'slug', active: 'boolean' },
   categories: { name: 'text', slug: 'slug', active: 'boolean' },
   societies: { name: 'text', slug: 'slug', city: 'text', active: 'boolean' },
   phases: { name: 'text', slug: 'slug', society: 'text', active: 'boolean' },
-  queries: { name: 'text', topic: 'text', status: 'text', isRead: 'boolean' },
-  'landing-page': { sectionName: 'text', title: 'text', order: 'number', active: 'boolean' },
+  queries: { property_id: 'optionalText', property_title: 'optionalText', name: 'text', email: 'optionalText', phone: 'optionalText', message: 'textarea', created_at: 'text', is_read: 'boolean' },
+  'landing-page': { sectionName: 'text', title: 'text', subtitle: 'textarea', order: 'integer', active: 'boolean', collection: 'text', selectedItems: 'json', mediaMode: 'text', mediaUrl: 'optionalText', delayMs: 'integer' },
   'calculator-phases': { name: 'text', active: 'boolean' },
   'calculator-blocks': { name: 'text', phase: 'text', active: 'boolean' },
   'calculator-property-types': { name: 'text', active: 'boolean' },
@@ -26,8 +30,18 @@ const initial = {
   categories: [{ id: 'category-homes', name: 'Homes', slug: 'homes', active: true }],
   societies: [{ id: 'society-sample', name: 'Sample Garden Society', slug: 'sample-garden', city: 'Lahore', active: true }],
   phases: [{ id: 'phase-sample', name: 'Sample Phase One', slug: 'sample-phase-one', society: 'Sample Garden Society', active: true }],
-  queries: [{ id: 'query-sample-1', name: 'Synthetic Visitor', topic: 'Property information', status: 'new', isRead: false }],
-  'landing-page': [{ id: 'section-featured', sectionName: 'Featured Properties', title: 'Featured synthetic properties', order: 1, active: true }],
+  queries: [
+    { id: 'query-sample-1', property_id: '101', property_title: 'Synthetic Garden Home', name: 'Sample Visitor', email: 'visitor@example.invalid', phone: '+92 300 0000000', message: 'I would like more information about this sample listing.', created_at: '2026-10-17 11:30:00', is_read: false },
+    { id: 'query-sample-2', property_id: null, property_title: '', name: 'Demo Customer', email: 'demo@example.invalid', phone: '+92 300 0000001', message: 'Please share the synthetic brochure and available viewing times.', created_at: '2026-10-15 15:45:00', is_read: true },
+  ],
+  'landing-page': [
+    { id: 'section-popup', sectionName: 'Landing Popup', title: 'Special Offer', subtitle: 'Discover our latest synthetic listings.', order: 1, active: false, collection: 'popup', selectedItems: [], mediaMode: 'image', mediaUrl: '', delayMs: 5000 },
+    { id: 'section-video', sectionName: 'Video Section', title: 'Featured Video', subtitle: 'Watch our latest property showcase.', order: 2, active: true, collection: 'video', selectedItems: [], mediaMode: 'embed', mediaUrl: '', delayMs: 5000 },
+    { id: 'section-featured', sectionName: 'Featured Properties', title: 'Featured Properties', subtitle: 'Discover our hand-picked selection of properties.', order: 3, active: true, collection: 'properties', selectedItems: ['1'], mediaMode: 'image', mediaUrl: '', delayMs: 5000 },
+    { id: 'section-categories', sectionName: 'Property Categories', title: 'Property Categories', subtitle: 'Explore properties by type.', order: 4, active: true, collection: 'categories', selectedItems: ['category-homes'], mediaMode: 'image', mediaUrl: '', delayMs: 5000 },
+    { id: 'section-maps', sectionName: 'Location Maps', title: 'Location Maps', subtitle: 'Find properties in prime locations.', order: 5, active: true, collection: 'maps', selectedItems: [], mediaMode: 'image', mediaUrl: '', delayMs: 5000 },
+    { id: 'section-files', sectionName: 'Available Files', title: 'Available Files', subtitle: 'Explore available property files.', order: 6, active: false, collection: 'files', selectedItems: [], mediaMode: 'image', mediaUrl: '', delayMs: 5000 },
+  ],
   'calculator-phases': [{ id: 'calc-phase-sample', name: 'Sample Phase', active: true }],
   'calculator-blocks': [{ id: 'calc-block-sample', name: 'Sample Block', phase: 'Sample Phase', active: true }],
   'calculator-property-types': [{ id: 'calc-type-house', name: 'House', active: true }],
@@ -51,8 +65,21 @@ function sourceId(domain, item) {
 }
 
 function toAdminRecord(domain, item) {
-  if (domain === 'properties') return { id: sourceId(domain, item), title: item.title, category: item.category?.name || '', city: item.location?.city?.name || '', price: Number(item.price) || 0, visible: item.public === true }
-  if (domain === 'files') return { id: item.slug, title: item.title, city: item.cityName, fileType: item.fileType, visible: item.public === true }
+  if (domain === 'properties') return {
+    id: sourceId(domain, item), title: item.title, shortDescription: item.shortDescription || '', address: item.location?.address || '',
+    propertyType: item.propertyType || 'Residential', purchaseType: item.purchaseType || 'sale', category: item.category?.name || '',
+    city: item.location?.city?.name || '', society: item.location?.society?.name || '', phase: item.location?.phase?.name || '',
+    price: Number(item.price) || 0, area: Number(item.area?.value) || 0,
+    areaUnit: item.area?.unit || 'sqft', beds: Number(item.beds) || 0, baths: Number(item.baths) || 0,
+    isFurnished: item.isFurnished === true, isDiscounted: item.isDiscounted === true, visible: item.public === true,
+    description: item.descriptionHtml || '',
+  }
+  if (domain === 'files') return {
+    id: item.slug, title: item.title, city: item.cityName, society: item.societyName, phase: item.phaseName,
+    fileType: item.fileType, area: Number(item.area?.value) || 0, areaUnit: item.area?.unit || 'marla',
+    price: Number(item.price?.amount) || 0, visible: item.public === true,
+  }
+  if (domain === 'maps') return { id: item.slug, title: item.title, city: item.cityName, society: item.societyName, phase: item.phaseName, description: item.description || '', visible: item.public === true }
   return { id: item.slug, title: item.title, city: item.cityName, visible: item.public === true }
 }
 
@@ -70,15 +97,34 @@ function applyPublicFields(domain, target, fields) {
   if (fields.title !== undefined) target.title = fields.title
   if (fields.visible !== undefined) target.public = fields.visible
   if (domain === 'properties') {
+    if (fields.shortDescription !== undefined) target.shortDescription = fields.shortDescription
+    if (fields.address !== undefined) target.location.address = fields.address
+    if (fields.propertyType !== undefined) target.propertyType = fields.propertyType
+    if (fields.purchaseType !== undefined) target.purchaseType = fields.purchaseType
     if (fields.category !== undefined) target.category = { ...target.category, name: fields.category, slug: toSlug(fields.category) }
     if (fields.city !== undefined) target.location.city = { ...target.location.city, name: fields.city, slug: toSlug(fields.city) }
+    if (fields.society !== undefined) target.location.society = { ...target.location.society, name: fields.society, slug: toSlug(fields.society) }
+    if (fields.phase !== undefined) target.location.phase = { ...target.location.phase, name: fields.phase, slug: toSlug(fields.phase) }
     if (fields.price !== undefined) target.price = String(fields.price)
+    if (fields.area !== undefined || fields.areaUnit !== undefined) target.area = { ...target.area, value: String(fields.area ?? target.area?.value ?? 0), unit: fields.areaUnit ?? target.area?.unit ?? 'sqft' }
+    if (fields.beds !== undefined) target.beds = fields.beds
+    if (fields.baths !== undefined) target.baths = fields.baths
+    if (fields.isFurnished !== undefined) target.isFurnished = fields.isFurnished
+    if (fields.isDiscounted !== undefined) target.isDiscounted = fields.isDiscounted
+    if (fields.description !== undefined) target.descriptionHtml = fields.description
   } else {
     if (fields.city !== undefined) {
       target.cityName = fields.city
       target.city = toSlug(fields.city)
     }
-    if (domain === 'files' && fields.fileType !== undefined) target.fileType = fields.fileType
+    if (fields.society !== undefined) { target.societyName = fields.society; target.society = toSlug(fields.society) }
+    if (fields.phase !== undefined) { target.phaseName = fields.phase; target.phase = toSlug(fields.phase) }
+    if (domain === 'files') {
+      if (fields.fileType !== undefined) target.fileType = fields.fileType
+      if (fields.area !== undefined || fields.areaUnit !== undefined) target.area = { ...target.area, value: String(fields.area ?? target.area?.value ?? 0), unit: fields.areaUnit ?? target.area?.unit ?? 'marla' }
+      if (fields.price !== undefined) target.price = { ...target.price, amount: String(fields.price), currency: 'PKR' }
+    }
+    if (domain === 'maps' && fields.description !== undefined) target.description = fields.description
   }
   return toAdminRecord(domain, target)
 }
@@ -109,6 +155,7 @@ function createPublicSource(domain, fields) {
     target.city = toSlug(fields.city || target.cityName)
     if (domain === 'files') target.fileType = fields.fileType || target.fileType
   }
+  applyPublicFields(domain, target, fields)
   source.push(target)
   return toAdminRecord(domain, target)
 }
@@ -166,8 +213,9 @@ function validateFields(domain, input) {
     if (type === 'boolean' && typeof value === 'boolean') result[key] = value
     else if (type === 'number' && typeof value === 'number' && Number.isFinite(value) && value >= 0) result[key] = value
     else if (type === 'integer' && typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) result[key] = value
+    else if (type === 'json' && Array.isArray(value) && value.length <= 100 && value.every((entry) => typeof entry === 'string' && entry.length <= 100) && new Set(value).size === value.length) result[key] = value
     else if (type === 'slug' && typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) result[key] = value
-    else if (type === 'text' && typeof value === 'string' && value.trim().length > 0 && value.length <= 300) result[key] = value.trim()
+    else if (['text', 'textarea', 'optionalText'].includes(type) && typeof value === 'string' && (type !== 'text' || value.trim().length > 0) && value.length <= (type === 'textarea' ? 5000 : 300)) result[key] = value.trim()
     else errors[key] = 'Value is invalid.'
   }
   if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'

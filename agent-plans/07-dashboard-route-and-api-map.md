@@ -1,6 +1,6 @@
 # Dashboard and dynamic-route migration map
 
-**Status:** Repository audit complete; synthetic public Maps/Files and local admin auth/dashboard implementation are present. Main mapped route families have generic schema-driven synthetic CRUD; Users/Profile are read-only. Property, File, and Map admin CRUD shares its transient fixtures with public reads. Taxonomy/CMS/query/calculator data remains isolated. Rich media forms and calculator semantics/imports are incomplete. No production credentials, records, APIs, or storage are in scope.
+**Status:** Source route inventory is complete. Staging represents all current public route paths and dashboard route families, but route/feature presence is not full visual or behavioral parity. Property/File/Map editors expose grouped synthetic fields; Queries now has synthetic detail/read/unread/edit/delete/filter/bulk-delete/CSV workflows, and Landing Page has editable section visibility/content/order/selection plus popup/video settings. Media upload remains disabled. Taxonomy and Calculator dashboard forms remain generic or incomplete. Users/Profile are read-only by approved staging boundary. Public calculator is a synthetic source-inspired wizard with source-derived formula golden tests for representative cases; exhaustive parity and import workflows remain incomplete. No production credentials, records, APIs, or storage are in scope.
 
 ## Existing route ownership
 
@@ -31,7 +31,7 @@
 | `/properties/$id/` | Public property detail, related properties, inquiry form | `fetchProperty`, property list, and `submitQuery`; staging uses the accepted slug API and does not submit inquiries |
 | `/maps/` | Public society-map directory and filters | `fetchMaps`, `fetchMapFilterOptions` |
 | `/files/` | Public plot-file directory and filters | `fetchFileProperties`, `fetchFileFilterOptions` |
-| `/calculator` | Public fee calculator | `/calculator-config`; calculation semantics remain outside this dashboard slice |
+| `/calculator` | Public fee calculator, three-step location/property/transfer flow, result details and exports | Legacy `/calculator-config`; staging uses fabricated `/api/v1/calculator/config` data and source-inspired calculations. Local JavaScript golden tests cover representative source-derived scenarios; they do not invoke the legacy route function or prove exhaustive parity |
 
 The dashboard shell is in `src/routes/dashboard.jsx` and `src/components/dashboard/DashboardLayout.jsx`; navigation labels and route destinations are in `src/components/dashboard/app-sidebar.jsx`. Many modules call the shared `apiFetch`, while Categories, Phases, Societies, Landing Page, and some Queries actions use direct `/api/...` fetches. The staging API should normalize these into one versioned contract rather than copy that inconsistency.
 
@@ -47,8 +47,9 @@ The dashboard shell is in `src/routes/dashboard.jsx` and `src/components/dashboa
 
 1. **Complete locally:** Add public synthetic Maps and Files list/filter APIs and replace their staging placeholders.
 2. **Implemented locally:** Added loopback-only two-admin login/session/logout, a protected dashboard shell/home, a read-only two-admin account view, and versioned synthetic API auth/session gates. Direct API tests verify credential checks, cookies, CSRF, throttling, and local-host gating.
-3. **Implemented as generic synthetic CRUD:** Properties, Files, Maps, Cities, Categories, Societies, Phases, Queries, Landing Page, and all calculator route families use allowlisted schema-driven create/edit/delete. User/Profile views are read-only. Uploads, CSV import/export, formula parity, and outbound notifications are disabled.
-4. **Next:** Configure local-only passwords and test the complete authenticated browser flow; connect taxonomy editing to public filter fixtures. Then port specialized property/map/file forms and calculator business rules with acceptance cases.
+3. **Implemented locally:** Every mapped dashboard URL resolves in staging through the shared `$section` route. Users/Profile are read-only. Property/File/Map editors group source-derived fields over synthetic fixtures. Queries and Landing Page have specialized synthetic workflows; Landing Page section order, visibility, titles, copy, selected items, popup delay, and embed URL save to the in-memory API. File/media upload remains disabled.
+4. **Public frontend coverage:** `/`, `/about`, `/contact`, `/privacy-policy`, `/calculator`, `/properties`, `/properties/$slug`, `/maps`, and `/files` have staging routes. There is no current source Terms route. This measures route coverage, not exact design parity. Contact/newsletter actions remain disabled; media is placeholder-only; calculator values are fabricated and formula parity is not acceptance-tested.
+5. **Next:** Port route-specific calculator administration from its source forms and expand formula golden cases around boundary/fallback scenarios. Continue field-by-field comparison of Property/File/Map and taxonomy forms; compare dashboard visuals and query/landing workflows against source screenshots. Keep uploads and transactional messaging disabled, CSV imports unimplemented, and production data out of scope.
 
 The property/file/map and public directory paths share transient fixture arrays, so local visibility and field edits affect subsequent public reads in the same Worker process. Taxonomy/CMS/query/calculator persistence and deeper workflow semantics are still local previews. The route labels and basic edit controls are intentionally generic rather than a visual/form parity claim for every legacy module.
 

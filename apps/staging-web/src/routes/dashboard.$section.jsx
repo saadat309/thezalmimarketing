@@ -1,78 +1,148 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3, Copy, FileDown, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { createAdminRecord, deleteAdminRecord, readAdminCollection, updateAdminRecord } from '../data/admin-api.js'
+import QueriesWorkspace from '../components/dashboard/QueriesWorkspace.jsx'
+import LandingPageWorkspace from '../components/dashboard/LandingPageWorkspace.jsx'
 
 const titles = {
-  properties: 'Properties', files: 'Files', maps: 'Maps', cities: 'Cities', categories: 'Categories', societies: 'Societies', phases: 'Phases',
-  queries: 'Queries', 'landing-page': 'Landing Page Sections', 'calculator-phases': 'Calculator Phases', 'calculator-blocks': 'Calculator Blocks',
+  properties: 'Manage Properties', files: 'Manage Files', maps: 'Manage Maps', cities: 'Manage Cities', categories: 'Manage Categories', societies: 'Manage Societies', phases: 'Manage Phases',
+  queries: 'Customer Queries', 'landing-page': 'Manage Landing Page', 'calculator-phases': 'Calculator Phases', 'calculator-blocks': 'Calculator Blocks',
   'calculator-property-types': 'Calculator Property Types', 'calculator-rates': 'Calculator Rates', 'calculator-transfer-fees': 'Calculator Transfer Fees',
-  'calculator-fees': 'Calculator Fees', 'calculator-tax-rates': 'Calculator Tax Rates', 'calculator-fee-rules': 'Calculator Fee Rules',
-  users: 'Admin Accounts', profile: 'Current Admin Profile',
+  'calculator-fees': 'Calculator Fees', 'calculator-tax-rates': 'Calculator Tax Rates', 'calculator-fee-rules': 'Calculator Fee Rules', users: 'Admin Users', profile: 'Profile',
 }
-
 export const Route = createFileRoute('/dashboard/$section')({ component: AdminSection })
 
 function AdminSection() {
   const { section } = Route.useParams()
+  if (section === 'queries') return <QueriesWorkspace />
+  if (section === 'landing-page') return <LandingPageWorkspace />
+  return <GenericAdminSection section={section} />
+}
+
+function GenericAdminSection({ section }) {
   const title = titles[section]
   const readOnly = section === 'users' || section === 'profile'
   const [payload, setPayload] = useState(null)
-  const [editing, setEditing] = useState(null)
-  const [draft, setDraft] = useState({})
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const schema = payload?.fields || {}
-  const fields = useMemo(() => Object.entries(schema), [schema])
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [selected, setSelected] = useState([])
+  const [visibleColumns, setVisibleColumns] = useState(null)
+  const [showColumns, setShowColumns] = useState(false)
+  const [actionId, setActionId] = useState(null)
+  const [editor, setEditor] = useState(null)
+  const [draft, setDraft] = useState({})
 
   async function refresh() {
     if (!title) return
     setError('')
-    try { setPayload(await readAdminCollection(section)) }
-    catch (caught) { setError(caught.message) }
+    try { setPayload(await readAdminCollection(section)) } catch (caught) { setError(caught.message) }
   }
-  useEffect(() => { refresh() }, [section])
+  useEffect(() => { setPayload(null); setSelected([]); setQuery(''); setPage(0); refresh() }, [section])
+
+  const items = section === 'profile' ? (payload?.user ? [payload.user] : []) : payload?.items || []
+  const schema = payload?.fields || (items[0] ? Object.fromEntries(Object.keys(items[0]).filter((key) => key !== 'id').map((key) => [key, typeof items[0][key] === 'boolean' ? 'boolean' : 'text'])) : {})
+  const fields = Object.entries(schema).map(([name, type]) => ({ name, type, label: labelFor(name) }))
+  const fieldGroups = groupFields(section, fields)
+  const columnKeys = useMemo(() => ['id', ...Object.keys(schema)].filter((key, index, list) => key !== 'id' || items.some((item) => item.id !== undefined)).slice(0, 6), [schema, items])
+  const [columnSelectionReady, setColumnSelectionReady] = useState(false)
+  useEffect(() => { setVisibleColumns(columnKeys); setColumnSelectionReady(true) }, [columnKeys.join('|')])
+  const filtered = items.filter((item) => Object.values(item).some((value) => String(value ?? '').toLowerCase().includes(query.toLowerCase())))
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const pageItems = filtered.slice(page * pageSize, (page + 1) * pageSize)
+  const displayedColumns = columnSelectionReady ? columnKeys.filter((key) => visibleColumns?.includes(key)) : columnKeys
 
   function startCreate() {
-    setEditing(null)
-    setDraft(Object.fromEntries(fields.map(([key, type]) => [key, type === 'boolean' ? true : ['number', 'integer'].includes(type) ? 0 : ''])))
+    setActionId(null); setEditor({ kind: 'create' })
+    setDraft(Object.fromEntries(fields.map(({ name, type }) => [name, type === 'boolean' ? false : type === 'number' || type === 'integer' ? 0 : ''])))
   }
   function startEdit(item) {
-    setEditing(item.id)
-    setDraft(Object.fromEntries(fields.map(([key]) => [key, item[key]])))
+    setActionId(null); setEditor({ kind: 'edit', id: item.id })
+    setDraft(Object.fromEntries(fields.map(({ name }) => [name, item[name] ?? ''])))
   }
   async function save(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
+    event.preventDefault(); setBusy(true); setError('')
+    const values = Object.fromEntries(fields
+      .filter(({ name, type }) => !['text', 'slug'].includes(type) || String(draft[name] ?? '').trim() !== '' || ['title', 'name'].includes(name))
+      .map(({ name, type }) => [name, type === 'integer' || type === 'number' ? Number(draft[name]) : draft[name]]))
     try {
-      if (editing) await updateAdminRecord(section, editing, draft)
-      else await createAdminRecord(section, draft)
-      setDraft({}); setEditing(null); await refresh()
-    } catch (caught) { setError(caught.message) }
-    finally { setBusy(false) }
+      if (editor.kind === 'create') await createAdminRecord(section, values)
+      else await updateAdminRecord(section, editor.id, values)
+      setEditor(null); setDraft({}); await refresh()
+    } catch (caught) { setError(caught.message) } finally { setBusy(false) }
   }
   async function remove(id) {
+    setActionId(null)
     if (!window.confirm('Delete this synthetic sample record?')) return
-    setBusy(true)
-    try { await deleteAdminRecord(section, id); await refresh() }
-    catch (caught) { setError(caught.message) }
-    finally { setBusy(false) }
+    setBusy(true); setError('')
+    try { await deleteAdminRecord(section, id); setSelected((current) => current.filter((key) => key !== id)); await refresh() }
+    catch (caught) { setError(caught.message) } finally { setBusy(false) }
   }
+  function duplicate(item) {
+    const { id, ...rest } = item
+    setEditor({ kind: 'create' }); setDraft(rest); setActionId(null)
+  }
+  function toggleSelected(id) { setSelected((current) => current.includes(id) ? current.filter((key) => key !== id) : [...current, id]) }
 
-  if (!title) return <section><p className="admin-eyebrow">ROUTE NOT FOUND</p><h1 className="admin-page-title">Unknown dashboard section</h1></section>
-  const items = section === 'profile' ? (payload?.user ? [payload.user] : []) : payload?.items || []
+  if (!title) return <div className="dashboard-page"><p className="dashboard-eyebrow">ROUTE NOT FOUND</p><h2>Unknown dashboard section</h2></div>
+  return <section className="dashboard-data-page">
+    {error && <div className="dashboard-alert" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError('')}><X size={16} /></button></div>}
+    <div className="dashboard-data-heading"><div><h2>{title}</h2><p>{readOnly ? 'Read-only staging view. User and profile management are intentionally disabled.' : `Manage ${section.replaceAll('-', ' ')} in the synthetic staging workspace.`}</p></div>
+      {!readOnly && payload?.fields && <button className="dashboard-primary-button" type="button" onClick={startCreate}><Plus size={16} aria-hidden="true" />Add New</button>}
+    </div>
+    <div className="dashboard-table-toolbar">
+      <div className="dashboard-table-search"><Search aria-hidden="true" size={16} /><input id="dashboard-table-filter" name="dashboardFilter" autoComplete="off" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0) }} placeholder={`Filter ${section.replaceAll('-', ' ')}…`} aria-label={`Filter ${section.replaceAll('-', ' ')}`} /></div>
+      <div className="dashboard-table-tools">
+        {selected.length > 0 && !readOnly && <span className="dashboard-selected-count">{selected.length} selected</span>}
+        <div className="dashboard-columns-menu"><button type="button" className="dashboard-outline-button" aria-expanded={showColumns} onClick={() => setShowColumns((open) => !open)}><Columns3 size={15} aria-hidden="true" />View</button>
+          {showColumns && <div className="dashboard-columns-popover">{columnKeys.map((key) => <label key={key}><input type="checkbox" checked={visibleColumns?.includes(key) ?? true} onChange={() => setVisibleColumns((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])} />{labelFor(key)}</label>)}<button type="button" onClick={() => setVisibleColumns(columnKeys)}>Reset View</button></div>}
+        </div>
+        {section === 'files' && <button type="button" className="dashboard-outline-button" disabled title="File export is not connected in the synthetic preview"><FileDown size={15} aria-hidden="true" />Export</button>}
+      </div>
+    </div>
+    <div className="dashboard-table-wrap"><table className="dashboard-table">
+      <thead><tr><th className="dashboard-check-cell"><input id="dashboard-select-all" name="selectAllRows" type="checkbox" aria-label="Select all visible rows" checked={pageItems.length > 0 && pageItems.every((item) => selected.includes(item.id))} onChange={(event) => setSelected(event.target.checked ? [...new Set([...selected, ...pageItems.map((item) => item.id)])] : selected.filter((id) => !pageItems.some((item) => item.id === id)))} /></th>{displayedColumns.map((key) => <th key={key}>{labelFor(key)}</th>)}<th className="dashboard-actions-heading">Actions</th></tr></thead>
+      <tbody>{pageItems.map((item) => <tr key={item.id} onDoubleClick={() => !readOnly && startEdit(item)}>
+        <td className="dashboard-check-cell"><input id={`dashboard-select-${fieldInputId(item.id)}`} name={`select-${item.id}`} type="checkbox" aria-label={`Select ${item.title || item.name || item.id}`} checked={selected.includes(item.id)} onChange={() => toggleSelected(item.id)} /></td>
+        {displayedColumns.map((key) => <td key={key}>{key === 'id' ? <span className="dashboard-record-id">{formatValue(item[key])}</span> : formatValue(item[key])}</td>)}
+        <td className="dashboard-row-actions"><button type="button" className="dashboard-icon-button" aria-label={`Actions for ${item.title || item.name || item.id}`} aria-expanded={actionId === item.id} onClick={() => setActionId((current) => current === item.id ? null : item.id)}><MoreHorizontal size={18} /></button>
+          {actionId === item.id && <div className="dashboard-row-menu">{!readOnly && <><button type="button" onClick={() => startEdit(item)}><Pencil size={15} />Edit</button><button type="button" onClick={() => duplicate(item)}><Copy size={15} />Duplicate</button><button className="is-danger" type="button" onClick={() => remove(item.id)}><Trash2 size={15} />Delete</button></>}</div>}
+        </td>
+      </tr>)}
+      {!pageItems.length && <tr><td colSpan={displayedColumns.length + 2} className="dashboard-empty-cell">{payload ? (query ? 'No matching records found.' : 'No synthetic records yet.') : 'Loading local sample data…'}</td></tr>}
+      </tbody>
+    </table></div>
+    <div className="dashboard-table-pagination"><p>{selected.length} of {filtered.length} row(s) selected.</p><div className="dashboard-page-size"><label htmlFor="dashboard-page-size">Rows per page</label><select id="dashboard-page-size" name="pageSize" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0) }}>{[10, 20, 30, 40, 50].map((size) => <option key={size} value={size}>{size}</option>)}</select></div><span className="dashboard-page-count">Page {page + 1} of {pageCount}</span><div className="dashboard-page-controls"><button type="button" aria-label="Go to first page" disabled={page === 0} onClick={() => setPage(0)}><ChevronsLeft size={16} /></button><button type="button" aria-label="Go to previous page" disabled={page === 0} onClick={() => setPage((value) => value - 1)}><ChevronLeft size={16} /></button><button type="button" aria-label="Go to next page" disabled={page >= pageCount - 1} onClick={() => setPage((value) => value + 1)}><ChevronRight size={16} /></button><button type="button" aria-label="Go to last page" disabled={page >= pageCount - 1} onClick={() => setPage(pageCount - 1)}><ChevronsRight size={16} /></button></div></div>
+    <p className="dashboard-data-note">{readOnly ? 'The two staging accounts are synthetic and share the Admin role.' : 'Changes apply only to in-memory synthetic samples and reset when the local API restarts.'}{['files', 'maps', 'properties', 'landing-page'].includes(section) && ' Media storage is not connected.'}{section.startsWith('calculator-') && ' Formula parity and CSV import/export remain unported.'}</p>
 
-  return <section>
-    <p className="admin-eyebrow">SYNTHETIC ADMIN DATA</p><div className="admin-section-heading"><div><h1 className="admin-page-title">{title}</h1><p className="admin-muted">{readOnly ? 'Read-only staging view. User and profile management are intentionally disabled.' : 'Edits affect local synthetic data only and reset when the API process restarts.'}</p></div>{!readOnly && <button className="admin-primary-button" type="button" onClick={startCreate}>Add sample record</button>}</div>
-    {error && <p className="admin-error" role="alert">{error}</p>}
-    {draft && Object.keys(draft).length > 0 && !readOnly && <form className="admin-editor" onSubmit={save}><h2>{editing ? 'Edit sample record' : 'New sample record'}</h2><div className="admin-editor-grid">{fields.map(([key, type]) => { const numeric = type === 'number' || type === 'integer'; return <label key={key} htmlFor={`admin-field-${key}`}>{labelFor(key)}{type === 'boolean' ? <input id={`admin-field-${key}`} name={key} type="checkbox" checked={Boolean(draft[key])} onChange={(event) => setDraft({ ...draft, [key]: event.target.checked })} /> : <input id={`admin-field-${key}`} name={key} type={numeric ? 'number' : 'text'} min={numeric ? 0 : undefined} step={type === 'integer' ? 1 : undefined} value={draft[key] ?? ''} maxLength={numeric ? undefined : 300} required={type !== 'boolean'} onChange={(event) => setDraft({ ...draft, [key]: numeric ? Number(event.target.value) : event.target.value })} />}</label> })}</div><div className="admin-actions"><button className="admin-primary-button" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save sample'}</button><button className="admin-secondary-button" type="button" onClick={() => { setDraft({}); setEditing(null) }}>Cancel</button></div></form>}
-    <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Record</th>{fields.slice(0, 3).map(([key]) => <th key={key}>{labelFor(key)}</th>)}<th>{readOnly ? 'Role' : 'Actions'}</th></tr></thead><tbody>{items.map((item) => <tr key={item.id}><th scope="row">{item.title || item.name || item.sectionName || item.email || item.id}</th>{fields.slice(0, 3).map(([key]) => <td key={key}>{String(item[key] ?? '—')}</td>)}<td>{readOnly ? item.role || 'Admin' : <div className="admin-row-actions"><button type="button" onClick={() => startEdit(item)}>Edit</button><button type="button" onClick={() => remove(item.id)}>Delete</button></div>}</td></tr>)}{!items.length && <tr><td colSpan={Math.max(fields.length + 1, 2)} className="admin-empty">{payload ? 'No synthetic records yet.' : 'Loading local sample data…'}</td></tr>}</tbody></table></div>
-    {section === 'users' && <p className="admin-muted">Exactly two synthetic accounts share the hardcoded Admin role. Invitations, role editing, and user CRUD are not available.</p>}
-    {['files', 'maps', 'properties', 'landing-page'].includes(section) && <p className="admin-muted">Uploads and media changes are disabled in this slice. File imports/exports and external notifications are not connected.</p>}
-    {section.startsWith('calculator-') && <p className="admin-muted">This is synthetic record management only; calculator formula behavior and CSV import/export remain unported.</p>}
+    {editor && <div className="dashboard-sheet-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditor(null) }}>
+      <section className="dashboard-sheet" role="dialog" aria-modal="true" aria-labelledby="dashboard-editor-title"><header><div><h3 id="dashboard-editor-title">{editor.kind === 'edit' ? `Edit ${singularFor(section)}` : `Add New ${singularFor(section)}`}</h3><p>{editor.kind === 'edit' ? `Make changes to your ${singularFor(section)} here.` : `Add a new ${singularFor(section)} to your list.`}</p></div><button type="button" aria-label="Close editor" onClick={() => setEditor(null)}><X size={18} /></button></header>
+        <form onSubmit={save}><div className="dashboard-sheet-groups">{fieldGroups.map((group) => <fieldset className="dashboard-sheet-group" key={group.title}><legend>{group.title}</legend><div className="dashboard-sheet-fields">{group.fields.map((field) => <label key={field.name} className={field.type === 'boolean' ? 'dashboard-boolean-field' : ''}>
+          {field.type === 'boolean' ? <><input id={fieldInputId(field.name)} name={field.name} type="checkbox" checked={Boolean(draft[field.name])} onChange={(event) => setDraft((current) => ({ ...current, [field.name]: event.target.checked }))} />{field.label}</> : <>{field.label}{field.type === 'textarea' ? <textarea id={fieldInputId(field.name)} name={field.name} autoComplete="off" value={draft[field.name] ?? ''} onChange={(event) => setDraft((current) => ({ ...current, [field.name]: event.target.value }))} /> : <input id={fieldInputId(field.name)} name={field.name} autoComplete="off" required={['title', 'name'].includes(field.name)} type={field.type === 'integer' || field.type === 'number' ? 'number' : 'text'} min={field.type === 'number' || field.type === 'integer' ? 0 : undefined} step={field.type === 'integer' ? 1 : undefined} value={draft[field.name] ?? ''} onChange={(event) => setDraft((current) => ({ ...current, [field.name]: event.target.value }))} />}</>}
+        </label>)}</div></fieldset>)}</div>{['properties', 'files', 'maps'].includes(section) && <div className="dashboard-media-placeholder"><strong>Media</strong><span>Upload and ordering controls match the legacy workflow but are intentionally disabled until staging storage is approved.</span></div>}<p className="dashboard-data-note">Synthetic staging data only. Uploads and external actions are disabled.</p><footer><button className="dashboard-outline-button" type="button" onClick={() => setEditor(null)}>Cancel</button><button className="dashboard-primary-button" type="submit" disabled={busy}>{busy ? 'Saving…' : editor.kind === 'edit' ? 'Save changes' : 'Add record'}</button></footer></form>
+      </section>
+    </div>}
   </section>
 }
 
-function labelFor(key) {
-  return key.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`).replace(/^./, (letter) => letter.toUpperCase())
+function labelFor(value) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
+function fieldInputId(value) { return `admin-field-${String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}` }
+function groupFields(section, fields) {
+  const definitions = {
+    properties: [['General Information', ['title', 'shortDescription', 'address']], ['Classification & Location', ['propertyType', 'purchaseType', 'category', 'city', 'society', 'phase']], ['Pricing', ['price', 'isDiscounted']], ['Physical Specifications', ['area', 'areaUnit', 'beds', 'baths', 'isFurnished']], ['Detailed Description & Publishing', ['description', 'visible']]],
+    files: [['File Property Information', ['title', 'fileType']], ['Location', ['city', 'society', 'phase']], ['Area & Pricing', ['area', 'areaUnit', 'price']], ['Publishing Settings', ['visible']]],
+    maps: [['Map Information', ['title', 'description']], ['Relations', ['city', 'society', 'phase']], ['Publishing Settings', ['visible']]],
+  }
+  const groups = definitions[section]
+  if (!groups) return [{ title: 'Record Information', fields }]
+  const remaining = new Map(fields.map((field) => [field.name, field]))
+  return groups.map(([title, names]) => ({ title, fields: names.map((name) => remaining.get(name)).filter(Boolean) })).filter((group) => group.fields.length)
 }
+function singularFor(value) {
+  const irregular = { properties: 'property', categories: 'category', societies: 'society', phases: 'phase', queries: 'query', files: 'file', maps: 'map', users: 'user' }
+  return irregular[value] || value.replace(/s$/, '').replaceAll('-', ' ')
+}
+function formatValue(value) { return value === undefined || value === null || value === '' ? '—' : typeof value === 'boolean' ? value ? 'Yes' : 'No' : String(value) }

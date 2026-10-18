@@ -46,8 +46,42 @@ assert.ok(userList.items.every((user) => user.role === 'Admin'))
 assert.equal((await api.collection(new Request(`${base}/users`, { method: 'POST', headers: writeHeaders, body: '{}' }), 'users')).status, 405)
 const profile = await api.collection(new Request(`${base}/profile`, { headers: readHeaders }), 'profile')
 assert.equal((await profile.json()).user.email, 'admin.one@staging.invalid')
+const queryCollection = await api.collection(new Request(`${base}/queries`, { headers: readHeaders }), 'queries')
+assert.equal(queryCollection.status, 200)
+const queryData = await queryCollection.json()
+assert.equal(queryData.count, 2)
+assert.ok(queryData.items.every((item) => typeof item.is_read === 'boolean' && item.email.endsWith('.invalid')))
+const sampleQuery = queryData.items.find((item) => !item.is_read)
+const readQuery = await api.item(new Request(`${base}/queries/${sampleQuery.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ is_read: true }),
+}), 'queries', sampleQuery.id)
+assert.equal(readQuery.status, 200)
+assert.equal((await readQuery.json()).item.is_read, true)
+const newQuery = await api.collection(new Request(`${base}/queries`, {
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic Test', email: '', phone: '', property_id: '', property_title: '', message: 'A synthetic query message.', created_at: '2026-10-18 12:00:00', is_read: false }),
+}), 'queries')
+assert.equal(newQuery.status, 201)
+assert.equal((await newQuery.json()).item.email, '')
+const landingCollection = await api.collection(new Request(`${base}/landing-page`, { headers: readHeaders }), 'landing-page')
+assert.equal(landingCollection.status, 200)
+const landingData = await landingCollection.json()
+assert.equal(landingData.count, 6)
+const featuredSection = landingData.items.find((item) => item.id === 'section-featured')
+const landingUpdate = await api.item(new Request(`${base}/landing-page/${featuredSection.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Home Picks', order: 1, selectedItems: ['101'], active: true }),
+}), 'landing-page', featuredSection.id)
+assert.equal(landingUpdate.status, 200)
+assert.deepEqual((await landingUpdate.json()).item.selectedItems, ['101'])
+const invalidLandingItems = await api.item(new Request(`${base}/landing-page/${featuredSection.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: ['101', '101'] }),
+}), 'landing-page', featuredSection.id)
+assert.equal(invalidLandingItems.status, 400)
 const created = await api.collection(new Request(`${base}/properties`, {
-  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic test record', visible: true }),
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({
+    title: 'Synthetic test record', shortDescription: 'Staging form test', address: 'Sample Road', propertyType: 'Residential',
+    purchaseType: 'sale', category: 'Houses', city: 'Lahore', price: 12000000, area: 10, areaUnit: 'marla', beds: 3,
+    baths: 2, isFurnished: true, isDiscounted: false, description: '<p>Synthetic description</p>', visible: true,
+  }),
 }), 'properties')
 assert.equal(created.status, 201)
 const createdItem = (await created.json()).item
@@ -55,6 +89,10 @@ assert.equal(createdItem.title, 'Synthetic test record')
 assert.ok(createdItem.id)
 const createdProperty = syntheticProperties.find((item) => String(item.id) === createdItem.id)
 assert.ok(createdProperty)
+assert.equal(createdProperty.location.address, 'Sample Road')
+assert.equal(createdProperty.area.value, '10')
+assert.equal(createdProperty.shortDescription, 'Staging form test')
+assert.equal(createdProperty.beds, 3)
 const createdListing = await propertyApi.list(new Request('https://test.invalid/api/v1/properties'))
 assert.ok((await createdListing.json()).items.some((item) => item.slug === createdProperty.slug))
 
@@ -83,15 +121,19 @@ const afterDelete = await propertyApi.list(new Request('https://test.invalid/api
 assert.ok(!(await afterDelete.json()).items.some((item) => item.slug === createdProperty.slug))
 
 const newMap = (await api.collection(new Request(`${base}/maps`, {
-  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin Map', city: 'Lahore', visible: true }),
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin Map', city: 'Lahore', society: 'Sample Society', phase: 'Phase One', description: 'Sample map notes', visible: true }),
 }), 'maps')).json()
 const map = (await newMap).item
+assert.equal(syntheticMaps.find((item) => item.slug === map.id).description, 'Sample map notes')
 assert.ok((await (await mapsApi.list(new Request('https://test.invalid/api/v1/maps'))).json()).items.some((item) => item.slug === map.id))
 
 const newFileResponse = await api.collection(new Request(`${base}/files`, {
-  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin File', city: 'Lahore', fileType: 'Allocation', visible: true }),
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin File', city: 'Lahore', society: 'Sample Society', phase: 'Phase One', fileType: 'Allocation', area: 5, areaUnit: 'marla', price: 8500000, visible: true }),
 }), 'files')
 const file = (await newFileResponse.json()).item
+const fileFixture = syntheticFiles.find((item) => item.slug === file.id)
+assert.equal(fileFixture.area.value, '5')
+assert.equal(fileFixture.price.amount, '8500000')
 assert.ok((await (await filesApi.list(new Request('https://test.invalid/api/v1/files'))).json()).items.some((item) => item.slug === file.id))
 
 console.log('Synthetic admin API checks passed.')
