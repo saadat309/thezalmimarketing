@@ -461,12 +461,12 @@ function propertyTaxonomyOptions(field) {
   return [...values].map(([value, label]) => ({ value, label }))
 }
 
-function propertyLabelOptions() {
-  return syntheticLabels.map((label) => ({ value: label.slug, label: label.name, isBadge: label.is_badge }))
+function propertyLabelOptions(labels = syntheticLabels) {
+  return labels.map((label) => ({ value: label.slug, label: label.name, isBadge: Boolean(label.is_badge) }))
 }
 
 function adminLabelRecord(label) {
-  return { id: label.slug, slug: label.slug, name: label.name, is_badge: label.is_badge, is_filter: label.is_filter }
+  return { id: label.slug, slug: label.slug, name: label.name, is_badge: Boolean(label.is_badge), is_filter: Boolean(label.is_filter) }
 }
 
 function validateLabelFields(input, current = null) {
@@ -483,22 +483,24 @@ function validateLabelFields(input, current = null) {
   return { result, errors }
 }
 
-async function handleLabelCollection(request, auth) {
+async function handleLabelCollection(request, auth, propertyRepository = null) {
   if (request.method === 'OPTIONS') return auth.options(request)
   const mutation = request.method !== 'GET'
   const guard = await auth.requireAdmin(request, { csrf: mutation })
   if (guard.response) return guard.response
   if (request.method === 'GET') {
-    const items = syntheticLabels.map(adminLabelRecord)
+    const items = propertyRepository ? (await propertyRepository.listLabels()).map(adminLabelRecord) : syntheticLabels.map(adminLabelRecord)
     return json(request, { items, count: items.length, fields: DOMAIN_FIELDS.labels, columns: ['id', 'name', 'slug', 'is_badge', 'is_filter'] })
   }
   if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
-  return readBody(request).then((body) => {
+  return readBody(request).then(async (body) => {
     if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
     if (Object.keys(body.value).some((key) => key !== 'name')) return json(request, { error: { code: 'invalid_fields', fields: { _: 'Only a label name may be submitted.' } } }, 400)
     const { result, errors } = validateLabelFields(body.value)
     if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
-    return json(request, { item: adminLabelRecord(createSyntheticLabel(result.name)) }, 201)
+    const label = createSyntheticLabel(result.name)
+    const stored = propertyRepository ? await propertyRepository.saveLabel(label) : null
+    return json(request, { item: adminLabelRecord(stored || label) }, 201)
   })
 }
 
@@ -507,23 +509,29 @@ async function handleLabelItem(request, auth, slug, propertyRepository = null, d
   const mutation = request.method !== 'GET'
   const guard = await auth.requireAdmin(request, { csrf: mutation })
   if (guard.response) return guard.response
-  const current = syntheticLabels.find((label) => label.slug === slug)
+  const current = (propertyRepository && await propertyRepository.findLabelBySlug(slug)) || syntheticLabels.find((label) => label.slug === slug)
   if (!current) return json(request, { error: { code: 'not_found' } }, 404)
   if (request.method === 'GET') return json(request, { item: adminLabelRecord(current) })
   if (request.method === 'DELETE') {
     if (propertyRepository) await propertyRepository.removeLabelFromProperties(slug)
     if (directoryRepository) await directoryRepository.removeLabelFromFiles(slug)
-    return removeSyntheticLabel(slug) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
+    const deletedFromStorage = propertyRepository ? await propertyRepository.deleteLabel(slug) : false
+    const deletedFromMemory = removeSyntheticLabel(slug)
+    return deletedFromStorage || deletedFromMemory
+      ? json(request, { ok: true })
+      : json(request, { error: { code: 'not_found' } }, 404)
   }
   if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
   const body = await readBody(request)
   if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
   const { result, errors } = validateLabelFields(body.value, current)
   if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
-  return json(request, { item: adminLabelRecord(updateSyntheticLabel(slug, result)) })
+  const updated = updateSyntheticLabel(slug, result) || { ...current, ...result }
+  const stored = propertyRepository ? await propertyRepository.updateLabel(slug, updated) : null
+  return json(request, { item: adminLabelRecord(stored || updated) })
 }
 
-function propertyAdminOptions() {
+function propertyAdminOptions(sourceOptions = {}) {
   const related = syntheticProperties.filter((item) => !item.fileOnly).map((item) => ({ value: item.slug, label: item.title }))
   return {
     property_type: [{ value: 'Residential', label: 'Residential' }, { value: 'Commercial', label: 'Commercial' }],
@@ -531,9 +539,12 @@ function propertyAdminOptions() {
     unit: ['sqft', 'marla', 'kanal', 'hectare', 'acre', 'yard'].map((value) => ({ value, label: value === 'sqft' ? 'Sq. Ft.' : value[0].toUpperCase() + value.slice(1) })),
     price_period_unit: ['day', 'week', 'month', 'year'].map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })),
     installment_display_mode: [{ value: 'advance', label: 'Show advance' }, { value: 'installment', label: 'Show installment' }],
-    category_id: propertyTaxonomyOptions('category_id'), city_id: propertyTaxonomyOptions('city_id'),
-    society_id: propertyTaxonomyOptions('society_id'), phase_id: propertyTaxonomyOptions('phase_id'),
-    related_products: related, labels: propertyLabelOptions(),
+    category_id: sourceOptions.category_id || propertyTaxonomyOptions('category_id'),
+    city_id: sourceOptions.city_id || propertyTaxonomyOptions('city_id'),
+    society_id: sourceOptions.society_id || propertyTaxonomyOptions('society_id'),
+    phase_id: sourceOptions.phase_id || propertyTaxonomyOptions('phase_id'),
+    related_products: sourceOptions.related_products || related,
+    labels: propertyLabelOptions(sourceOptions.labels || syntheticLabels),
     template: [{ value: 'default', label: 'Default' }, { value: 'minimal', label: 'Minimal' }, { value: 'detailed', label: 'Detailed' }],
   }
 }
@@ -594,10 +605,10 @@ function validateDirectoryAdminFields(domain, input, { updating = false } = {}) 
   return { result, errors }
 }
 
-function validatePropertyFields(input) {
+function validatePropertyFields(input, sourceOptions = {}) {
   const result = {}
   const errors = {}
-  const options = propertyAdminOptions()
+  const options = propertyAdminOptions(sourceOptions)
   for (const [key, value] of Object.entries(input)) {
     const type = DOMAIN_FIELDS.properties[key]
     if (!type) { errors[key] = 'Field is not editable.'; continue }
@@ -620,9 +631,9 @@ function validatePropertyFields(input) {
   return { result, errors }
 }
 
-function validatePropertyUpdateFields(current, input) {
+function validatePropertyUpdateFields(current, input, sourceOptions = {}) {
   const previous = Object.fromEntries(Object.entries(current || {}).filter(([key]) => key !== 'id'))
-  return validatePropertyFields({ ...previous, ...input })
+  return validatePropertyFields({ ...previous, ...input }, sourceOptions)
 }
 
 function applyPublicFields(domain, target, fields) {
@@ -996,7 +1007,7 @@ export function createMemoryAdminRepository() {
 export function createAdminDataApi(repository, auth, profileStorage = createMemoryAdminStorage(), propertyRepository = null, directoryRepository = null, taxonomyRepository = null) {
   return {
     async collection(request, domain) {
-      if (domain === 'labels') return await handleLabelCollection(request, auth)
+      if (domain === 'labels') return await handleLabelCollection(request, auth, propertyRepository)
       if (domain === 'users') {
         if (request.method === 'OPTIONS') return auth.options(request)
         const guard = await auth.requireAdmin(request)
@@ -1052,12 +1063,15 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
         const directoryRecords = ['files', 'maps'].includes(domain) && directoryRepository
           ? [...await directoryRepository.listAll('maps'), ...await directoryRepository.listAll('files')]
           : []
+        const propertyOptions = domain === 'properties' && propertyRepository
+          ? await propertyRepository.editorOptions()
+          : undefined
         const calculatorRates = domain === 'calculator-rates'
         const calculatorTransferFees = domain === 'calculator-transfer-fees'
         return json(request, {
           items, count: items.length, fields: DOMAIN_FIELDS[domain],
           ...(domain === 'properties' ? {
-            options: propertyAdminOptions(),
+            options: propertyAdminOptions(propertyOptions),
             columns: ['id', 'title', 'property_type', 'purchase_type', 'category_id', 'city_id', 'price_amount', 'area', 'unit', 'hide'],
           } : {}),
           ...(['files', 'maps'].includes(domain) ? { options: directoryAdminOptions(domain, directoryRecords) } : {}),
@@ -1103,7 +1117,8 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
       const taxonomyFields = taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain)
         ? { map_ids: await taxonomyRepository.mapOptions() } : {}
-      const { result, errors } = domain === 'properties' ? validatePropertyFields(body.value)
+      const propertyOptions = domain === 'properties' && propertyRepository ? await propertyRepository.editorOptions() : undefined
+      const { result, errors } = domain === 'properties' ? validatePropertyFields(body.value, propertyOptions)
         : ['files', 'maps'].includes(domain) ? validateDirectoryAdminFields(domain, body.value)
         : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
@@ -1220,7 +1235,8 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
         : ['files', 'maps'].includes(domain) && directoryRepository
           ? currentDirectory ? toAdminRecord(domain, currentDirectory) : null
         : repository.find(domain, id)
-      const { result, errors } = domain === 'properties' ? validatePropertyUpdateFields(currentAdminProperty, body.value)
+      const propertyOptions = domain === 'properties' && propertyRepository ? await propertyRepository.editorOptions() : undefined
+      const { result, errors } = domain === 'properties' ? validatePropertyUpdateFields(currentAdminProperty, body.value, propertyOptions)
         : ['files', 'maps'].includes(domain) ? validateDirectoryAdminFields(domain, body.value, { updating: true })
         : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)

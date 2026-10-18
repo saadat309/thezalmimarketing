@@ -25,15 +25,22 @@ their column names, numeric IDs, slugs, nullable media-reference columns,
 timestamps, visibility flags, and `map_docs` foreign-key relationships. The
 admin API keeps its current shape through an adapter; map location selectors
 resolve to source-shaped numeric foreign keys. The staging-only `embed_link`
-column is an additive extension for the existing editor.
+column is an additive extension for the existing editor. Migrations 0005–0007
+add source-shaped `properties`, `detail_descriptions`, `labels`,
+`property_labels`, and `property_related_properties` tables. The Property
+repository translates stable-slug editor/API values to numeric foreign keys,
+and migration 0007 backfills the prior synthetic-only `staging_properties`
+rows without deleting that legacy table. It does not copy media rows or assets.
 
-This is a schema-alignment foundation, not a completed import pipeline. The
-Property and File prototype tables still use staging-specific projections and
-must be translated before any production export can be imported. Media tables
-and binary objects are excluded; references such as `pic`, `thumb`, `map_pic`,
-`map_thumb`, and `pdf` are text columns only, and their future object-storage
-key mapping remains open. Never import production data into this local fixture
-database.
+This is a schema-alignment foundation, not a completed production import
+pipeline. Files still use a staging-specific directory representation and
+should next be mapped to source `properties.is_file = 1`. The staging-only
+Property `vat_amount` and `template` form controls have no columns in the
+checked-in source schema and are not persisted by the normalized tables; a
+separate extension decision is still open. Media tables and binary objects are
+excluded; source media-reference columns remain nullable but are not linked to
+media records. Future object-storage key mapping remains open. Never import
+production data into this local fixture database.
 
 The local dashboard API is disabled by default. To enable its synthetic-only
 login while running this app on loopback, create an ignored `.dev.vars` file

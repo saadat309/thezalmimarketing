@@ -70,7 +70,7 @@ async function sanitizeDescription(input) {
 }
 
 async function publicProperty(property, detail = false) {
-  const images = property.images
+  const images = (property.images || [])
     .filter((image) => image.public && !image.hidden)
     .sort((a, b) => a.position - b.position)
     .map(({ url, alt }) => ({ url, alt }))
@@ -88,7 +88,10 @@ async function publicProperty(property, detail = false) {
     beds: property.beds,
     baths: property.baths,
     category: property.category,
-    labels: publicLabels(property.labels),
+    labels: property.labels?.some((label) => label.isBadge !== undefined || label.is_badge !== undefined)
+      ? property.labels.filter((label) => label.public !== false && label.hidden !== true)
+        .map(({ slug, name, isBadge, is_badge }) => ({ slug, name, isBadge: Boolean(isBadge ?? is_badge) }))
+      : publicLabels(property.labels || []),
     media: {
       thumbnail: thumbnailImage ?? null,
       images,
@@ -100,7 +103,7 @@ async function publicProperty(property, detail = false) {
 
   if (detail) {
     result.shortDescription = property.shortDescription
-    result.descriptionHtml = await sanitizeDescription(property.descriptionHtml)
+    result.descriptionHtml = await sanitizeDescription(property.descriptionHidden ? '' : property.descriptionHtml)
   }
 
   return result

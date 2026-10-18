@@ -94,7 +94,7 @@ const writeHeaders = { Origin: origin, Cookie: cookie, 'X-CSRF-Token': loginBody
 const cityCollection = await api.collection(request(`${base}/cities`, { headers: { Origin: origin, Cookie: cookie } }), 'cities')
 assert.equal(cityCollection.status, 200)
 const cityPayload = await cityCollection.json()
-assert.equal(cityPayload.items.length, 2)
+assert.equal(cityPayload.items.length, 3)
 assert.equal(cityPayload.items[0].id, 1)
 assert.ok(cityPayload.items[0].map_ids.includes('dha-lahore-phase-6-master-plan'))
 assert.equal(database.sqlite.prepare('SELECT slug FROM cities WHERE id = ?').get(1).slug, 'lahore')
@@ -109,7 +109,7 @@ const newCityResponse = await api.collection(request(`${base}/cities`, {
 }), 'cities')
 assert.equal(newCityResponse.status, 201)
 const newCity = (await newCityResponse.json()).item
-assert.equal(newCity.id, 3)
+assert.equal(newCity.id, 4)
 const unassignFromLahore = await api.item(request(`${base}/cities/1`, {
   method: 'PATCH', headers: writeHeaders,
   body: JSON.stringify({ name: 'Lahore', map_ids: cityPayload.items[0].map_ids.filter((slug) => slug !== 'dha-lahore-phase-6-master-plan') }),
