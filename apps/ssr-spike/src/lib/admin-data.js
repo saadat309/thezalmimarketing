@@ -13,8 +13,14 @@ const DOMAIN_FIELDS = {
     phase_id: 'optionalSelect', related_products: 'multiSelect', labels: 'multiSelect', detailed_description_content: 'textarea',
     embed_link: 'optionalText', hide: 'boolean', template: 'select',
   },
-  files: { title: 'text', city: 'text', society: 'text', phase: 'text', fileType: 'text', area: 'number', areaUnit: 'text', price: 'integer', visible: 'boolean' },
-  maps: { title: 'text', city: 'text', society: 'text', phase: 'text', description: 'textarea', visible: 'boolean' },
+  files: {
+    title: 'text', short_desc: 'textarea', address: 'textarea', property_type: 'select', file_type: 'select', purchase_type: 'select',
+    area: 'integer', unit: 'select', price_amount: 'optionalInteger', is_discounted: 'boolean', price_original_amount: 'optionalInteger',
+    price_period_unit: 'select', price_period_value: 'integer', installment_amount: 'optionalInteger', installment_total_period_text: 'optionalText',
+    installment_advance_amount: 'optionalInteger', installment_display_mode: 'select', city_id: 'optionalSelect', society_id: 'optionalSelect',
+    phase_id: 'optionalSelect', embed_link: 'optionalText', labels: 'multiSelect', hide: 'boolean',
+  },
+  maps: { title: 'text', description: 'textarea', city_id: 'optionalSelect', society_id: 'optionalSelect', phase_id: 'optionalSelect', embed_link: 'optionalText', hide: 'boolean' },
   cities: { name: 'text', map_ids: 'multiSelect' },
   categories: { name: 'text' },
   societies: { name: 'text', map_ids: 'multiSelect' },
@@ -417,11 +423,17 @@ function toAdminRecord(domain, item) {
     template: item.adminForm?.template || 'default',
   }
   if (domain === 'files') return {
-    id: item.slug, title: item.title, city: item.cityName, society: item.societyName, phase: item.phaseName,
-    fileType: item.fileType, area: Number(item.area?.value) || 0, areaUnit: item.area?.unit || 'marla',
-    price: Number(item.price?.amount) || 0, visible: item.public === true,
+    id: item.slug, title: item.title, short_desc: item.shortDescription || '', address: item.address || '',
+    property_type: item.adminForm?.property_type || 'Residential', file_type: item.fileType || 'Affidavit', purchase_type: item.purchaseType || 'sale',
+    area: Number(item.area?.value) || 0, unit: item.area?.unit || 'marla', price_amount: Number(item.price?.amount) || 0,
+    is_discounted: item.adminForm?.is_discounted === true, price_original_amount: item.adminForm?.price_original_amount ?? '',
+    price_period_unit: item.adminForm?.price_period_unit || 'month', price_period_value: item.adminForm?.price_period_value ?? 1,
+    installment_amount: item.adminForm?.installment_amount ?? '', installment_total_period_text: item.adminForm?.installment_total_period_text || '',
+    installment_advance_amount: item.adminForm?.installment_advance_amount ?? '', installment_display_mode: item.adminForm?.installment_display_mode || 'installment',
+    city_id: item.city || '', society_id: item.society || '', phase_id: item.phase || '', embed_link: item.adminForm?.embed_link || '',
+    labels: item.adminForm?.labels || [], hide: item.public !== true,
   }
-  if (domain === 'maps') return { id: item.slug, title: item.title, city: item.cityName, society: item.societyName, phase: item.phaseName, description: item.description || '', visible: item.public === true }
+  if (domain === 'maps') return { id: item.slug, title: item.title, description: item.description || '', city_id: item.city || '', society_id: item.society || '', phase_id: item.phase || '', embed_link: item.embedLink || '', hide: item.public !== true }
   return { id: item.slug, title: item.title, city: item.cityName, visible: item.public === true }
 }
 
@@ -470,6 +482,53 @@ function propertyAdminOptions() {
 function propertyTaxonomyOption(field, slug) {
   return propertyTaxonomyOptions(field).map(({ value, label }) => ({ slug: value, name: label })).find((item) => item.slug === slug)
     || { slug, name: slug }
+}
+
+function directoryTaxonomyOptions(field) {
+  const values = new Map()
+  for (const item of [...syntheticMaps, ...syntheticFiles]) {
+    const slug = item[field]
+    const name = item[`${field}Name`]
+    if (slug && name) values.set(slug, name)
+  }
+  for (const property of syntheticProperties) {
+    const relation = field === 'city' ? property.location?.city : property.location?.[field]
+    if (relation?.slug && relation.name) values.set(relation.slug, relation.name)
+  }
+  return [...values].map(([value, label]) => ({ value, label }))
+}
+
+function directoryTaxonomyName(field, slug) {
+  return directoryTaxonomyOptions(field).find((option) => option.value === slug)?.label || slug
+}
+
+function directoryAdminOptions(domain) {
+  const taxonomies = { city_id: directoryTaxonomyOptions('city'), society_id: directoryTaxonomyOptions('society'), phase_id: directoryTaxonomyOptions('phase') }
+  const shared = {
+    property_type: [{ value: 'Residential', label: 'Residential' }, { value: 'Commercial', label: 'Commercial' }],
+    purchase_type: [{ value: 'sale', label: 'Sale' }, { value: 'installment', label: 'Installment' }],
+    unit: ['sqft', 'marla', 'kanal', 'hectare', 'acre', 'yard'].map((value) => ({ value, label: value === 'sqft' ? 'Square Feet' : value[0].toUpperCase() + value.slice(1) })),
+    price_period_unit: ['day', 'week', 'month', 'year'].map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })),
+    installment_display_mode: [{ value: 'advance', label: 'Show Advance Amount' }, { value: 'installment', label: 'Show Installment Amount' }],
+  }
+  return domain === 'files' ? { ...shared, file_type: [{ value: 'Allocation', label: 'Allocation' }, { value: 'Affidavit', label: 'Affidavit' }], ...taxonomies, labels: propertyLabelOptions() }
+    : { ...taxonomies }
+}
+
+function validateDirectoryAdminFields(domain, input, { updating = false } = {}) {
+  const { result, errors } = validateFields(domain, input)
+  const options = directoryAdminOptions(domain)
+  for (const [key, value] of Object.entries(input)) {
+    const type = DOMAIN_FIELDS[domain][key]
+    if (!type) continue
+    if (type === 'select' && !options[key]?.some((option) => option.value === value)) errors[key] = 'Choose an available synthetic option.'
+    if (type === 'optionalSelect' && value !== '' && !options[key]?.some((option) => option.value === value)) errors[key] = 'Choose an available synthetic option.'
+    if (type === 'multiSelect' && !value.every((entry) => options[key]?.some((option) => option.value === entry))) errors[key] = 'Choose only available synthetic options.'
+  }
+  if (!updating && !result.title) errors.title = 'Title is required.'
+  if (domain === 'files' && result.is_discounted && !(Number(result.price_original_amount) > 0)) errors.price_original_amount = 'Original price is required for discounted files.'
+  if (result.price_period_value !== undefined && result.price_period_value < 1) errors.price_period_value = 'Price period value must be at least one.'
+  return { result, errors }
 }
 
 function validatePropertyFields(input) {
@@ -525,19 +584,24 @@ function applyPublicFields(domain, target, fields) {
     if (fields.labels !== undefined) target.labels = fields.labels.map((slug) => ({ slug, name: propertyLabelOptions().find((option) => option.value === slug)?.label || slug }))
     if (fields.detailed_description_content !== undefined) target.descriptionHtml = fields.detailed_description_content
   } else {
-    if (fields.visible !== undefined) target.public = fields.visible
-    if (fields.city !== undefined) {
-      target.cityName = fields.city
-      target.city = toSlug(fields.city)
-    }
-    if (fields.society !== undefined) { target.societyName = fields.society; target.society = toSlug(fields.society) }
-    if (fields.phase !== undefined) { target.phaseName = fields.phase; target.phase = toSlug(fields.phase) }
+    if (fields.hide !== undefined) target.public = !fields.hide
+    if (fields.city_id !== undefined) { target.city = fields.city_id; target.cityName = fields.city_id ? directoryTaxonomyName('city', fields.city_id) : '' }
+    if (fields.society_id !== undefined) { target.society = fields.society_id; target.societyName = fields.society_id ? directoryTaxonomyName('society', fields.society_id) : '' }
+    if (fields.phase_id !== undefined) { target.phase = fields.phase_id; target.phaseName = fields.phase_id ? directoryTaxonomyName('phase', fields.phase_id) : '' }
     if (domain === 'files') {
-      if (fields.fileType !== undefined) target.fileType = fields.fileType
-      if (fields.area !== undefined || fields.areaUnit !== undefined) target.area = { ...target.area, value: String(fields.area ?? target.area?.value ?? 0), unit: fields.areaUnit ?? target.area?.unit ?? 'marla' }
-      if (fields.price !== undefined) target.price = { ...target.price, amount: String(fields.price), currency: 'PKR' }
+      target.adminForm = { ...(target.adminForm || {}), ...fields }
+      if (fields.short_desc !== undefined) target.shortDescription = fields.short_desc
+      if (fields.address !== undefined) target.address = fields.address
+      if (fields.purchase_type !== undefined) target.purchaseType = fields.purchase_type
+      if (fields.file_type !== undefined) target.fileType = fields.file_type
+      if (fields.area !== undefined || fields.unit !== undefined) target.area = { ...target.area, value: String(fields.area ?? target.area?.value ?? 0), unit: fields.unit ?? target.area?.unit ?? 'marla' }
+      if (fields.price_amount !== undefined) target.price = { ...target.price, amount: String(fields.price_amount ?? ''), currency: 'PKR' }
     }
-    if (domain === 'maps' && fields.description !== undefined) target.description = fields.description
+    if (domain === 'maps') {
+      target.adminForm = { ...(target.adminForm || {}), ...fields }
+      if (fields.description !== undefined) target.description = fields.description
+      if (fields.embed_link !== undefined) target.embedLink = fields.embed_link
+    }
   }
   return toAdminRecord(domain, target)
 }
@@ -553,7 +617,7 @@ function createPublicSource(domain, fields) {
   const target = structuredClone(template)
   target.slug = slug
   target.title = fields.title
-  target.public = fields.visible === true
+  target.public = fields.hide !== undefined ? fields.hide !== true : fields.visible === true
   target.updatedAt = new Date().toISOString().slice(0, 10)
   if (domain === 'properties') {
     const numericIds = source.map((item) => Number(item.id)).filter(Number.isFinite)
@@ -566,7 +630,7 @@ function createPublicSource(domain, fields) {
   } else {
     target.cityName = fields.city || target.cityName
     target.city = toSlug(fields.city || target.cityName)
-    if (domain === 'files') target.fileType = fields.fileType || target.fileType
+    if (domain === 'files') target.fileType = fields.file_type || target.fileType
   }
   applyPublicFields(domain, target, fields)
   source.push(target)
@@ -614,6 +678,7 @@ async function readBody(request) {
 
 function validateFields(domain, input) {
   const schema = DOMAIN_FIELDS[domain]
+  const options = ['files', 'maps'].includes(domain) ? directoryAdminOptions(domain) : {}
   const result = {}
   const errors = {}
   for (const key of Object.keys(input)) {
@@ -626,10 +691,13 @@ function validateFields(domain, input) {
     if (type === 'boolean' && typeof value === 'boolean') result[key] = value
     else if (type === 'number' && typeof value === 'number' && Number.isFinite(value) && value >= 0) result[key] = value
     else if (type === 'integer' && typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) result[key] = value
+    else if (type === 'optionalInteger' && (value === null || value === '')) result[key] = null
+    else if (type === 'optionalInteger' && Number.isSafeInteger(value) && value >= 0) result[key] = value
+    else if (['select', 'optionalSelect'].includes(type) && (type === 'optionalSelect' && value === '' || options[key]?.some((option) => option.value === value))) result[key] = value
     else if (type === 'multiSelect' && Array.isArray(value) && value.length <= 100 && value.every((entry) => typeof entry === 'string' && entry.length <= 100) && new Set(value).size === value.length) {
-      const availableMaps = new Set(syntheticMaps.map((item) => item.slug))
-      if (value.every((mapId) => availableMaps.has(mapId))) result[key] = value
-      else errors[key] = 'Choose only available synthetic maps.'
+      const availableValues = new Set((options[key] || syntheticMaps.map((item) => ({ value: item.slug }))).map((option) => option.value))
+      if (value.every((selected) => availableValues.has(selected))) result[key] = value
+      else errors[key] = 'Choose only available synthetic options.'
     }
     else if (type === 'json' && Array.isArray(value) && value.length <= 100 && value.every((entry) => typeof entry === 'string' && entry.length <= 100) && new Set(value).size === value.length) result[key] = value
     else if (type === 'slug' && typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) result[key] = value
@@ -866,6 +934,7 @@ export function createAdminDataApi(repository, auth) {
             options: propertyAdminOptions(),
             columns: ['id', 'title', 'property_type', 'purchase_type', 'category_id', 'city_id', 'price_amount', 'area', 'unit', 'hide'],
           } : {}),
+          ...(['files', 'maps'].includes(domain) ? { options: directoryAdminOptions(domain) } : {}),
           ...(calculatorRates ? {
             options: calculatorRateOptions(),
             columns: ['id', 'city_name', 'society_name', 'calculator_phase_name', 'calculator_block_name', 'category', 'property_type_label', 'unit_label', 'dc_rate', 'fbr_rate', 'is_active', 'updated_at'],
@@ -907,6 +976,7 @@ export function createAdminDataApi(repository, auth) {
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
       const { result, errors } = domain === 'properties' ? validatePropertyFields(body.value)
+        : ['files', 'maps'].includes(domain) ? validateDirectoryAdminFields(domain, body.value)
         : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
@@ -978,6 +1048,7 @@ export function createAdminDataApi(repository, auth) {
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
       const { result, errors } = domain === 'properties' ? validatePropertyUpdateFields(repository.find(domain, id), body.value)
+        : ['files', 'maps'].includes(domain) ? validateDirectoryAdminFields(domain, body.value, { updating: true })
         : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)

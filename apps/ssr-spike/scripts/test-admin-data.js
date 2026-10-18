@@ -152,20 +152,35 @@ const afterDelete = await propertyApi.list(new Request('https://test.invalid/api
 assert.ok(!(await afterDelete.json()).items.some((item) => item.slug === createdProperty.slug))
 
 const newMap = (await api.collection(new Request(`${base}/maps`, {
-  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin Map', city: 'Lahore', society: 'Sample Society', phase: 'Phase One', description: 'Sample map notes', visible: true }),
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin Map', city_id: 'lahore', society_id: 'dha-lahore', phase_id: 'phase-6', description: 'Sample map notes', embed_link: '', hide: false }),
 }), 'maps')).json()
 const map = (await newMap).item
 assert.equal(syntheticMaps.find((item) => item.slug === map.id).description, 'Sample map notes')
+assert.equal(syntheticMaps.find((item) => item.slug === map.id).public, true)
 assert.ok((await (await mapsApi.list(new Request('https://test.invalid/api/v1/maps'))).json()).items.some((item) => item.slug === map.id))
+const clearMapRelation = await api.item(new Request(`${base}/maps/${map.id}`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ city_id: '' }) }), 'maps', map.id)
+assert.equal(clearMapRelation.status, 200)
+assert.equal(syntheticMaps.find((item) => item.slug === map.id).cityName, '')
 
 const newFileResponse = await api.collection(new Request(`${base}/files`, {
-  method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Admin File', city: 'Lahore', society: 'Sample Society', phase: 'Phase One', fileType: 'Allocation', area: 5, areaUnit: 'marla', price: 8500000, visible: true }),
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({
+    title: 'Synthetic Admin File', short_desc: 'Synthetic file listing', address: 'Sample file address', property_type: 'Residential', file_type: 'Allocation', purchase_type: 'installment',
+    area: 5, unit: 'marla', price_amount: 8500000, is_discounted: true, price_original_amount: 9000000, price_period_unit: 'month', price_period_value: 1,
+    installment_amount: 100000, installment_total_period_text: '3 years', installment_advance_amount: 2000000, installment_display_mode: 'installment',
+    city_id: 'lahore', society_id: 'dha-lahore', phase_id: 'phase-7', embed_link: '', labels: ['featured'], hide: false,
+  }),
 }), 'files')
+assert.equal(newFileResponse.status, 201)
 const file = (await newFileResponse.json()).item
 const fileFixture = syntheticFiles.find((item) => item.slug === file.id)
 assert.equal(fileFixture.area.value, '5')
 assert.equal(fileFixture.price.amount, '8500000')
+assert.equal(fileFixture.fileType, 'Allocation')
+assert.equal(fileFixture.shortDescription, 'Synthetic file listing')
 assert.ok((await (await filesApi.list(new Request('https://test.invalid/api/v1/files'))).json()).items.some((item) => item.slug === file.id))
+const hiddenFile = await api.item(new Request(`${base}/files/${file.id}`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ hide: true }) }), 'files', file.id)
+assert.equal(hiddenFile.status, 200)
+assert.ok(!(await (await filesApi.list(new Request('https://test.invalid/api/v1/files'))).json()).items.some((item) => item.slug === file.id))
 
 const rateCollectionResponse = await api.collection(new Request(`${base}/calculator-rates`, { headers: readHeaders }), 'calculator-rates')
 assert.equal(rateCollectionResponse.status, 200)
