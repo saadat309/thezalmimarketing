@@ -1,6 +1,7 @@
 import { syntheticFiles, syntheticMaps } from './directory-fixtures.js'
 import { syntheticProperties } from './property-fixtures.js'
 import { syntheticCalculatorConfig } from './calculator-fixtures.js'
+import { applyCalculatorCsvImport, calculatorCsvTemplate, prepareCalculatorCsvImport, readBoundedCsvForm } from './calculator-import.js'
 
 const DOMAIN_FIELDS = {
   properties: {
@@ -847,6 +848,38 @@ export function createAdminDataApi(repository, auth) {
       const mutation = request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE'
       const guard = auth.requireAdmin(request, { csrf: mutation })
       if (guard.response) return guard.response
+      if (id === 'template' && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
+        if (request.method !== 'GET') return json(request, { error: { code: 'method_not_allowed' } }, 405)
+        return calculatorCsvTemplate(domain, request)
+      }
+      if (id === 'import' && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
+        if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
+        const guardWrite = auth.requireAdmin(request, { csrf: true })
+        if (guardWrite.response) return guardWrite.response
+        const form = await readBoundedCsvForm(request)
+        if (form.error) {
+          const status = form.error === 'too_large' ? 413 : 400
+          const message = form.error === 'invalid_format' ? 'Invalid file format. Only .csv files are supported.'
+            : form.error === 'too_large' ? 'CSV upload exceeds the 512 KB staging limit.'
+              : form.error === 'missing_file' ? 'No valid CSV file was uploaded.'
+                : 'The CSV form could not be read.'
+          return json(request, { error: { code: form.error, message } }, status)
+        }
+        const prepared = prepareCalculatorCsvImport(domain, form.content)
+        if (prepared.error) {
+          const message = prepared.error === 'empty' ? 'Uploaded CSV is empty or has no data rows.'
+            : prepared.error === 'too_many_rows' ? 'CSV exceeds the 500-row staging limit.'
+              : 'CSV file is malformed or unreadable.'
+          return json(request, { error: { code: prepared.error, message } }, 400)
+        }
+        if (form.validateOnly) return json(request, prepared.summary)
+        if (!prepared.validRows.length) return json(request, { error: { code: 'no_valid_rows', message: 'Cannot import: all rows contain validation errors.' } }, 400)
+        const counts = applyCalculatorCsvImport(domain, prepared.validRows)
+        const message = domain === 'calculator-rates'
+          ? `Import completed successfully. Inserted Rates: ${counts.inserted}, Updated Rates: ${counts.updated} (Auto-created: ${counts.created_phases} phases, ${counts.created_blocks} blocks).`
+          : `Import completed successfully. Inserted: ${counts.inserted}, Updated: ${counts.updated}.`
+        return json(request, { success: true, message, total_rows: prepared.summary.total_rows, ...counts })
+      }
       if (request.method === 'GET') {
         const item = repository.find(domain, id)
         return item ? json(request, { item }) : json(request, { error: { code: 'not_found' } }, 404)

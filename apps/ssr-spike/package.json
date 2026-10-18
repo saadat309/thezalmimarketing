@@ -9,7 +9,7 @@
     "preview": "node scripts/run-vite.js preview --host 127.0.0.1 --port 4175",
     "smoke": "node scripts/smoke.js",
     "test:property": "node scripts/test-property-api.js",
-    "test:admin-auth": "node scripts/test-admin-auth.js && node scripts/test-admin-data.js",
+    "test:admin-auth": "node scripts/test-admin-auth.js && node scripts/test-admin-data.js && node scripts/test-calculator-import.js",
     "cf:whoami": "wrangler whoami"
   },
   "dependencies": {

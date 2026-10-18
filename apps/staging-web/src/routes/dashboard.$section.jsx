@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3, Copy, FileDown, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3, Copy, FileDown, MoreHorizontal, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-react'
 import { createAdminRecord, deleteAdminRecord, readAdminCollection, updateAdminRecord } from '../data/admin-api.js'
 import QueriesWorkspace from '../components/dashboard/QueriesWorkspace.jsx'
 import LandingPageWorkspace from '../components/dashboard/LandingPageWorkspace.jsx'
+import CalculatorCsvImportDialog from '../components/dashboard/CalculatorCsvImportDialog.jsx'
 
 const titles = {
   properties: 'Manage Properties', files: 'Manage Files', maps: 'Manage Maps', cities: 'Manage Cities', categories: 'Manage Categories', societies: 'Manage Societies', phases: 'Manage Phases',
@@ -26,6 +27,7 @@ function GenericAdminSection({ section }) {
   const fixedPropertyTypes = section === 'calculator-property-types'
   const [payload, setPayload] = useState(null)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
@@ -36,6 +38,7 @@ function GenericAdminSection({ section }) {
   const [actionId, setActionId] = useState(null)
   const [editor, setEditor] = useState(null)
   const [draft, setDraft] = useState({})
+  const [importOpen, setImportOpen] = useState(false)
 
   async function refresh() {
     if (!title) return
@@ -129,19 +132,20 @@ function GenericAdminSection({ section }) {
   if (!title) return <div className="dashboard-page"><p className="dashboard-eyebrow">ROUTE NOT FOUND</p><h2>Unknown dashboard section</h2></div>
   return <section className="dashboard-data-page">
     {error && <div className="dashboard-alert" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError('')}><X size={16} /></button></div>}
+    {notice && <div className="dashboard-success-alert" role="status">{notice}<button type="button" aria-label="Dismiss message" onClick={() => setNotice('')}><X size={16} /></button></div>}
     <div className="dashboard-data-heading"><div><h2>{title}</h2><p>{readOnly ? 'Read-only staging view. User and profile management are intentionally disabled.' : `Manage ${section.replaceAll('-', ' ')} in the synthetic staging workspace.`}</p></div>
-      {!readOnly && !fixedPropertyTypes && payload?.fields && <button className="dashboard-primary-button" type="button" onClick={startCreate}><Plus size={16} aria-hidden="true" />Add New</button>}
+      <div className="dashboard-heading-actions">{['calculator-rates', 'calculator-transfer-fees'].includes(section) && <button className="dashboard-outline-button" type="button" onClick={() => setImportOpen(true)}><Upload size={16} aria-hidden="true" />Import {section === 'calculator-rates' ? 'Rates' : 'Transfer Fees'}</button>}{!readOnly && !fixedPropertyTypes && payload?.fields && <button className="dashboard-primary-button" type="button" onClick={startCreate}><Plus size={16} aria-hidden="true" />Add New</button>}</div>
     </div>
     <div className="dashboard-table-toolbar">
       <div className="dashboard-table-search"><Search aria-hidden="true" size={16} /><input id="dashboard-table-filter" name="dashboardFilter" autoComplete="off" value={query} onChange={(event) => { setQuery(event.target.value); setPage(0) }} placeholder={`Filter ${section.replaceAll('-', ' ')}…`} aria-label={`Filter ${section.replaceAll('-', ' ')}`} /></div>
       <div className="dashboard-table-tools">
         {selected.length > 0 && !readOnly && <span className="dashboard-selected-count">{selected.length} selected</span>}
-        {['calculator-fee-rules', 'calculator-phases', 'calculator-blocks', 'cities', 'categories', 'societies', 'phases'].includes(section) && selected.length > 0 && <button type="button" className="dashboard-outline-button" disabled={busy} onClick={removeSelected}><Trash2 size={15} aria-hidden="true" />Delete Selected</button>}
+        {['calculator-rates', 'calculator-transfer-fees', 'calculator-fee-rules', 'calculator-phases', 'calculator-blocks', 'cities', 'categories', 'societies', 'phases'].includes(section) && selected.length > 0 && <button type="button" className="dashboard-outline-button" disabled={busy} onClick={removeSelected}><Trash2 size={15} aria-hidden="true" />Delete Selected</button>}
         <div className="dashboard-columns-menu"><button type="button" className="dashboard-outline-button" aria-expanded={showColumns} onClick={() => setShowColumns((open) => !open)}><Columns3 size={15} aria-hidden="true" />View</button>
           {showColumns && <div className="dashboard-columns-popover">{columnKeys.map((key) => <label key={key}><input type="checkbox" checked={visibleColumns?.includes(key) ?? true} onChange={() => setVisibleColumns((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])} />{labelFor(key)}</label>)}<button type="button" onClick={() => setVisibleColumns(columnKeys)}>Reset View</button></div>}
         </div>
         {section === 'files' && <button type="button" className="dashboard-outline-button" disabled title="File export is not connected in the synthetic preview"><FileDown size={15} aria-hidden="true" />Export</button>}
-        {['calculator-fees', 'calculator-tax-rates', 'calculator-fee-rules', 'calculator-phases', 'calculator-blocks', 'calculator-property-types', 'cities', 'categories', 'societies', 'phases'].includes(section) && <button type="button" className="dashboard-outline-button" disabled={selected.length === 0 || busy} onClick={exportSelectedCsv}><FileDown size={15} aria-hidden="true" />Export CSV</button>}
+        {['calculator-rates', 'calculator-transfer-fees', 'calculator-fees', 'calculator-tax-rates', 'calculator-fee-rules', 'calculator-phases', 'calculator-blocks', 'calculator-property-types', 'cities', 'categories', 'societies', 'phases'].includes(section) && <button type="button" className="dashboard-outline-button" disabled={selected.length === 0 || busy} onClick={exportSelectedCsv}><FileDown size={15} aria-hidden="true" />Export CSV</button>}
       </div>
     </div>
     <div className="dashboard-table-wrap"><table className="dashboard-table">
@@ -157,7 +161,7 @@ function GenericAdminSection({ section }) {
       </tbody>
     </table></div>
     <div className="dashboard-table-pagination"><p>{selected.length} of {filtered.length} row(s) selected.</p><div className="dashboard-page-size"><label htmlFor="dashboard-page-size">Rows per page</label><select id="dashboard-page-size" name="pageSize" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0) }}>{[10, 20, 30, 40, 50].map((size) => <option key={size} value={size}>{size}</option>)}</select></div><span className="dashboard-page-count">Page {page + 1} of {pageCount}</span><div className="dashboard-page-controls"><button type="button" aria-label="Go to first page" disabled={page === 0} onClick={() => setPage(0)}><ChevronsLeft size={16} /></button><button type="button" aria-label="Go to previous page" disabled={page === 0} onClick={() => setPage((value) => value - 1)}><ChevronLeft size={16} /></button><button type="button" aria-label="Go to next page" disabled={page >= pageCount - 1} onClick={() => setPage((value) => value + 1)}><ChevronRight size={16} /></button><button type="button" aria-label="Go to last page" disabled={page >= pageCount - 1} onClick={() => setPage(pageCount - 1)}><ChevronsRight size={16} /></button></div></div>
-    <p className="dashboard-data-note">{readOnly ? 'The two staging accounts are synthetic and share the Admin role.' : 'Changes apply only to in-memory synthetic samples and reset when the local API restarts.'}{['files', 'maps', 'properties', 'landing-page'].includes(section) && ' Media storage is not connected.'}{section.startsWith('calculator-') && ' Calculator CSV import/export remains unported.'}</p>
+    <p className="dashboard-data-note">{readOnly ? 'The two staging accounts are synthetic and share the Admin role.' : 'Changes apply only to in-memory synthetic samples and reset when the local API restarts.'}{['files', 'maps', 'properties', 'landing-page'].includes(section) && ' Media storage is not connected.'}{section.startsWith('calculator-') && ' Some calculator CSV import and PDF export workflows remain unported.'}</p>
 
     {editor && <div className="dashboard-sheet-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditor(null) }}>
       <section className="dashboard-sheet" role="dialog" aria-modal="true" aria-labelledby="dashboard-editor-title"><header><div><h3 id="dashboard-editor-title">{editor.kind === 'edit' ? `Edit ${singularFor(section)}` : `Add New ${singularFor(section)}`}</h3><p>{editor.kind === 'edit' ? `Make changes to your ${singularFor(section)} here.` : `Add a new ${singularFor(section)} to your list.`}</p></div><button type="button" aria-label="Close editor" onClick={() => setEditor(null)}><X size={18} /></button></header>
@@ -166,6 +170,7 @@ function GenericAdminSection({ section }) {
         </label>)}</div></fieldset>)}</div>{section === 'calculator-transfer-fees' && <div className="dashboard-calculator-preview"><h4>Derived Calculation Preview <span>(Sports Fund = Rs. 10,500)</span></h4><div className="dashboard-calculator-preview-grid"><div><small>Base Transfer Fee</small><strong>Rs. {transferPreviewBase.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div><div><small>Per Marla Rate</small><strong>Rs. {transferPreviewPerMarla.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / Marla</strong></div><div><small>Reference Sq.Ft.</small><strong>{transferPreviewSqft.toLocaleString()} Sq.Ft.</strong></div><div><small>Per Sq.Ft. Rate</small><strong>Rs. {transferPreviewPerSqft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / Sq.Ft.</strong></div></div><p>Reference transfer fee must exceed Rs. 10,500 and reference size must be greater than zero.</p></div>}{section === 'calculator-tax-rates' && <p className="dashboard-data-note">Enter the percentage as displayed, for example 1.25 means 1.25%, not 125%. The rate unit is fixed to percent.</p>}{['properties', 'files', 'maps', 'categories'].includes(section) && <div className="dashboard-media-placeholder"><strong>{section === 'categories' ? 'Category Image' : 'Media'}</strong><span>Upload and ordering controls match the legacy workflow but are intentionally disabled until staging storage is approved.</span></div>}<p className="dashboard-data-note">Synthetic staging data only. Uploads and external actions are disabled.</p><footer><button className="dashboard-outline-button" type="button" onClick={() => setEditor(null)}>Cancel</button><button className="dashboard-primary-button" type="submit" disabled={busy}>{busy ? 'Saving…' : editor.kind === 'edit' ? 'Save changes' : 'Add record'}</button></footer></form>
       </section>
     </div>}
+    {importOpen && <CalculatorCsvImportDialog domain={section} onClose={() => setImportOpen(false)} onSuccess={async (result) => { setImportOpen(false); setNotice(result?.message || 'Calculator CSV import completed.'); await refresh() }} />}
   </section>
 }
 

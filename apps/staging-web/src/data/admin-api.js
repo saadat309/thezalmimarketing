@@ -76,3 +76,39 @@ export function updateAdminRecord(domain, id, data) {
 export function deleteAdminRecord(domain, id) {
   return request(`/${encodeURIComponent(domain)}/${encodeURIComponent(id)}`, { method: 'DELETE', csrf: true })
 }
+
+export async function calculatorCsvAction(domain, action, { file, validateOnly = false } = {}) {
+  if (!['calculator-rates', 'calculator-transfer-fees'].includes(domain) || !['import', 'template'].includes(action)) {
+    throw new Error('This calculator CSV action is not available.')
+  }
+  const url = new URL(`${ADMIN_API}/${encodeURIComponent(domain)}/${action}`, apiOrigin())
+  if (action === 'template') {
+    const response = await fetch(url, { credentials: 'include', cache: 'no-store', headers: { Accept: 'text/csv' } })
+    if (!response.ok) throw new Error(response.status === 401 ? 'Your local staging session has expired. Please sign in again.' : 'Could not download the synthetic CSV template.')
+    const blobUrl = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = domain === 'calculator-rates' ? 'calculator_rates_sample.csv' : 'calculator_transfer_fees_sample.csv'
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    return
+  }
+  if (!(file instanceof File)) throw new Error('Choose a CSV file first.')
+  const form = new FormData()
+  form.append('file', file)
+  form.append('validate_only', validateOnly ? '1' : '0')
+  let response
+  try {
+    response = await fetch(url, {
+      method: 'POST', credentials: 'include', cache: 'no-store',
+      headers: { Accept: 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+      body: form,
+    })
+  } catch {
+    throw new Error('The local synthetic dashboard API is unavailable.')
+  }
+  let data
+  try { data = await response.json() } catch { data = null }
+  if (!response.ok) throw new Error(data?.error?.message || 'The staging API rejected this CSV.')
+  return data
+}
