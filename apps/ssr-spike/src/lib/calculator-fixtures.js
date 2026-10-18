@@ -1,20 +1,20 @@
 // Fabricated examples only. Do not replace with production calculator records.
 export const syntheticCalculatorConfig = {
   cities: [{ id: 'city-lahore', name: 'Lahore' }],
-  societies: [{ id: 'society-demo', name: 'DHA Lahore (Synthetic)' }],
+  societies: [{ id: 'society-demo', city_id: 'city-lahore', name: 'DHA Lahore (Synthetic)' }],
   calculator_phases: [
-    { id: 'phase-demo', city_id: 'city-lahore', society_id: 'society-demo', name: 'Sample Phase' },
+    { id: 'phase-demo', city_id: 'city-lahore', society_id: 'society-demo', name: 'Sample Phase', sort_order: 0, is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_blocks: [
-    { id: 'block-demo-a', calculator_phase_id: 'phase-demo', name: 'Sample Block A' },
-    { id: 'block-demo-b', calculator_phase_id: 'phase-demo', name: 'Sample Block B' },
+    { id: 'block-demo-a', calculator_phase_id: 'phase-demo', name: 'Sample Block A', sort_order: 0, is_active: true, updated_at: '2026-10-18' },
+    { id: 'block-demo-b', calculator_phase_id: 'phase-demo', name: 'Sample Block B', sort_order: 1, is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_property_types: [
-    { id: 'type-res-plot', category: 'Residential', property_type: 'Plot', label: 'Plot' },
-    { id: 'type-res-house', category: 'Residential', property_type: 'House', label: 'House' },
-    { id: 'type-com-shop', category: 'Commercial', property_type: 'Shop', label: 'Shop' },
-    { id: 'type-com-plot', category: 'Commercial', property_type: 'Plot', label: 'Commercial Plot' },
-    { id: 'type-sector-shop', category: 'Sector Shop', property_type: 'Shop', label: 'Sector Shop' },
+    { id: 'type-res-plot', category: 'Residential', property_type: 'Plot', label: 'Plot', sort_order: 0, is_active: true, updated_at: '2026-10-18' },
+    { id: 'type-res-house', category: 'Residential', property_type: 'House', label: 'House', sort_order: 1, is_active: true, updated_at: '2026-10-18' },
+    { id: 'type-com-shop', category: 'Commercial', property_type: 'Shop', label: 'Shop', sort_order: 2, is_active: true, updated_at: '2026-10-18' },
+    { id: 'type-com-plot', category: 'Commercial', property_type: 'Plot', label: 'Commercial Plot', sort_order: 3, is_active: true, updated_at: '2026-10-18' },
+    { id: 'type-sector-shop', category: 'Sector Shop', property_type: 'Shop', label: 'Sector Shop', sort_order: 4, is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_rates: [
     { id: 'rate-demo-plot', calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-res-plot', dc_per_marla: 425000, dc_per_sqft: 0, fbr_per_marla: 440000, fbr_per_sqft: 0, is_active: true, updated_at: '2026-10-18' },

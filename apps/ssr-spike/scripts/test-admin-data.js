@@ -6,6 +6,7 @@ import { syntheticFiles, syntheticMaps } from '../src/lib/directory-fixtures.js'
 import { createPropertyApi } from '../src/lib/property-api.js'
 import { syntheticProperties } from '../src/lib/property-fixtures.js'
 import { createMemoryPropertyRepository } from '../src/lib/property-repository.js'
+import { syntheticCalculatorConfig } from '../src/lib/calculator-fixtures.js'
 
 const environment = {
   STAGING_LOCAL_AUTH: 'enabled',
@@ -397,5 +398,69 @@ const updateCategoryResponse = await api.item(new Request(`${base}/categories/${
 assert.equal(updateCategoryResponse.status, 200)
 assert.equal((await updateCategoryResponse.json()).item.pic, '')
 assert.equal((await api.item(new Request(`${base}/categories/${newCategory.id}`, { method: 'DELETE', headers: writeHeaders }), 'categories', newCategory.id)).status, 200)
+
+const phaseListResponse = await api.collection(new Request(`${base}/calculator-phases`, { headers: readHeaders }), 'calculator-phases')
+const phaseList = await phaseListResponse.json()
+assert.deepEqual(Object.keys(phaseList.fields), ['city_id', 'society_id', 'name', 'sort_order', 'is_active'])
+assert.equal(phaseList.items[0].city_name, 'Lahore')
+assert.equal(phaseList.options.city_id[0].value, 'city-lahore')
+const newCalculatorPhaseResponse = await api.collection(new Request(`${base}/calculator-phases`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ city_id: 'city-lahore', society_id: 'society-demo', name: 'Synthetic Test Phase', sort_order: 3, is_active: true }),
+}), 'calculator-phases')
+assert.equal(newCalculatorPhaseResponse.status, 201)
+const newCalculatorPhase = (await newCalculatorPhaseResponse.json()).item
+assert.equal(newCalculatorPhase.society_name, 'DHA Lahore (Synthetic)')
+assert.equal((await api.collection(new Request(`${base}/calculator-phases`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ city_id: 'city-lahore', society_id: 'society-demo', name: 'Synthetic Test Phase', sort_order: 0, is_active: true }),
+}), 'calculator-phases')).status, 400)
+assert.equal((await api.item(new Request(`${base}/calculator-phases/${newCalculatorPhase.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ name: 'Sample Phase' }),
+}), 'calculator-phases', newCalculatorPhase.id)).status, 400)
+const updateCalculatorPhaseResponse = await api.item(new Request(`${base}/calculator-phases/${newCalculatorPhase.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ city_id: 'city-lahore', society_id: 'society-demo', name: 'Synthetic Test Phase Updated', sort_order: 4, is_active: false }),
+}), 'calculator-phases', newCalculatorPhase.id)
+assert.equal(updateCalculatorPhaseResponse.status, 200)
+assert.equal((await updateCalculatorPhaseResponse.json()).item.is_active, false)
+
+const blockList = await (await api.collection(new Request(`${base}/calculator-blocks`, { headers: readHeaders }), 'calculator-blocks')).json()
+assert.deepEqual(Object.keys(blockList.fields), ['calculator_phase_id', 'name', 'sort_order', 'is_active'])
+assert.match(blockList.options.calculator_phase_id[0].label, /Lahore > DHA Lahore \(Synthetic\) > Sample Phase/)
+const newCalculatorBlockResponse = await api.collection(new Request(`${base}/calculator-blocks`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: newCalculatorPhase.id, name: 'Synthetic Test Block', sort_order: 2, is_active: true }),
+}), 'calculator-blocks')
+assert.equal(newCalculatorBlockResponse.status, 201)
+const newCalculatorBlock = (await newCalculatorBlockResponse.json()).item
+assert.equal(newCalculatorBlock.calculator_phase_name, 'Synthetic Test Phase Updated')
+assert.equal((await api.collection(new Request(`${base}/calculator-blocks`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: newCalculatorPhase.id, name: 'Synthetic Test Block', sort_order: 0, is_active: true }),
+}), 'calculator-blocks')).status, 400)
+const cascadeRateResponse = await api.collection(new Request(`${base}/calculator-rates`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: newCalculatorPhase.id, calculator_block_id: newCalculatorBlock.id, calculator_property_type_id: 'type-res-plot', unit: 'marla', dc_rate: 1, fbr_rate: 1, is_active: true }),
+}), 'calculator-rates')
+assert.equal(cascadeRateResponse.status, 201)
+const cascadeRate = (await cascadeRateResponse.json()).item
+assert.equal((await api.item(new Request(`${base}/calculator-phases/${newCalculatorPhase.id}`, { method: 'DELETE', headers: writeHeaders }), 'calculator-phases', newCalculatorPhase.id)).status, 200)
+assert.ok(!syntheticCalculatorConfig.calculator_blocks.some((item) => item.id === newCalculatorBlock.id))
+assert.ok(!syntheticCalculatorConfig.calculator_rates.some((item) => item.id === cascadeRate.id))
+
+const propertyTypeList = await (await api.collection(new Request(`${base}/calculator-property-types`, { headers: readHeaders }), 'calculator-property-types')).json()
+assert.deepEqual(Object.keys(propertyTypeList.fields), ['category', 'property_type', 'label', 'sort_order', 'is_active'])
+const fixedType = propertyTypeList.items[0]
+assert.equal((await api.collection(new Request(`${base}/calculator-property-types`, { method: 'POST', headers: writeHeaders, body: JSON.stringify({ label: 'Not Allowed' }) }), 'calculator-property-types')).status, 405)
+assert.equal((await api.item(new Request(`${base}/calculator-property-types/${fixedType.id}`, { method: 'DELETE', headers: writeHeaders }), 'calculator-property-types', fixedType.id)).status, 405)
+assert.equal((await api.item(new Request(`${base}/calculator-property-types/${fixedType.id}`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ category: 'Changed' }) }), 'calculator-property-types', fixedType.id)).status, 400)
+const updateTypeResponse = await api.item(new Request(`${base}/calculator-property-types/${fixedType.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ label: 'Synthetic Plot Label', sort_order: fixedType.sort_order + 1, is_active: false }),
+}), 'calculator-property-types', fixedType.id)
+assert.equal(updateTypeResponse.status, 200)
+assert.equal((await updateTypeResponse.json()).item.label, 'Synthetic Plot Label')
+assert.equal((await (await api.collection(new Request(`${base}/calculator-property-types`, { headers: readHeaders }), 'calculator-property-types')).json()).items[0].is_active, false)
 
 console.log('Synthetic admin API checks passed.')
