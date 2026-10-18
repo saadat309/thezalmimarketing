@@ -69,6 +69,13 @@ sellerTaxRate.is_active = false
 assert.equal(estimate({ payer: 'Seller' }).grandTotal, 60_500)
 sellerTaxRate.is_active = true
 sellerTaxRate.rate = 2.75
+const residentialFeeRule = config.calculator_fee_rules.find((item) => item.property_type === 'Residential' && item.min_area === 0 && item.max_area === 10)
+residentialFeeRule.fee_amount = 82000
+assert.equal(estimate().lines.find((line) => line.label.startsWith('Membership Fee')).amount, 82000)
+residentialFeeRule.is_active = false
+assert.equal(estimate().lines.find((line) => line.label.startsWith('Membership Fee')).amount, 75000)
+residentialFeeRule.is_active = true
+residentialFeeRule.fee_amount = 75000
 assert.equal(estimate({ customDcRate: '0' }).dcValue, 0)
 const edited = estimate({ overrides: { Biana: '0' }, customExpenses: [{ id: 'synthetic-extra', label: 'Sample fee', amount: 123 }] })
 assert.equal(edited.lines[0].amount, 0)

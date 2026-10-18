@@ -29,7 +29,9 @@ const DOMAIN_FIELDS = {
   },
   'calculator-fees': { fee_key: 'text', fee_name: 'text', amount: 'number', charge_unit: 'select', is_active: 'boolean' },
   'calculator-tax-rates': { rate_key: 'text', rate_name: 'text', rate: 'number', rate_unit: 'select', is_active: 'boolean' },
-  'calculator-fee-rules': { name: 'text', fee: 'text', rule: 'text' },
+  'calculator-fee-rules': {
+    fee_id: 'select', property_type: 'select', unit: 'select', min_area: 'number', max_area: 'optionalNumber', fee_amount: 'number', is_active: 'boolean',
+  },
 }
 
 const initial = {
@@ -56,7 +58,7 @@ const initial = {
   'calculator-transfer-fees': [{ id: 'calc-transfer-sample', name: 'Sample transfer fee', phase: 'Sample Phase', block: 'Sample Block', amount: 5000 }],
   'calculator-fees': [{ id: 'calc-fee-sample', name: 'Sample processing fee', amount: 2500 }],
   'calculator-tax-rates': [{ id: 'calc-tax-sample', name: 'Sample tax rate', rate: 1 }],
-  'calculator-fee-rules': [{ id: 'calc-rule-sample', name: 'Sample fee rule', fee: 'Sample processing fee', rule: 'Synthetic example only' }],
+  'calculator-fee-rules': [],
 }
 
 const records = new Map(Object.entries(initial).map(([domain, items]) => [domain, items.map((item) => ({ ...item }))]))
@@ -223,6 +225,50 @@ function validateCalculatorTaxRateFields(input, { updating = false } = {}) {
   for (const field of required) if (!(field in result)) errors[field] ||= 'This field is required or invalid.'
   if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'
   return { result, errors }
+}
+
+function calculatorFeeRuleRecord(rule) {
+  const fee = syntheticCalculatorConfig.calculator_fees.find((item) => item.id === rule.fee_id)
+  return { ...rule, fee_key: fee?.fee_key || '', fee_name: fee?.fee_name || '', is_active: rule.is_active !== false && rule.is_active !== 0 }
+}
+
+function calculatorFeeRuleOptions() {
+  return {
+    fee_id: syntheticCalculatorConfig.calculator_fees.map((fee) => ({ value: fee.id, label: `${fee.fee_name} (${fee.fee_key})` })),
+    property_type: [{ value: 'Residential', label: 'Residential' }, { value: 'Commercial', label: 'Commercial' }],
+    unit: [{ value: 'marla', label: 'Marla' }, { value: 'kanal', label: 'Kanal' }],
+  }
+}
+
+function validateCalculatorFeeRuleFields(input, { updating = false } = {}) {
+  const result = {}
+  const errors = {}
+  const fields = DOMAIN_FIELDS['calculator-fee-rules']
+  for (const [key, value] of Object.entries(input)) {
+    if (!Object.hasOwn(fields, key)) errors[key] = 'Field is not editable.'
+    else if (key === 'fee_id' && typeof value === 'string' && syntheticCalculatorConfig.calculator_fees.some((item) => item.id === value)) result[key] = value
+    else if (key === 'property_type' && ['Residential', 'Commercial'].includes(value)) result[key] = value
+    else if (key === 'unit' && ['marla', 'kanal'].includes(value)) result[key] = value
+    else if (key === 'min_area' && typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1000000) result[key] = value
+    else if (key === 'max_area' && (value === null || (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1000000))) result[key] = value
+    else if (key === 'fee_amount' && typeof value === 'number' && Number.isFinite(value) && value >= 0) result[key] = value
+    else if (key === 'is_active' && typeof value === 'boolean') result[key] = value
+    else errors[key] = 'Value is invalid.'
+  }
+  const required = ['fee_id', 'property_type', 'unit', 'min_area', 'fee_amount']
+  for (const field of required) if (!(field in result)) errors[field] ||= 'This field is required or invalid.'
+  if (result.max_area != null && result.min_area !== undefined && result.max_area <= result.min_area) errors.max_area = 'Maximum area must be greater than minimum area.'
+  if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'
+  return { result, errors }
+}
+
+function writeCalculatorFeeRule(rule, fields) {
+  for (const key of ['fee_id', 'property_type', 'unit', 'min_area', 'max_area', 'fee_amount', 'is_active']) {
+    if (fields[key] !== undefined) rule[key] = fields[key]
+  }
+  if (rule.is_active === undefined) rule.is_active = true
+  rule.updated_at = new Date().toISOString().slice(0, 10)
+  return calculatorFeeRuleRecord(rule)
 }
 
 function writeCalculatorTaxRate(rate, fields) {
@@ -456,6 +502,7 @@ export function createMemoryAdminRepository() {
       if (domain === 'calculator-transfer-fees') return syntheticCalculatorConfig.calculator_transfer_fees.map(calculatorTransferFeeRecord)
       if (domain === 'calculator-fees') return syntheticCalculatorConfig.calculator_fees.map((item) => ({ ...item }))
       if (domain === 'calculator-tax-rates') return syntheticCalculatorConfig.calculator_tax_rates.map((item) => ({ ...item }))
+      if (domain === 'calculator-fee-rules') return syntheticCalculatorConfig.calculator_fee_rules.map(calculatorFeeRuleRecord)
       return publicSources[domain] ? publicSourceList(domain) : (records.get(domain) || []).map((item) => ({ ...item }))
     },
     find(domain, id) {
@@ -469,6 +516,10 @@ export function createMemoryAdminRepository() {
       }
       if (domain === 'calculator-fees') return syntheticCalculatorConfig.calculator_fees.find((item) => item.id === id) || null
       if (domain === 'calculator-tax-rates') return syntheticCalculatorConfig.calculator_tax_rates.find((item) => item.id === id) || null
+      if (domain === 'calculator-fee-rules') {
+        const rule = syntheticCalculatorConfig.calculator_fee_rules.find((item) => item.id === id)
+        return rule ? calculatorFeeRuleRecord(rule) : null
+      }
       return publicSources[domain] ? (findPublicSource(domain, id) ? toAdminRecord(domain, findPublicSource(domain, id)) : null) : records.get(domain)?.find((item) => item.id === id) || null
     },
     insert(domain, fields) {
@@ -494,6 +545,11 @@ export function createMemoryAdminRepository() {
         syntheticCalculatorConfig.calculator_tax_rates.push(rate)
         return { ...rate }
       }
+      if (domain === 'calculator-fee-rules') {
+        const rule = { id: `fee-rule-sample-${nextId++}`, max_area: null, is_active: true, ...fields }
+        syntheticCalculatorConfig.calculator_fee_rules.push(rule)
+        return calculatorFeeRuleRecord(rule)
+      }
       if (publicSources[domain]) return createPublicSource(domain, fields)
       const item = { id: `${domain.replaceAll('-', '').slice(0, 8)}-sample-${nextId++}`, ...fields }
       records.get(domain).push(item)
@@ -515,6 +571,10 @@ export function createMemoryAdminRepository() {
       if (domain === 'calculator-tax-rates') {
         const rate = syntheticCalculatorConfig.calculator_tax_rates.find((item) => item.id === id)
         return rate ? writeCalculatorTaxRate(rate, fields) : null
+      }
+      if (domain === 'calculator-fee-rules') {
+        const rule = syntheticCalculatorConfig.calculator_fee_rules.find((item) => item.id === id)
+        return rule ? writeCalculatorFeeRule(rule, fields) : null
       }
       if (publicSources[domain]) return updatePublicSource(domain, id, fields)
       const list = records.get(domain) || []
@@ -538,6 +598,12 @@ export function createMemoryAdminRepository() {
       }
       if (domain === 'calculator-fees') return false
       if (domain === 'calculator-tax-rates') return false
+      if (domain === 'calculator-fee-rules') {
+        const index = syntheticCalculatorConfig.calculator_fee_rules.findIndex((item) => item.id === id)
+        if (index < 0) return false
+        syntheticCalculatorConfig.calculator_fee_rules.splice(index, 1)
+        return true
+      }
       if (publicSources[domain]) return removePublicSource(domain, id)
       const list = records.get(domain) || []
       const index = list.findIndex((item) => item.id === id)
@@ -599,6 +665,10 @@ export function createAdminDataApi(repository, auth) {
             options: { rate_unit: [{ value: 'percent', label: 'Percent (%)' }] },
             columns: ['id', 'rate_key', 'rate_name', 'rate', 'rate_unit', 'is_active', 'updated_at'],
           } : {}),
+          ...(domain === 'calculator-fee-rules' ? {
+            options: calculatorFeeRuleOptions(),
+            columns: ['id', 'fee_name', 'fee_key', 'property_type', 'unit', 'min_area', 'max_area', 'fee_amount', 'is_active', 'updated_at'],
+          } : {}),
         })
       }
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
@@ -607,7 +677,8 @@ export function createAdminDataApi(repository, auth) {
       const { result, errors } = domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value)
-            : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value) : validateFields(domain, body.value)
+            : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value)
+              : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value) : validateFields(domain, body.value)
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (domain === 'calculator-fees' && !Object.keys(errors).length && syntheticCalculatorConfig.calculator_fees.some((item) => item.fee_key === result.fee_key)) errors.fee_key = 'A calculator fee with this key already exists.'
@@ -641,7 +712,8 @@ export function createAdminDataApi(repository, auth) {
       const { result, errors } = domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value, { updating: true })
-            : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value, { updating: true }) : validateFields(domain, body.value)
+            : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value, { updating: true })
+              : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value, { updating: true }) : validateFields(domain, body.value)
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result, id)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result, id)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)

@@ -301,4 +301,43 @@ const forbiddenTaxDelete = await api.item(new Request(`${base}/calculator-tax-ra
 }), 'calculator-tax-rates', newTaxRate.id)
 assert.equal(forbiddenTaxDelete.status, 405)
 
+const feeRulesResponse = await api.collection(new Request(`${base}/calculator-fee-rules`, { headers: readHeaders }), 'calculator-fee-rules')
+assert.equal(feeRulesResponse.status, 200)
+const feeRules = await feeRulesResponse.json()
+assert.equal(feeRules.count, 5)
+assert.equal(feeRules.options.fee_id.length, 16)
+assert.equal(feeRules.items[0].fee_key, 'membership_fee_residential')
+assert.equal(feeRules.items[0].fee_name, 'Membership Fee - Residential')
+assert.equal(feeRules.items[0].max_area, 10)
+const newFeeRuleResponse = await api.collection(new Request(`${base}/calculator-fee-rules`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ fee_id: 'fee-demo-membership_fee_residential', property_type: 'Residential', unit: 'kanal', min_area: 0, max_area: null, fee_amount: 225000, is_active: true }),
+}), 'calculator-fee-rules')
+assert.equal(newFeeRuleResponse.status, 201)
+const newFeeRule = (await newFeeRuleResponse.json()).item
+assert.equal(newFeeRule.fee_key, 'membership_fee_residential')
+assert.equal((await calculatorConfigApi()).calculator_fee_rules.find((item) => item.id === newFeeRule.id).unit, 'kanal')
+const invalidFeeRangeResponse = await api.collection(new Request(`${base}/calculator-fee-rules`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ fee_id: 'fee-demo-membership_fee_residential', property_type: 'Residential', unit: 'marla', min_area: 10, max_area: 10, fee_amount: 1, is_active: true }),
+}), 'calculator-fee-rules')
+assert.equal(invalidFeeRangeResponse.status, 400)
+const invalidFeeRelationResponse = await api.collection(new Request(`${base}/calculator-fee-rules`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ fee_id: 'unknown-fee', property_type: 'Residential', unit: 'marla', min_area: 0, max_area: null, fee_amount: 1, is_active: true }),
+}), 'calculator-fee-rules')
+assert.equal(invalidFeeRelationResponse.status, 400)
+const residentialRule = feeRules.items[0]
+const updateFeeRuleResponse = await api.item(new Request(`${base}/calculator-fee-rules/${residentialRule.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ fee_id: residentialRule.fee_id, property_type: residentialRule.property_type, unit: residentialRule.unit, min_area: 0, max_area: 10, fee_amount: 82000, is_active: false }),
+}), 'calculator-fee-rules', residentialRule.id)
+assert.equal(updateFeeRuleResponse.status, 200)
+assert.equal((await calculatorConfigApi()).calculator_fee_rules.find((item) => item.id === residentialRule.id).fee_amount, 82000)
+const deleteFeeRuleResponse = await api.item(new Request(`${base}/calculator-fee-rules/${newFeeRule.id}`, {
+  method: 'DELETE', headers: writeHeaders,
+}), 'calculator-fee-rules', newFeeRule.id)
+assert.equal(deleteFeeRuleResponse.status, 200)
+assert.ok(!(await calculatorConfigApi()).calculator_fee_rules.some((item) => item.id === newFeeRule.id))
+
 console.log('Synthetic admin API checks passed.')

@@ -61,7 +61,7 @@ export function calculateStagingEstimate(config, input) {
     }
     let membership = category.toLowerCase() === 'residential' ? (size <= 10 ? 75000 : size < 40 ? 150000 : 200000) : (size <= 4 ? 150000 : 200000)
     const rule = config.calculator_fee_rules.find((item) => {
-      if (item.property_type.toLowerCase() !== (category.toLowerCase() === 'residential' ? 'residential' : 'commercial') || item.is_active === 0) return false
+      if (item.property_type.toLowerCase() !== (category.toLowerCase() === 'residential' ? 'residential' : 'commercial') || item.is_active === false || item.is_active === 0) return false
       const minimum = Number(item.min_area || 0)
       const maximum = item.max_area == null ? null : Number(item.max_area)
       const area = (item.unit || 'marla').toLowerCase() === 'kanal' ? size / 20 : size

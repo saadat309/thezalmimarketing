@@ -46,10 +46,12 @@ export const syntheticCalculatorConfig = {
     ['purchaser_236k_filer', 'Purchaser 236K - Filer', 1.25], ['purchaser_236k_non_filer', 'Purchaser 236K - Non-Filer', 10.5],
   ].map(([rate_key, rate_name, rate]) => ({ id: `tax-demo-${rate_key}`, rate_key, rate_name, rate, rate_unit: 'percent', is_active: true, updated_at: '2026-10-18' })),
   calculator_fee_rules: [
-    { property_type: 'Residential', unit: 'marla', min_area: 0, max_area: 10, fee_amount: 75000, is_active: 1 },
-    { property_type: 'Residential', unit: 'marla', min_area: 10, max_area: 40, fee_amount: 150000, is_active: 1 },
-    { property_type: 'Residential', unit: 'marla', min_area: 40, max_area: null, fee_amount: 200000, is_active: 1 },
-    { property_type: 'Commercial', unit: 'marla', min_area: 0, max_area: 4, fee_amount: 150000, is_active: 1 },
-    { property_type: 'Commercial', unit: 'marla', min_area: 4, max_area: null, fee_amount: 200000, is_active: 1 },
-  ],
+    ['rule-demo-residential-0-10', 'membership_fee_residential', 'Residential', 'marla', 0, 10, 75000],
+    ['rule-demo-residential-10-40', 'membership_fee_residential', 'Residential', 'marla', 10, 40, 150000],
+    ['rule-demo-residential-40-plus', 'membership_fee_residential', 'Residential', 'marla', 40, null, 200000],
+    ['rule-demo-commercial-0-4', 'membership_fee_commercial', 'Commercial', 'marla', 0, 4, 150000],
+    ['rule-demo-commercial-4-plus', 'membership_fee_commercial', 'Commercial', 'marla', 4, null, 200000],
+  ].map(([id, fee_key, property_type, unit, min_area, max_area, fee_amount]) => ({
+    id, fee_id: `fee-demo-${fee_key}`, fee_key, property_type, unit, min_area, max_area, fee_amount, is_active: true, updated_at: '2026-10-18',
+  })),
 }
