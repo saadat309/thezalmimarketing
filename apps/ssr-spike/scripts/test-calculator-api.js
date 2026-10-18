@@ -11,6 +11,8 @@ assert.equal(new Set(syntheticCalculatorConfig.calculator_transfer_fees.map((ite
 assert.ok(syntheticCalculatorConfig.calculator_transfer_fees.every((item) => typeof item.is_active === 'boolean'))
 assert.ok(syntheticCalculatorConfig.calculator_fees.every((item) => Number.isFinite(Number(item.amount))))
 assert.ok(syntheticCalculatorConfig.calculator_tax_rates.every((item) => Number.isFinite(Number(item.rate))))
+assert.equal(new Set(syntheticCalculatorConfig.calculator_tax_rates.map((item) => item.id)).size, syntheticCalculatorConfig.calculator_tax_rates.length)
+assert.ok(syntheticCalculatorConfig.calculator_tax_rates.every((item) => item.rate_unit === 'percent' && typeof item.is_active === 'boolean'))
 assert.ok(JSON.stringify(syntheticCalculatorConfig).includes('Synthetic'))
 assert.equal(Object.hasOwn(syntheticCalculatorConfig, 'production'), false)
 let response = handleCalculatorConfig(new Request('https://staging.invalid/api/v1/calculator/config'))

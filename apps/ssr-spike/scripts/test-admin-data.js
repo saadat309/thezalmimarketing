@@ -264,4 +264,41 @@ const forbiddenFeeDelete = await api.item(new Request(`${base}/calculator-fees/$
 }), 'calculator-fees', newCalculatorFee.id)
 assert.equal(forbiddenFeeDelete.status, 405)
 
+const taxRatesResponse = await api.collection(new Request(`${base}/calculator-tax-rates`, { headers: readHeaders }), 'calculator-tax-rates')
+assert.equal(taxRatesResponse.status, 200)
+const taxRates = await taxRatesResponse.json()
+assert.equal(taxRates.count, 4)
+assert.ok(taxRates.items.every((item) => item.rate_unit === 'percent' && Number.isFinite(item.rate)))
+assert.equal(taxRates.options.rate_unit[0].value, 'percent')
+const newTaxRateResponse = await api.collection(new Request(`${base}/calculator-tax-rates`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ rate_key: 'staging_sample_tax', rate_name: 'Staging Sample Tax', rate: 4.25, rate_unit: 'percent', is_active: true }),
+}), 'calculator-tax-rates')
+assert.equal(newTaxRateResponse.status, 201)
+const newTaxRate = (await newTaxRateResponse.json()).item
+assert.equal((await calculatorConfigApi()).calculator_tax_rates.find((item) => item.rate_key === newTaxRate.rate_key).rate, 4.25)
+const duplicateTaxRateResponse = await api.collection(new Request(`${base}/calculator-tax-rates`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ rate_key: 'seller_236c_filer', rate_name: 'Duplicate', rate: 3, rate_unit: 'percent', is_active: true }),
+}), 'calculator-tax-rates')
+assert.equal(duplicateTaxRateResponse.status, 400)
+const filerTaxRate = taxRates.items.find((item) => item.rate_key === 'seller_236c_filer')
+const updateTaxRateResponse = await api.item(new Request(`${base}/calculator-tax-rates/${filerTaxRate.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ rate_name: 'Synthetic Seller 236C - Filer', rate: 3.5, is_active: false }),
+}), 'calculator-tax-rates', filerTaxRate.id)
+assert.equal(updateTaxRateResponse.status, 200)
+const updatedTax = (await calculatorConfigApi()).calculator_tax_rates.find((item) => item.rate_key === 'seller_236c_filer')
+assert.equal(updatedTax.rate, 3.5)
+assert.equal(updatedTax.is_active, false)
+const forbiddenTaxKeyUpdate = await api.item(new Request(`${base}/calculator-tax-rates/${filerTaxRate.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ rate_key: 'renamed_seller_tax' }),
+}), 'calculator-tax-rates', filerTaxRate.id)
+assert.equal(forbiddenTaxKeyUpdate.status, 400)
+const forbiddenTaxDelete = await api.item(new Request(`${base}/calculator-tax-rates/${newTaxRate.id}`, {
+  method: 'DELETE', headers: writeHeaders,
+}), 'calculator-tax-rates', newTaxRate.id)
+assert.equal(forbiddenTaxDelete.status, 405)
+
 console.log('Synthetic admin API checks passed.')

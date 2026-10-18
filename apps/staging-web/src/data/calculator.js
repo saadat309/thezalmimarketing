@@ -1,6 +1,6 @@
 const money = (value) => `Rs. ${Math.round(Number(value) || 0).toLocaleString('en-PK')}`
 const getFee = (config, key, fallback) => Number(config.calculator_fees.find((item) => item.fee_key === key && item.is_active !== false && item.is_active !== 0)?.amount ?? fallback)
-const getTax = (config, key, fallback) => Number(config.calculator_tax_rates.find((item) => item.rate_key === key)?.rate ?? fallback)
+const getTax = (config, key, fallback) => Number(config.calculator_tax_rates.find((item) => item.rate_key === key && item.is_active !== false && item.is_active !== 0)?.rate ?? fallback)
 
 // Pure staging calculation; kept separate so synthetic examples can be compared
 // against the legacy calculation rules without mounting the React route.

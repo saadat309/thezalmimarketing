@@ -42,9 +42,9 @@ export const syntheticCalculatorConfig = {
     id: `fee-demo-${fee_key}`, fee_key, fee_name, amount, charge_unit, is_active: true, updated_at: '2026-10-18',
   })),
   calculator_tax_rates: [
-    ['seller_236c_filer', 2.75], ['seller_236c_non_filer', 11.5],
-    ['purchaser_236k_filer', 1.25], ['purchaser_236k_non_filer', 10.5],
-  ].map(([rate_key, rate]) => ({ rate_key, rate })),
+    ['seller_236c_filer', 'Seller 236C - Filer', 2.75], ['seller_236c_non_filer', 'Seller 236C - Non-Filer', 11.5],
+    ['purchaser_236k_filer', 'Purchaser 236K - Filer', 1.25], ['purchaser_236k_non_filer', 'Purchaser 236K - Non-Filer', 10.5],
+  ].map(([rate_key, rate_name, rate]) => ({ id: `tax-demo-${rate_key}`, rate_key, rate_name, rate, rate_unit: 'percent', is_active: true, updated_at: '2026-10-18' })),
   calculator_fee_rules: [
     { property_type: 'Residential', unit: 'marla', min_area: 0, max_area: 10, fee_amount: 75000, is_active: 1 },
     { property_type: 'Residential', unit: 'marla', min_area: 10, max_area: 40, fee_amount: 150000, is_active: 1 },

@@ -62,6 +62,13 @@ bianaFee.is_active = false
 assert.equal(estimate({ transferType: 'Biana Only' }).grandTotal, 4000)
 bianaFee.is_active = true
 bianaFee.amount = 4000
+const sellerTaxRate = config.calculator_tax_rates.find((item) => item.rate_key === 'seller_236c_filer')
+sellerTaxRate.rate = 3.5
+assert.equal(estimate({ payer: 'Seller' }).grandTotal, 77_000)
+sellerTaxRate.is_active = false
+assert.equal(estimate({ payer: 'Seller' }).grandTotal, 60_500)
+sellerTaxRate.is_active = true
+sellerTaxRate.rate = 2.75
 assert.equal(estimate({ customDcRate: '0' }).dcValue, 0)
 const edited = estimate({ overrides: { Biana: '0' }, customExpenses: [{ id: 'synthetic-extra', label: 'Sample fee', amount: 123 }] })
 assert.equal(edited.lines[0].amount, 0)
