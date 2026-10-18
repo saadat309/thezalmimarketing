@@ -48,6 +48,7 @@
 2. Continue source-to-staging review of remaining dashboard forms and workflows; Rates/Transfer Fees CSV imports are implemented synthetically. Do not add a Fee Rules import or calculator PDF workflow absent from the source; its legacy PDF button is toast-only. Keep media/storage disabled.
 3. Keep hosted test traffic modest within the confirmed Workers Free limit; do not activate a paid plan or add metered bindings/services.
 4. Obtain only the owner's safe aggregate data/media inventory before any storage design; never request records or secret values.
+5. Local authenticated visual review can now use the synthetic API at `http://127.0.0.1:4195` and staging frontend at `http://127.0.0.1:4196`; login page rendering and credentialed CORS were checked, but no credentials were entered and dashboard interaction still needs user-authenticated review.
 
 ## Open questions
 

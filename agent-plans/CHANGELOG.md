@@ -434,3 +434,11 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Files:** `apps/staging-web/src/routes/dashboard.$section.jsx`, `apps/staging-web/src/routes/staging.css`, `agent-plans/PROJECT-STATE.md`, and `agent-plans/CHANGELOG.md`.
 - **Evidence and verification:** Source behavior was read in `src/components/dashboard/property-form/property-form.jsx` and `property-file-form.jsx`. The staging-web Worker build passed; the admin-data order regression test passed in the preceding slice. `git diff --check` passed. Browser interaction verification remains unavailable because the running local dashboard cannot reach its configured synthetic admin API.
 - **Risk/follow-up:** No API contract or data projection changed. Badge toggling, global label create/delete/search, full authenticated visual review, and all media operations remain open. No production or Cloudflare resources were changed.
+
+## 2026-10-18 — Restore local dashboard review endpoints
+
+- **Type:** Local-only staging development setup and browser smoke check.
+- **Summary:** Started the synthetic API on loopback port 4195 and the staging frontend on loopback port 4196, explicitly pointing the frontend at that API. The login route rendered in the isolated browser; the dashboard was not authenticated. Read-only `wrangler whoami` succeeded with account details suppressed. A credentialed CORS/session smoke check returned HTTP 200 and the expected frontend-origin/credentials headers from the local synthetic API.
+- **Files:** `agent-plans/PROJECT-STATE.md` and `agent-plans/CHANGELOG.md`.
+- **Evidence and verification:** Confirmed `GET /api/health` returns 200; `GET /api/v1/admin/auth/session` returns 200 with the configured frontend origin and credentialed requests enabled; the browser rendered the staging login route. No credentials were read or entered. `git diff --check` is run before publication.
+- **Risk/follow-up:** Both servers are loopback-only and use synthetic in-memory data. They are not deployed. User-authenticated visual review remains pending; no Cloudflare resources, DNS, production data, cPanel/MySQL, or `workers/ai-worker` were changed.
