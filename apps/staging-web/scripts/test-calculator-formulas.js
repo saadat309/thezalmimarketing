@@ -47,6 +47,10 @@ assert.equal(estimate({ size: 40 }).lines.find((line) => line.label.startsWith('
 const house = estimate({ blockId: 'block-demo-a', propertyTypeId: 'type-res-house', propertyName: 'House', usesCoveredArea: true, coveredArea: 1000 })
 assert.equal(house.dcValue, 2_200_000)
 assert.equal(house.fbrValue, 2_500_000)
+const plotRate = config.calculator_rates.find((item) => item.id === 'rate-demo-plot')
+plotRate.is_active = false
+assert.equal(estimate().rateFound, false)
+plotRate.is_active = true
 assert.equal(estimate({ customDcRate: '0' }).dcValue, 0)
 const edited = estimate({ overrides: { Biana: '0' }, customExpenses: [{ id: 'synthetic-extra', label: 'Sample fee', amount: 123 }] })
 assert.equal(edited.lines[0].amount, 0)

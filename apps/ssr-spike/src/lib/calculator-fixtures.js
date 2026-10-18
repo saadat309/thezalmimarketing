@@ -17,11 +17,11 @@ export const syntheticCalculatorConfig = {
     { id: 'type-sector-shop', category: 'Sector Shop', property_type: 'Shop', label: 'Sector Shop' },
   ],
   calculator_rates: [
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-res-plot', dc_per_marla: 425000, dc_per_sqft: 0, fbr_per_marla: 440000, fbr_per_sqft: 0 },
-    { calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-a', calculator_property_type_id: 'type-res-house', dc_per_marla: 0, dc_per_sqft: 2200, fbr_per_marla: 0, fbr_per_sqft: 2500 },
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-com-shop', dc_per_marla: 0, dc_per_sqft: 7800, fbr_per_marla: 0, fbr_per_sqft: 8400 },
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-com-plot', dc_per_marla: 780000, dc_per_sqft: 0, fbr_per_marla: 820000, fbr_per_sqft: 0 },
-    { calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-sector-shop', dc_per_marla: 0, dc_per_sqft: 7800, fbr_per_marla: 0, fbr_per_sqft: 8400 },
+    { id: 'rate-demo-plot', calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-res-plot', dc_per_marla: 425000, dc_per_sqft: 0, fbr_per_marla: 440000, fbr_per_sqft: 0, is_active: true, updated_at: '2026-10-18' },
+    { id: 'rate-demo-house', calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-a', calculator_property_type_id: 'type-res-house', dc_per_marla: 0, dc_per_sqft: 2200, fbr_per_marla: 0, fbr_per_sqft: 2500, is_active: true, updated_at: '2026-10-18' },
+    { id: 'rate-demo-shop', calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-com-shop', dc_per_marla: 0, dc_per_sqft: 7800, fbr_per_marla: 0, fbr_per_sqft: 8400, is_active: true, updated_at: '2026-10-18' },
+    { id: 'rate-demo-commercial-plot', calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-com-plot', dc_per_marla: 780000, dc_per_sqft: 0, fbr_per_marla: 820000, fbr_per_sqft: 0, is_active: true, updated_at: '2026-10-18' },
+    { id: 'rate-demo-sector-shop', calculator_phase_id: 'phase-demo', calculator_block_id: null, calculator_property_type_id: 'type-sector-shop', dc_per_marla: 0, dc_per_sqft: 7800, fbr_per_marla: 0, fbr_per_sqft: 8400, is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_transfer_fees: [
     { calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Residential', reference_amount: 42000, reference_size: 5, reference_unit: 'marla' },

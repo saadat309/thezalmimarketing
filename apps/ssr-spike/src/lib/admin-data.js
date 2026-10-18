@@ -1,5 +1,6 @@
 import { syntheticFiles, syntheticMaps } from './directory-fixtures.js'
 import { syntheticProperties } from './property-fixtures.js'
+import { syntheticCalculatorConfig } from './calculator-fixtures.js'
 
 const DOMAIN_FIELDS = {
   properties: {
@@ -18,7 +19,10 @@ const DOMAIN_FIELDS = {
   'calculator-phases': { name: 'text', active: 'boolean' },
   'calculator-blocks': { name: 'text', phase: 'text', active: 'boolean' },
   'calculator-property-types': { name: 'text', active: 'boolean' },
-  'calculator-rates': { name: 'text', phase: 'text', block: 'text', propertyType: 'text', amount: 'number' },
+  'calculator-rates': {
+    calculator_phase_id: 'select', calculator_block_id: 'optionalSelect', calculator_property_type_id: 'select',
+    unit: 'select', dc_rate: 'number', fbr_rate: 'number', is_active: 'boolean',
+  },
   'calculator-transfer-fees': { name: 'text', phase: 'text', block: 'text', amount: 'number' },
   'calculator-fees': { name: 'text', amount: 'number' },
   'calculator-tax-rates': { name: 'text', rate: 'number' },
@@ -55,6 +59,95 @@ const initial = {
 const records = new Map(Object.entries(initial).map(([domain, items]) => [domain, items.map((item) => ({ ...item }))]))
 const publicSources = { properties: syntheticProperties, files: syntheticFiles, maps: syntheticMaps }
 let nextId = 1
+
+function calculatorRateUnit(rate) {
+  return Number(rate.dc_per_marla) !== 0 || Number(rate.dc_per_sqft) === 0 ? 'marla' : 'sqft'
+}
+
+function calculatorRateRecord(rate) {
+  const phase = syntheticCalculatorConfig.calculator_phases.find((item) => item.id === rate.calculator_phase_id)
+  const society = syntheticCalculatorConfig.societies.find((item) => item.id === phase?.society_id)
+  const city = syntheticCalculatorConfig.cities.find((item) => item.id === phase?.city_id)
+  const block = syntheticCalculatorConfig.calculator_blocks.find((item) => item.id === rate.calculator_block_id)
+  const propertyType = syntheticCalculatorConfig.calculator_property_types.find((item) => item.id === rate.calculator_property_type_id)
+  const unit = calculatorRateUnit(rate)
+  return {
+    id: rate.id,
+    city_name: city?.name || '', society_name: society?.name || '', calculator_phase_name: phase?.name || '',
+    calculator_block_name: block?.name || '', category: propertyType?.category || '',
+    property_type_label: propertyType?.label || propertyType?.property_type || '',
+    unit_label: unit === 'sqft' ? 'Per Sq. Ft.' : 'Per Marla', unit,
+    calculator_phase_id: rate.calculator_phase_id, calculator_block_id: rate.calculator_block_id || '',
+    calculator_property_type_id: rate.calculator_property_type_id,
+    dc_rate: unit === 'sqft' ? Number(rate.dc_per_sqft) : Number(rate.dc_per_marla),
+    fbr_rate: unit === 'sqft' ? Number(rate.fbr_per_sqft) : Number(rate.fbr_per_marla),
+    is_active: rate.is_active !== false,
+    updated_at: rate.updated_at || '2026-10-18',
+  }
+}
+
+function calculatorRateOptions() {
+  return {
+    calculator_phase_id: syntheticCalculatorConfig.calculator_phases.map((phase) => {
+      const city = syntheticCalculatorConfig.cities.find((item) => item.id === phase.city_id)
+      const society = syntheticCalculatorConfig.societies.find((item) => item.id === phase.society_id)
+      return { value: phase.id, label: `${city?.name || ''} > ${society?.name || ''} > ${phase.name}` }
+    }),
+    calculator_block_id: syntheticCalculatorConfig.calculator_blocks.map((block) => ({ value: block.id, label: block.name, phaseId: block.calculator_phase_id })),
+    calculator_property_type_id: syntheticCalculatorConfig.calculator_property_types.map((type) => ({ value: type.id, label: `${type.category} - ${type.label || type.property_type}` })),
+    unit: [{ value: 'marla', label: 'Per Marla' }, { value: 'sqft', label: 'Per Sq. Ft.' }],
+  }
+}
+
+function writeCalculatorRate(rate, fields) {
+  if (fields.calculator_phase_id !== undefined) rate.calculator_phase_id = fields.calculator_phase_id
+  if (fields.calculator_block_id !== undefined) rate.calculator_block_id = fields.calculator_block_id || null
+  if (fields.calculator_property_type_id !== undefined) rate.calculator_property_type_id = fields.calculator_property_type_id
+  if (fields.unit !== undefined) {
+    rate.dc_per_marla = fields.unit === 'marla' ? Number(fields.dc_rate ?? 0) : 0
+    rate.dc_per_sqft = fields.unit === 'sqft' ? Number(fields.dc_rate ?? 0) : 0
+    rate.fbr_per_marla = fields.unit === 'marla' ? Number(fields.fbr_rate ?? 0) : 0
+    rate.fbr_per_sqft = fields.unit === 'sqft' ? Number(fields.fbr_rate ?? 0) : 0
+  } else {
+    const unit = calculatorRateUnit(rate)
+    if (fields.dc_rate !== undefined) rate[unit === 'sqft' ? 'dc_per_sqft' : 'dc_per_marla'] = Number(fields.dc_rate)
+    if (fields.fbr_rate !== undefined) rate[unit === 'sqft' ? 'fbr_per_sqft' : 'fbr_per_marla'] = Number(fields.fbr_rate)
+  }
+  if (fields.is_active !== undefined) rate.is_active = fields.is_active
+  rate.updated_at = new Date().toISOString().slice(0, 10)
+  return calculatorRateRecord(rate)
+}
+
+function validateCalculatorRateFields(input) {
+  const result = {}
+  const errors = {}
+  for (const [key, value] of Object.entries(input)) {
+    if (!Object.hasOwn(DOMAIN_FIELDS['calculator-rates'], key)) errors[key] = 'Field is not editable.'
+    else if (key === 'calculator_phase_id' && typeof value === 'string' && syntheticCalculatorConfig.calculator_phases.some((item) => item.id === value)) result[key] = value
+    else if (key === 'calculator_block_id' && (value === '' || typeof value === 'string') && (value === '' || syntheticCalculatorConfig.calculator_blocks.some((item) => item.id === value))) result[key] = value
+    else if (key === 'calculator_property_type_id' && typeof value === 'string' && syntheticCalculatorConfig.calculator_property_types.some((item) => item.id === value)) result[key] = value
+    else if (key === 'unit' && ['marla', 'sqft'].includes(value)) result[key] = value
+    else if (['dc_rate', 'fbr_rate'].includes(key) && typeof value === 'number' && Number.isFinite(value) && value >= 0) result[key] = value
+    else if (key === 'is_active' && typeof value === 'boolean') result[key] = value
+    else errors[key] = 'Value is invalid.'
+  }
+  for (const field of ['calculator_phase_id', 'calculator_property_type_id', 'unit', 'dc_rate', 'fbr_rate']) {
+    if (!(field in result)) errors[field] ||= 'This field is required.'
+  }
+  if (result.calculator_block_id) {
+    const block = syntheticCalculatorConfig.calculator_blocks.find((item) => item.id === result.calculator_block_id)
+    const selectedPhase = result.calculator_phase_id
+    if (block && selectedPhase && block.calculator_phase_id !== selectedPhase) errors.calculator_block_id = 'Block must belong to the selected phase.'
+  }
+  return { result, errors }
+}
+
+function calculatorRateScopeExists(fields, ignoreId) {
+  return syntheticCalculatorConfig.calculator_rates.some((rate) => rate.id !== ignoreId &&
+    rate.calculator_phase_id === fields.calculator_phase_id &&
+    (rate.calculator_block_id || '') === (fields.calculator_block_id || '') &&
+    rate.calculator_property_type_id === fields.calculator_property_type_id)
+}
 
 function toSlug(value) {
   return value.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 90) || 'synthetic-record'
@@ -224,15 +317,33 @@ function validateFields(domain, input) {
 
 export function createMemoryAdminRepository() {
   return {
-    list(domain) { return publicSources[domain] ? publicSourceList(domain) : (records.get(domain) || []).map((item) => ({ ...item })) },
-    find(domain, id) { return publicSources[domain] ? (findPublicSource(domain, id) ? toAdminRecord(domain, findPublicSource(domain, id)) : null) : records.get(domain)?.find((item) => item.id === id) || null },
+    list(domain) {
+      if (domain === 'calculator-rates') return syntheticCalculatorConfig.calculator_rates.map(calculatorRateRecord)
+      return publicSources[domain] ? publicSourceList(domain) : (records.get(domain) || []).map((item) => ({ ...item }))
+    },
+    find(domain, id) {
+      if (domain === 'calculator-rates') {
+        const rate = syntheticCalculatorConfig.calculator_rates.find((item) => item.id === id)
+        return rate ? calculatorRateRecord(rate) : null
+      }
+      return publicSources[domain] ? (findPublicSource(domain, id) ? toAdminRecord(domain, findPublicSource(domain, id)) : null) : records.get(domain)?.find((item) => item.id === id) || null
+    },
     insert(domain, fields) {
+      if (domain === 'calculator-rates') {
+        const rate = { id: `rate-sample-${nextId++}`, calculator_phase_id: '', calculator_block_id: null, calculator_property_type_id: '', dc_per_marla: 0, dc_per_sqft: 0, fbr_per_marla: 0, fbr_per_sqft: 0, is_active: true }
+        syntheticCalculatorConfig.calculator_rates.push(rate)
+        return writeCalculatorRate(rate, fields)
+      }
       if (publicSources[domain]) return createPublicSource(domain, fields)
       const item = { id: `${domain.replaceAll('-', '').slice(0, 8)}-sample-${nextId++}`, ...fields }
       records.get(domain).push(item)
       return { ...item }
     },
     update(domain, id, fields) {
+      if (domain === 'calculator-rates') {
+        const rate = syntheticCalculatorConfig.calculator_rates.find((item) => item.id === id)
+        return rate ? writeCalculatorRate(rate, fields) : null
+      }
       if (publicSources[domain]) return updatePublicSource(domain, id, fields)
       const list = records.get(domain) || []
       const index = list.findIndex((item) => item.id === id)
@@ -241,6 +352,12 @@ export function createMemoryAdminRepository() {
       return { ...list[index] }
     },
     remove(domain, id) {
+      if (domain === 'calculator-rates') {
+        const index = syntheticCalculatorConfig.calculator_rates.findIndex((item) => item.id === id)
+        if (index < 0) return false
+        syntheticCalculatorConfig.calculator_rates.splice(index, 1)
+        return true
+      }
       if (publicSources[domain]) return removePublicSource(domain, id)
       const list = records.get(domain) || []
       const index = list.findIndex((item) => item.id === id)
@@ -282,12 +399,20 @@ export function createAdminDataApi(repository, auth) {
       if (guard.response) return guard.response
       if (request.method === 'GET') {
         const items = repository.list(domain)
-        return json(request, { items, count: items.length, fields: DOMAIN_FIELDS[domain] })
+        const calculatorRates = domain === 'calculator-rates'
+        return json(request, {
+          items, count: items.length, fields: DOMAIN_FIELDS[domain],
+          ...(calculatorRates ? {
+            options: calculatorRateOptions(),
+            columns: ['id', 'city_name', 'society_name', 'calculator_phase_name', 'calculator_block_name', 'category', 'property_type_label', 'unit_label', 'dc_rate', 'fbr_rate', 'is_active', 'updated_at'],
+          } : {}),
+        })
       }
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
-      const { result, errors } = validateFields(domain, body.value)
+      const { result, errors } = domain === 'calculator-rates' ? validateCalculatorRateFields(body.value) : validateFields(domain, body.value)
+      if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
       return json(request, { item: repository.insert(domain, result) }, 201)
     },
@@ -313,7 +438,8 @@ export function createAdminDataApi(repository, auth) {
       if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
-      const { result, errors } = validateFields(domain, body.value)
+      const { result, errors } = domain === 'calculator-rates' ? validateCalculatorRateFields(body.value) : validateFields(domain, body.value)
+      if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result, id)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
       const item = repository.update(domain, id, result)
       return item ? json(request, { item }) : json(request, { error: { code: 'not_found' } }, 404)

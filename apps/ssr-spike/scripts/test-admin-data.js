@@ -18,6 +18,7 @@ const propertyApi = createPropertyApi(createMemoryPropertyRepository(syntheticPr
 const directoryRepository = createMemoryDirectoryRepository({ maps: syntheticMaps, files: syntheticFiles })
 const mapsApi = createDirectoryApi(directoryRepository, 'maps')
 const filesApi = createDirectoryApi(directoryRepository, 'files')
+const calculatorConfigApi = async () => (await import('../src/lib/calculator-api.js')).handleCalculatorConfig(new Request('https://test.invalid/api/v1/calculator/config')).json()
 const origin = 'http://127.0.0.1:4182'
 const base = 'http://127.0.0.1:4175/api/v1/admin'
 const response = await auth.login(new Request(`${base}/auth/login`, {
@@ -135,5 +136,48 @@ const fileFixture = syntheticFiles.find((item) => item.slug === file.id)
 assert.equal(fileFixture.area.value, '5')
 assert.equal(fileFixture.price.amount, '8500000')
 assert.ok((await (await filesApi.list(new Request('https://test.invalid/api/v1/files'))).json()).items.some((item) => item.slug === file.id))
+
+const rateCollectionResponse = await api.collection(new Request(`${base}/calculator-rates`, { headers: readHeaders }), 'calculator-rates')
+assert.equal(rateCollectionResponse.status, 200)
+const rateCollection = await rateCollectionResponse.json()
+assert.equal(rateCollection.count, 5)
+assert.equal(new Set(rateCollection.items.map((item) => item.id)).size, 5)
+assert.equal(rateCollection.options.calculator_phase_id[0].label, 'Lahore > DHA Lahore (Synthetic) > Sample Phase')
+assert.deepEqual(rateCollection.columns.slice(0, 5), ['id', 'city_name', 'society_name', 'calculator_phase_name', 'calculator_block_name'])
+const duplicateRate = await api.collection(new Request(`${base}/calculator-rates`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: '', calculator_property_type_id: 'type-res-plot', unit: 'marla', dc_rate: 430000, fbr_rate: 445000, is_active: true }),
+}), 'calculator-rates')
+assert.equal(duplicateRate.status, 400)
+const newRateResponse = await api.collection(new Request(`${base}/calculator-rates`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-b', calculator_property_type_id: 'type-res-plot', unit: 'sqft', dc_rate: 910, fbr_rate: 990, is_active: true }),
+}), 'calculator-rates')
+assert.equal(newRateResponse.status, 201)
+const newRate = (await newRateResponse.json()).item
+assert.equal(newRate.unit, 'sqft')
+let liveConfig = await calculatorConfigApi()
+let publicRate = liveConfig.calculator_rates.find((item) => item.id === newRate.id)
+assert.equal(publicRate.dc_per_sqft, 910)
+assert.equal(publicRate.fbr_per_sqft, 990)
+const updateRateResponse = await api.item(new Request(`${base}/calculator-rates/${newRate.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'phase-demo', calculator_block_id: 'block-demo-b', calculator_property_type_id: 'type-res-plot', unit: 'sqft', dc_rate: 920, fbr_rate: 1000, is_active: false }),
+}), 'calculator-rates', newRate.id)
+assert.equal(updateRateResponse.status, 200)
+liveConfig = await calculatorConfigApi()
+publicRate = liveConfig.calculator_rates.find((item) => item.id === newRate.id)
+assert.equal(publicRate.dc_per_sqft, 920)
+assert.equal(publicRate.is_active, false)
+const invalidRate = await api.collection(new Request(`${base}/calculator-rates`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ calculator_phase_id: 'missing-phase', calculator_block_id: '', calculator_property_type_id: 'type-res-plot', unit: 'sqft', dc_rate: -1, fbr_rate: 1000, is_active: true }),
+}), 'calculator-rates')
+assert.equal(invalidRate.status, 400)
+const deleteRateResponse = await api.item(new Request(`${base}/calculator-rates/${newRate.id}`, {
+  method: 'DELETE', headers: writeHeaders,
+}), 'calculator-rates', newRate.id)
+assert.equal(deleteRateResponse.status, 200)
+assert.ok(!(await calculatorConfigApi()).calculator_rates.some((item) => item.id === newRate.id))
 
 console.log('Synthetic admin API checks passed.')

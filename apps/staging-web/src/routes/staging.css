@@ -433,9 +433,9 @@
 .dashboard-sheet header > button { width: 2rem; height: 2rem; display: grid; place-items: center; border: 0; border-radius: .35rem; color: var(--muted-foreground); background: transparent; cursor: pointer; }
 .dashboard-sheet-fields { display: grid; gap: 1rem; padding-top: 1.2rem; }
 .dashboard-sheet-fields label { display: grid; gap: .4rem; color: var(--foreground); font-size: .78rem; font-weight: 550; }
-.dashboard-sheet-fields input:not([type=checkbox]),.dashboard-sheet-fields textarea { width: 100%; min-height: 2.55rem; padding: .55rem .7rem; border: 1px solid var(--input); border-radius: .4rem; outline: 0; color: var(--foreground); background: var(--background); font: .82rem 'Inter',sans-serif; }
+.dashboard-sheet-fields input:not([type=checkbox]),.dashboard-sheet-fields textarea,.dashboard-sheet-fields select { width: 100%; min-height: 2.55rem; padding: .55rem .7rem; border: 1px solid var(--input); border-radius: .4rem; outline: 0; color: var(--foreground); background: var(--background); font: .82rem 'Inter',sans-serif; }
 .dashboard-sheet-fields textarea { min-height: 6rem; resize: vertical; }
-.dashboard-sheet-fields input:focus,.dashboard-sheet-fields textarea:focus { border-color: var(--ring); box-shadow: 0 0 0 2px color-mix(in srgb,var(--ring) 20%,transparent); }
+.dashboard-sheet-fields input:focus,.dashboard-sheet-fields textarea:focus,.dashboard-sheet-fields select:focus { border-color: var(--ring); box-shadow: 0 0 0 2px color-mix(in srgb,var(--ring) 20%,transparent); }
 .dashboard-sheet-fields label.dashboard-boolean-field { min-height: 2.5rem; display: flex; align-items: center; gap: .55rem; }
 .dashboard-sheet-fields input[type=checkbox] { width: 1rem; height: 1rem; accent-color: var(--primary); }
 .dashboard-sheet form > .dashboard-data-note { padding: 1rem 0; }

@@ -7,7 +7,8 @@ const getTax = (config, key, fallback) => Number(config.calculator_tax_rates.fin
 export function calculateStagingEstimate(config, input) {
   const { phaseId, blockId, propertyTypeId, propertyName, category, size, coveredArea, usesCoveredArea, transferType, payer, owners, taxpayer, verification, bianaIncluded, agreementType, stampDutyPayment, customDcRate, customFbrRate, overrides = {}, deletedLines = [], customExpenses = [] } = input
   const rates = config.calculator_rates
-  const rate = (blockId && rates.find((item) => String(item.calculator_phase_id) === phaseId && String(item.calculator_block_id || '') === blockId && String(item.calculator_property_type_id) === propertyTypeId)) || rates.find((item) => String(item.calculator_phase_id) === phaseId && !item.calculator_block_id && String(item.calculator_property_type_id) === propertyTypeId)
+  const isActiveRate = (item) => item.is_active !== false && item.is_active !== 0
+  const rate = (blockId && rates.find((item) => isActiveRate(item) && String(item.calculator_phase_id) === phaseId && String(item.calculator_block_id || '') === blockId && String(item.calculator_property_type_id) === propertyTypeId)) || rates.find((item) => isActiveRate(item) && String(item.calculator_phase_id) === phaseId && !item.calculator_block_id && String(item.calculator_property_type_id) === propertyTypeId)
   let dcMarla = Number(rate?.dc_per_marla || 0)
   let dcSqft = Number(rate?.dc_per_sqft || 0)
   let fbrMarla = Number(rate?.fbr_per_marla || 0)
