@@ -2,6 +2,7 @@ import { syntheticFiles, syntheticMaps } from './directory-fixtures.js'
 import { syntheticProperties } from './property-fixtures.js'
 import { syntheticCalculatorConfig } from './calculator-fixtures.js'
 import { applyCalculatorCsvImport, calculatorCsvTemplate, prepareCalculatorCsvImport, readBoundedCsvForm } from './calculator-import.js'
+import { createSyntheticLabel, removeSyntheticLabel, syntheticLabels, updateSyntheticLabel } from './synthetic-labels.js'
 
 const DOMAIN_FIELDS = {
   properties: {
@@ -25,6 +26,7 @@ const DOMAIN_FIELDS = {
   categories: { name: 'text' },
   societies: { name: 'text', map_ids: 'multiSelect' },
   phases: { name: 'text', map_ids: 'multiSelect' },
+  labels: { name: 'text', is_badge: 'boolean' },
   queries: { property_id: 'optionalText', property_title: 'optionalText', name: 'text', email: 'optionalText', phone: 'optionalText', message: 'textarea', created_at: 'text', is_read: 'boolean' },
   'landing-page': { sectionName: 'text', title: 'text', subtitle: 'textarea', order: 'integer', active: 'boolean', collection: 'text', selectedItems: 'json', mediaMode: 'text', mediaUrl: 'optionalText', delayMs: 'integer' },
   'calculator-phases': { city_id: 'select', society_id: 'select', name: 'text', sort_order: 'integer', is_active: 'boolean' },
@@ -459,9 +461,61 @@ function propertyTaxonomyOptions(field) {
 }
 
 function propertyLabelOptions() {
-  const labels = new Map([['featured', 'Featured'], ['new-listing', 'New Listing'], ['hot-deal', 'Hot Deal']])
-  syntheticProperties.forEach((property) => (property.labels || []).forEach((label) => labels.set(label.slug, label.name)))
-  return [...labels].map(([value, label]) => ({ value, label }))
+  return syntheticLabels.map((label) => ({ value: label.slug, label: label.name, isBadge: label.is_badge }))
+}
+
+function adminLabelRecord(label) {
+  return { id: label.slug, slug: label.slug, name: label.name, is_badge: label.is_badge, is_filter: label.is_filter }
+}
+
+function validateLabelFields(input, current = null) {
+  const errors = {}
+  const result = {}
+  for (const [key, value] of Object.entries(input)) {
+    if (key === 'name' && typeof value === 'string' && value.trim() && value.trim().length <= 80) result.name = value.trim()
+    else if (key === 'is_badge' && typeof value === 'boolean') result.is_badge = value
+    else errors[key] = 'Value is invalid or not editable.'
+  }
+  const nextName = result.name || current?.name
+  if (nextName && syntheticLabels.some((label) => label.slug !== current?.slug && label.name.toLowerCase() === nextName.toLowerCase())) errors.name = 'A label with this name already exists.'
+  if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide a label name or badge setting.'
+  return { result, errors }
+}
+
+function handleLabelCollection(request, auth) {
+  if (request.method === 'OPTIONS') return auth.options(request)
+  const mutation = request.method !== 'GET'
+  const guard = auth.requireAdmin(request, { csrf: mutation })
+  if (guard.response) return guard.response
+  if (request.method === 'GET') {
+    const items = syntheticLabels.map(adminLabelRecord)
+    return json(request, { items, count: items.length, fields: DOMAIN_FIELDS.labels, columns: ['id', 'name', 'slug', 'is_badge', 'is_filter'] })
+  }
+  if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
+  return readBody(request).then((body) => {
+    if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
+    if (Object.keys(body.value).some((key) => key !== 'name')) return json(request, { error: { code: 'invalid_fields', fields: { _: 'Only a label name may be submitted.' } } }, 400)
+    const { result, errors } = validateLabelFields(body.value)
+    if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
+    return json(request, { item: adminLabelRecord(createSyntheticLabel(result.name)) }, 201)
+  })
+}
+
+async function handleLabelItem(request, auth, slug) {
+  if (request.method === 'OPTIONS') return auth.options(request)
+  const mutation = request.method !== 'GET'
+  const guard = auth.requireAdmin(request, { csrf: mutation })
+  if (guard.response) return guard.response
+  const current = syntheticLabels.find((label) => label.slug === slug)
+  if (!current) return json(request, { error: { code: 'not_found' } }, 404)
+  if (request.method === 'GET') return json(request, { item: adminLabelRecord(current) })
+  if (request.method === 'DELETE') return removeSyntheticLabel(slug) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
+  if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
+  const body = await readBody(request)
+  if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
+  const { result, errors } = validateLabelFields(body.value, current)
+  if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
+  return json(request, { item: adminLabelRecord(updateSyntheticLabel(slug, result)) })
 }
 
 function propertyAdminOptions() {
@@ -898,6 +952,7 @@ export function createMemoryAdminRepository() {
 export function createAdminDataApi(repository, auth) {
   return {
     async collection(request, domain) {
+      if (domain === 'labels') return handleLabelCollection(request, auth)
       if (domain === 'users') {
         if (request.method === 'OPTIONS') return auth.options(request)
         const guard = auth.requireAdmin(request)
@@ -994,6 +1049,7 @@ export function createAdminDataApi(repository, auth) {
     },
 
     async item(request, domain, id) {
+      if (domain === 'labels') return handleLabelItem(request, auth, id)
       if (domain === 'users' || domain === 'profile') {
         const guard = auth.requireAdmin(request, { csrf: request.method !== 'GET' })
         if (guard.response) return guard.response

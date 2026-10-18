@@ -513,4 +513,39 @@ assert.equal(updateTypeResponse.status, 200)
 assert.equal((await updateTypeResponse.json()).item.label, 'Synthetic Plot Label')
 assert.equal((await (await api.collection(new Request(`${base}/calculator-property-types`, { headers: readHeaders }), 'calculator-property-types')).json()).items[0].is_active, false)
 
+assert.equal((await api.collection(new Request(`${base}/labels`), 'labels')).status, 401)
+const labelListResponse = await api.collection(new Request(`${base}/labels`, { headers: readHeaders }), 'labels')
+assert.equal(labelListResponse.status, 200)
+assert.ok((await labelListResponse.json()).items.some((label) => label.slug === 'featured'))
+assert.equal((await api.collection(new Request(`${base}/labels`, {
+  method: 'POST', headers: { ...readHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'No CSRF' }),
+}), 'labels')).status, 403)
+const newLabelResponse = await api.collection(new Request(`${base}/labels`, {
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic Priority' }),
+}), 'labels')
+assert.equal(newLabelResponse.status, 201)
+const newLabel = (await newLabelResponse.json()).item
+assert.equal(newLabel.slug, 'synthetic-priority')
+assert.equal(newLabel.is_badge, true)
+assert.equal((await api.collection(new Request(`${base}/labels`, {
+  method: 'POST', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic Priority' }),
+}), 'labels')).status, 400)
+syntheticProperties[0].labels.push({ slug: newLabel.slug, name: newLabel.name })
+syntheticFiles[0].adminForm = { ...(syntheticFiles[0].adminForm || {}), labels: [newLabel.slug] }
+const badgeToggleResponse = await api.item(new Request(`${base}/labels/${newLabel.slug}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ is_badge: false }),
+}), 'labels', newLabel.slug)
+assert.equal(badgeToggleResponse.status, 200)
+assert.equal((await badgeToggleResponse.json()).item.is_badge, false)
+const publicWithLabel = await (await propertyApi.list(new Request('https://test.invalid/api/v1/properties'))).json()
+const publicLabel = publicWithLabel.items[0].labels.find((label) => label.slug === newLabel.slug)
+assert.deepEqual(publicLabel, { slug: newLabel.slug, name: newLabel.name, isBadge: false })
+assert.deepEqual(Object.keys(publicLabel).sort(), ['isBadge', 'name', 'slug'])
+const propertiesWithUpdatedOptions = await (await api.collection(new Request(`${base}/properties`, { headers: readHeaders }), 'properties')).json()
+assert.equal(propertiesWithUpdatedOptions.options.labels.find((option) => option.value === newLabel.slug).isBadge, false)
+assert.equal((await api.item(new Request(`${base}/labels/${newLabel.slug}`, { method: 'DELETE', headers: writeHeaders }), 'labels', newLabel.slug)).status, 200)
+assert.ok(syntheticProperties.every((property) => !property.labels.some((label) => label.slug === newLabel.slug)))
+assert.ok(!syntheticFiles[0].adminForm.labels.includes(newLabel.slug))
+assert.equal((await api.item(new Request(`${base}/labels/${newLabel.slug}`, { headers: readHeaders }), 'labels', newLabel.slug)).status, 404)
+
 console.log('Synthetic admin API checks passed.')

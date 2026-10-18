@@ -1,3 +1,5 @@
+import { publicLabels } from './synthetic-labels.js'
+
 const CACHE_CONTROL = 'no-cache, must-revalidate'
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
@@ -86,7 +88,7 @@ async function publicProperty(property, detail = false) {
     beds: property.beds,
     baths: property.baths,
     category: property.category,
-    labels: property.labels,
+    labels: publicLabels(property.labels),
     media: {
       thumbnail: thumbnailImage ?? null,
       images,

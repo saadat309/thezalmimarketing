@@ -37,6 +37,7 @@ function PropertyDetailPage() {
         <div className="relative z-10 mx-auto max-w-7xl space-y-5">
           <Link to="/properties" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-300 hover:text-[#f3c55b]"><ArrowLeft aria-hidden="true" className="h-4 w-4" />All sample properties</Link>
           <div><Badge variant="outline" className="border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]">{property.category?.name || 'Property'} · synthetic sample</Badge></div>
+          {!!property.labels?.some((label) => label.isBadge) && <div className="flex flex-wrap gap-2">{property.labels.filter((label) => label.isBadge).map((label) => <Badge key={label.slug} variant="secondary">{label.name}</Badge>)}</div>}
           <h1 className="max-w-4xl font-display text-4xl font-extrabold sm:text-6xl">{property.title}</h1>
           <p className="flex items-center gap-2 text-base text-slate-300"><MapPin aria-hidden="true" className="h-5 w-5 shrink-0 text-[#D4AF37]" />{location || property.location?.address || 'Sample location'}</p>
         </div>

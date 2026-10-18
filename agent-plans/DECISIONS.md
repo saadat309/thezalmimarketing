@@ -172,3 +172,11 @@ This is the durable record of decisions that affect migration work. It is append
 - **Boundaries:** No local/remote database binding, D1/R2 resource, Cloudflare deployment, production data, or live-site change. In-memory edits are temporary and are explicitly not suitable for a deployed multi-user dashboard.
 - **Consequences:** Before any deployment, replace the in-memory repository and session adapter with durable, approved stores, check free-tier limits/usage guards, and rotate all credentials. The two local synthetic accounts must never be enabled on a public endpoint.
 - **Source:** User asked to select the approach that best supports a fast later Cloudflare-storage transition after the assistant recommended an adapter seam.
+
+### ADR-022 — Add full synthetic label management to Property and File forms
+
+- **Status:** Accepted by the user on 2026-10-18 for local synthetic implementation.
+- **Decision:** Implement protected admin label listing, creation, badge-visibility updates, and global deletion for the staging Property/File forms. Generate stable unique slugs from names; keep label assignments ordered per property/file. Global deletion removes that slug from all synthetic Property and File assignments. Public property responses expose only `slug`, `name`, and `isBadge`; badge metadata is resolved from the current synthetic label registry on each request.
+- **Boundaries:** Synthetic in-memory data only. No production records, database/storage binding, media operation, Cloudflare provisioning/deployment, DNS, cPanel/MySQL, or `workers/ai-worker` changes. Edits remain process-local and reset on API restart.
+- **Consequences:** New label management behavior must remain protected by the existing Admin session and CSRF checks. Public projection must never include admin IDs, internal filter fields, or storage identifiers. Visual parity review remains separate from API acceptance tests.
+- **Source:** User answered “Build full synthetic label management (Recommended)” to the proposed synthetic global label CRUD/badge visibility design.

@@ -118,7 +118,7 @@ function PropertiesPage() {
 }
 
 function PropertyCard({ property }) {
-  const { title, slug, category, propertyType, purchaseType, location, price, area, beds, baths, shortDescription } = property;
+  const { title, slug, category, propertyType, purchaseType, location, price, area, beds, baths, shortDescription, labels } = property;
   return (
     <Card className="overflow-hidden rounded-3xl border-border bg-card shadow-lg transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/50 hover:shadow-2xl">
       <Link to="/properties/$slug" params={{ slug }} className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]">
@@ -128,7 +128,7 @@ function PropertyCard({ property }) {
           <span className="absolute bottom-4 right-4 rounded-xl bg-slate-950/90 px-3 py-2 font-display text-base font-bold text-[#f3c55b]">{formatPrice(price)}</span>
         </div>
         <CardContent className="space-y-4 p-5 sm:p-6">
-          <div className="flex flex-wrap gap-2"><Badge variant="outline" className="border-[#D4AF37]/30 text-[#D4AF37]">{category?.name || 'Property'}</Badge><Badge variant="secondary">{propertyType} · {purchaseLabel(purchaseType)}</Badge></div>
+          <div className="flex flex-wrap gap-2"><Badge variant="outline" className="border-[#D4AF37]/30 text-[#D4AF37]">{category?.name || 'Property'}</Badge><Badge variant="secondary">{propertyType} · {purchaseLabel(purchaseType)}</Badge>{labels?.filter((label) => label.isBadge).map((label) => <Badge key={label.slug} variant="secondary">{label.name}</Badge>)}</div>
           <div><h3 className="font-display text-xl font-bold leading-snug text-foreground group-hover:text-[#D4AF37]">{title}</h3><p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />{location?.society?.name ? `${location.society.name}, ` : ''}{location?.city?.name || 'Sample location'}</p></div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-3 text-xs font-medium text-muted-foreground">{beds !== null && beds !== undefined && <span className="inline-flex items-center gap-1.5"><BedDouble aria-hidden="true" className="h-4 w-4 text-[#D4AF37]" />{beds} beds</span>}{baths !== null && baths !== undefined && <span className="inline-flex items-center gap-1.5"><Bath aria-hidden="true" className="h-4 w-4 text-[#D4AF37]" />{baths} baths</span>}<span className="inline-flex items-center gap-1.5"><Ruler aria-hidden="true" className="h-4 w-4 text-[#D4AF37]" />{area?.value} {area?.unit}</span></div>
           <p className="line-clamp-2 min-h-10 text-sm leading-relaxed text-muted-foreground">{shortDescription || 'Synthetic property record for staging layout and navigation review.'}</p>

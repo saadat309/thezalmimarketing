@@ -47,6 +47,7 @@ export const Route = createFileRoute('/')({
           title: property.title,
           short_desc: property.shortDescription,
           price: property.price.amount,
+          labels: property.labels,
           image: '/dha birdeye view.webp',
         })),
         propertyApiAvailable: true,
@@ -178,7 +179,7 @@ function SyntheticCardsSection({ title, description, items, kind, emptyMessage =
         {items.map((item) => (
           <Card key={item.slug} className="py-0 gap-0 overflow-hidden rounded-3xl border border-border bg-card shadow-xl hover:-translate-y-1 transition-transform">
             <img src={item.image} alt="Synthetic staging sample" className="w-full aspect-[16/10] object-cover" />
-            <CardContent className="p-6 space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">SYNTHETIC SAMPLE</Badge><h3 className="font-display font-bold text-xl">{item.title}</h3><p className="text-sm text-muted-foreground">{item.short_desc || 'Synthetic sample returned by the staging API.'}</p><div className="text-[#D4AF37] font-bold">PKR {Number(item.price).toLocaleString()}</div><Button asChild variant="outline" className="w-full"><Link to={isProperty ? `/properties/${item.slug}` : '/files'}>Preview only <ArrowRight size={16} className="ml-2" /></Link></Button></CardContent>
+            <CardContent className="p-6 space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">SYNTHETIC SAMPLE</Badge><div className="flex flex-wrap gap-2">{item.labels?.filter((label) => label.isBadge).map((label) => <Badge key={label.slug} variant="secondary">{label.name}</Badge>)}</div><h3 className="font-display font-bold text-xl">{item.title}</h3><p className="text-sm text-muted-foreground">{item.short_desc || 'Synthetic sample returned by the staging API.'}</p><div className="text-[#D4AF37] font-bold">PKR {Number(item.price).toLocaleString()}</div><Button asChild variant="outline" className="w-full"><Link to={isProperty ? `/properties/${item.slug}` : '/files'}>Preview only <ArrowRight size={16} className="ml-2" /></Link></Button></CardContent>
           </Card>
         ))}
       </div> : <Card className="rounded-3xl border-border bg-card"><CardContent className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent></Card>}
