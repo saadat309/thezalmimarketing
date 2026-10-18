@@ -55,6 +55,13 @@ const transferFee = config.calculator_transfer_fees.find((item) => item.id === '
 transferFee.is_active = false
 assert.equal(estimate().lines.find((line) => line.label === 'Base Transfer Fee').amount, 52_500)
 transferFee.is_active = true
+const bianaFee = config.calculator_fees.find((item) => item.fee_key === 'biana')
+bianaFee.amount = 4100
+assert.equal(estimate({ transferType: 'Biana Only' }).grandTotal, 4100)
+bianaFee.is_active = false
+assert.equal(estimate({ transferType: 'Biana Only' }).grandTotal, 4000)
+bianaFee.is_active = true
+bianaFee.amount = 4000
 assert.equal(estimate({ customDcRate: '0' }).dcValue, 0)
 const edited = estimate({ overrides: { Biana: '0' }, customExpenses: [{ id: 'synthetic-extra', label: 'Sample fee', amount: 123 }] })
 assert.equal(edited.lines[0].amount, 0)

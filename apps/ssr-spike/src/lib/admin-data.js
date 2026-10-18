@@ -27,7 +27,7 @@ const DOMAIN_FIELDS = {
     calculator_phase_id: 'select', calculator_block_id: 'optionalSelect', category: 'select',
     reference_amount: 'number', reference_size: 'number', reference_unit: 'select', is_active: 'boolean',
   },
-  'calculator-fees': { name: 'text', amount: 'number' },
+  'calculator-fees': { fee_key: 'text', fee_name: 'text', amount: 'number', charge_unit: 'select', is_active: 'boolean' },
   'calculator-tax-rates': { name: 'text', rate: 'number' },
   'calculator-fee-rules': { name: 'text', fee: 'text', rule: 'text' },
 }
@@ -177,6 +177,33 @@ function writeCalculatorTransferFee(fee, fields) {
   if (fields.calculator_block_id !== undefined) fee.calculator_block_id = fields.calculator_block_id || null
   fee.updated_at = new Date().toISOString().slice(0, 10)
   return calculatorTransferFeeRecord(fee)
+}
+
+function validateCalculatorFeeFields(input, { updating = false } = {}) {
+  const result = {}
+  const errors = {}
+  const allowed = updating ? ['fee_name', 'amount', 'is_active'] : ['fee_key', 'fee_name', 'amount', 'charge_unit', 'is_active']
+  for (const [key, value] of Object.entries(input)) {
+    if (!allowed.includes(key)) errors[key] = updating && ['fee_key', 'charge_unit'].includes(key) ? 'This field cannot be changed after creation.' : 'Field is not editable.'
+    else if (key === 'fee_key' && typeof value === 'string' && /^[a-z][a-z0-9_]{0,79}$/.test(value.trim())) result[key] = value.trim()
+    else if (key === 'fee_name' && typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 150) result[key] = value.trim()
+    else if (key === 'amount' && typeof value === 'number' && Number.isFinite(value) && value >= 0) result[key] = value
+    else if (key === 'charge_unit' && ['transaction', 'property', 'owner'].includes(value)) result[key] = value
+    else if (key === 'is_active' && typeof value === 'boolean') result[key] = value
+    else errors[key] = 'Value is invalid.'
+  }
+  const required = updating ? [] : ['fee_key', 'fee_name', 'amount', 'charge_unit']
+  for (const field of required) if (!(field in result)) errors[field] ||= 'This field is required or invalid.'
+  if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'
+  return { result, errors }
+}
+
+function writeCalculatorFee(fee, fields) {
+  for (const key of ['fee_key', 'fee_name', 'amount', 'charge_unit', 'is_active']) {
+    if (fields[key] !== undefined) fee[key] = fields[key]
+  }
+  fee.updated_at = new Date().toISOString().slice(0, 10)
+  return { ...fee }
 }
 
 function writeCalculatorRate(rate, fields) {
@@ -400,6 +427,7 @@ export function createMemoryAdminRepository() {
     list(domain) {
       if (domain === 'calculator-rates') return syntheticCalculatorConfig.calculator_rates.map(calculatorRateRecord)
       if (domain === 'calculator-transfer-fees') return syntheticCalculatorConfig.calculator_transfer_fees.map(calculatorTransferFeeRecord)
+      if (domain === 'calculator-fees') return syntheticCalculatorConfig.calculator_fees.map((item) => ({ ...item }))
       return publicSources[domain] ? publicSourceList(domain) : (records.get(domain) || []).map((item) => ({ ...item }))
     },
     find(domain, id) {
@@ -411,6 +439,7 @@ export function createMemoryAdminRepository() {
         const fee = syntheticCalculatorConfig.calculator_transfer_fees.find((item) => item.id === id)
         return fee ? calculatorTransferFeeRecord(fee) : null
       }
+      if (domain === 'calculator-fees') return syntheticCalculatorConfig.calculator_fees.find((item) => item.id === id) || null
       return publicSources[domain] ? (findPublicSource(domain, id) ? toAdminRecord(domain, findPublicSource(domain, id)) : null) : records.get(domain)?.find((item) => item.id === id) || null
     },
     insert(domain, fields) {
@@ -423,6 +452,12 @@ export function createMemoryAdminRepository() {
         const fee = { id: `transfer-fee-sample-${nextId++}`, calculator_phase_id: '', calculator_block_id: null, category: '', reference_amount: 0, reference_size: 0, reference_unit: 'marla', is_active: true }
         syntheticCalculatorConfig.calculator_transfer_fees.push(fee)
         return writeCalculatorTransferFee(fee, fields)
+      }
+      if (domain === 'calculator-fees') {
+        if (syntheticCalculatorConfig.calculator_fees.some((item) => item.fee_key === fields.fee_key)) return null
+        const fee = { id: `fee-sample-${nextId++}`, is_active: true, ...fields }
+        syntheticCalculatorConfig.calculator_fees.push(fee)
+        return { ...fee }
       }
       if (publicSources[domain]) return createPublicSource(domain, fields)
       const item = { id: `${domain.replaceAll('-', '').slice(0, 8)}-sample-${nextId++}`, ...fields }
@@ -437,6 +472,10 @@ export function createMemoryAdminRepository() {
       if (domain === 'calculator-transfer-fees') {
         const fee = syntheticCalculatorConfig.calculator_transfer_fees.find((item) => item.id === id)
         return fee ? writeCalculatorTransferFee(fee, fields) : null
+      }
+      if (domain === 'calculator-fees') {
+        const fee = syntheticCalculatorConfig.calculator_fees.find((item) => item.id === id)
+        return fee ? writeCalculatorFee(fee, fields) : null
       }
       if (publicSources[domain]) return updatePublicSource(domain, id, fields)
       const list = records.get(domain) || []
@@ -458,6 +497,7 @@ export function createMemoryAdminRepository() {
         syntheticCalculatorConfig.calculator_transfer_fees.splice(index, 1)
         return true
       }
+      if (domain === 'calculator-fees') return false
       if (publicSources[domain]) return removePublicSource(domain, id)
       const list = records.get(domain) || []
       const index = list.findIndex((item) => item.id === id)
@@ -511,15 +551,21 @@ export function createAdminDataApi(repository, auth) {
             options: calculatorTransferFeeOptions(),
             columns: ['id', 'city_name', 'society_name', 'calculator_phase_name', 'calculator_block_name', 'category', 'reference_amount', 'reference_size', 'reference_unit', 'base_transfer_fee', 'per_marla_rate', 'per_sqft_rate', 'is_active', 'updated_at'],
           } : {}),
+          ...(domain === 'calculator-fees' ? {
+            options: { charge_unit: [{ value: 'transaction', label: 'Transaction' }, { value: 'property', label: 'Property' }, { value: 'owner', label: 'Owner' }] },
+            columns: ['id', 'fee_key', 'fee_name', 'amount', 'charge_unit', 'is_active', 'updated_at'],
+          } : {}),
         })
       }
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
       const { result, errors } = domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
-        : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value) : validateFields(domain, body.value)
+        : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
+          : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value) : validateFields(domain, body.value)
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
+      if (domain === 'calculator-fees' && !Object.keys(errors).length && syntheticCalculatorConfig.calculator_fees.some((item) => item.fee_key === result.fee_key)) errors.fee_key = 'A calculator fee with this key already exists.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
       return json(request, { item: repository.insert(domain, result) }, 201)
     },
@@ -540,13 +586,15 @@ export function createAdminDataApi(repository, auth) {
         return item ? json(request, { item }) : json(request, { error: { code: 'not_found' } }, 404)
       }
       if (request.method === 'DELETE') {
+        if (domain === 'calculator-fees') return json(request, { error: { code: 'read_only_action' } }, 405)
         return repository.remove(domain, id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
       }
       if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
       const { result, errors } = domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
-        : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value) : validateFields(domain, body.value)
+        : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
+          : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value, { updating: true }) : validateFields(domain, body.value)
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result, id)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result, id)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)

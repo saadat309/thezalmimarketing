@@ -406,6 +406,10 @@
 .dashboard-table .dashboard-check-cell { width: 2.5rem; min-width: 2.5rem; padding-inline: .75rem .25rem; }
 .dashboard-check-cell input { width: .9rem; height: .9rem; accent-color: var(--primary); cursor: pointer; }
 .dashboard-record-id { color: var(--muted-foreground); font: .72rem ui-monospace,monospace; }
+.dashboard-status-pill { display: inline-flex; align-items: center; padding: .18rem .5rem; border-radius: 999px; font-size: .68rem; font-weight: 600; }
+.dashboard-status-pill.is-active { color: #166534; background: #dcfce7; }
+.dashboard-status-pill.is-inactive { color: #475569; background: #e2e8f0; }
+.calculator-fee-key { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: .72rem; }
 .dashboard-actions-heading { width: 3.5rem; min-width: 3.5rem; text-align: right; }
 .dashboard-row-actions { position: relative; width: 3.5rem; min-width: 3.5rem; padding-inline: .35rem!important; text-align: right; }
 .dashboard-icon-button { width: 2rem; height: 2rem; display: inline-grid; place-items: center; border: 0; border-radius: .35rem; color: var(--muted-foreground); background: transparent; cursor: pointer; }

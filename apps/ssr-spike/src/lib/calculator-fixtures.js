@@ -29,10 +29,18 @@ export const syntheticCalculatorConfig = {
     { id: 'transfer-demo-sector-shop', calculator_phase_id: 'phase-demo', calculator_block_id: null, category: 'Sector Shop', reference_amount: 65000, reference_size: 5, reference_unit: 'marla', is_active: true, updated_at: '2026-10-18' },
   ],
   calculator_fees: [
-    ['biana', 4000], ['verification', 5250], ['transfer_file_plot_file', 7000], ['transfer_file_other', 8000],
-    ['membership_form', 2100], ['agreement_simple', 4000], ['sports_fund', 10500], ['urgent_fee', 70000],
-    ['executive_fee', 80000], ['mutation', 300], ['plra_service', 3600], ['plra_mutation', 200], ['online_psid', 15],
-  ].map(([fee_key, amount]) => ({ fee_key, amount })),
+    ['biana', 'Biana', 4000, 'transaction'], ['verification', 'Verification', 5250, 'transaction'],
+    ['transfer_file_plot_file', 'Transfer File - Plot/File', 7000, 'owner'], ['transfer_file_other', 'Transfer File - Other', 8000, 'owner'],
+    ['membership_fee_residential', 'Membership Fee - Residential', 150000, 'owner'],
+    ['membership_fee_commercial', 'Membership Fee - Commercial/Sector Shop', 200000, 'owner'],
+    ['membership_form', 'Membership Form', 2100, 'owner'], ['agreement_simple', 'Simple Agreement', 4000, 'transaction'],
+    ['sports_fund', 'Sports Fund', 10500, 'property'], ['urgent_fee', 'Urgent Transfer Fee', 70000, 'owner'],
+    ['executive_fee', 'Executive Transfer Fee', 80000, 'owner'], ['mutation', 'Mutation', 300, 'transaction'],
+    ['plra_service', 'PLRA Service Charges', 3600, 'transaction'], ['plra_mutation', 'PLRA Mutation', 200, 'transaction'],
+    ['online_psid', 'Online PSID', 15, 'transaction'],
+  ].map(([fee_key, fee_name, amount, charge_unit]) => ({
+    id: `fee-demo-${fee_key}`, fee_key, fee_name, amount, charge_unit, is_active: true, updated_at: '2026-10-18',
+  })),
   calculator_tax_rates: [
     ['seller_236c_filer', 2.75], ['seller_236c_non_filer', 11.5],
     ['purchaser_236k_filer', 1.25], ['purchaser_236k_non_filer', 10.5],

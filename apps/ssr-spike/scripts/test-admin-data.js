@@ -226,4 +226,42 @@ const deleteTransferFeeResponse = await api.item(new Request(`${base}/calculator
 assert.equal(deleteTransferFeeResponse.status, 200)
 assert.ok(!(await calculatorConfigApi()).calculator_transfer_fees.some((item) => item.id === newTransferFee.id))
 
+const calculatorFeesResponse = await api.collection(new Request(`${base}/calculator-fees`, { headers: readHeaders }), 'calculator-fees')
+assert.equal(calculatorFeesResponse.status, 200)
+const calculatorFees = await calculatorFeesResponse.json()
+assert.equal(calculatorFees.count, 15)
+const bianaFee = calculatorFees.items.find((item) => item.fee_key === 'biana')
+assert.equal(bianaFee.fee_name, 'Biana')
+assert.equal(bianaFee.charge_unit, 'transaction')
+assert.equal(calculatorFees.options.charge_unit.length, 3)
+const newCalculatorFeeResponse = await api.collection(new Request(`${base}/calculator-fees`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ fee_key: 'staging_sample_fee', fee_name: 'Staging Sample Fee', amount: 125.5, charge_unit: 'owner', is_active: true }),
+}), 'calculator-fees')
+assert.equal(newCalculatorFeeResponse.status, 201)
+const newCalculatorFee = (await newCalculatorFeeResponse.json()).item
+assert.equal((await calculatorConfigApi()).calculator_fees.find((item) => item.fee_key === newCalculatorFee.fee_key).amount, 125.5)
+const duplicateCalculatorFeeResponse = await api.collection(new Request(`${base}/calculator-fees`, {
+  method: 'POST', headers: writeHeaders,
+  body: JSON.stringify({ fee_key: 'biana', fee_name: 'Duplicate', amount: 1, charge_unit: 'transaction', is_active: true }),
+}), 'calculator-fees')
+assert.equal(duplicateCalculatorFeeResponse.status, 400)
+const updateCalculatorFeeResponse = await api.item(new Request(`${base}/calculator-fees/${bianaFee.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ fee_name: 'Synthetic Biana', amount: 4100, is_active: false }),
+}), 'calculator-fees', bianaFee.id)
+assert.equal(updateCalculatorFeeResponse.status, 200)
+const updatedBiana = (await calculatorConfigApi()).calculator_fees.find((item) => item.fee_key === 'biana')
+assert.equal(updatedBiana.amount, 4100)
+assert.equal(updatedBiana.is_active, false)
+const forbiddenFeeKeyUpdate = await api.item(new Request(`${base}/calculator-fees/${bianaFee.id}`, {
+  method: 'PATCH', headers: writeHeaders,
+  body: JSON.stringify({ fee_key: 'renamed_biana' }),
+}), 'calculator-fees', bianaFee.id)
+assert.equal(forbiddenFeeKeyUpdate.status, 400)
+const forbiddenFeeDelete = await api.item(new Request(`${base}/calculator-fees/${newCalculatorFee.id}`, {
+  method: 'DELETE', headers: writeHeaders,
+}), 'calculator-fees', newCalculatorFee.id)
+assert.equal(forbiddenFeeDelete.status, 405)
+
 console.log('Synthetic admin API checks passed.')
