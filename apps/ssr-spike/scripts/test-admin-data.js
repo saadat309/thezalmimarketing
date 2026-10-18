@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createAdminAuth } from '../src/lib/admin-auth.js'
+import { createMemoryAdminStorage } from '../src/lib/admin-storage.js'
 import { createAdminDataApi, createMemoryAdminRepository } from '../src/lib/admin-data.js'
 import { createDirectoryApi, createMemoryDirectoryRepository } from '../src/lib/directory-api.js'
 import { syntheticFiles, syntheticMaps } from '../src/lib/directory-fixtures.js'
@@ -13,8 +14,9 @@ const environment = {
   STAGING_ADMIN_1_PASSWORD: `${crypto.randomUUID()}-${crypto.randomUUID()}`,
   STAGING_ADMIN_2_PASSWORD: `${crypto.randomUUID()}-${crypto.randomUUID()}`,
 }
-const auth = createAdminAuth(environment)
-const api = createAdminDataApi(createMemoryAdminRepository(), auth)
+const storage = createMemoryAdminStorage()
+const auth = createAdminAuth(environment, storage)
+const api = createAdminDataApi(createMemoryAdminRepository(), auth, storage)
 const propertyApi = createPropertyApi(createMemoryPropertyRepository(syntheticProperties))
 const directoryRepository = createMemoryDirectoryRepository({ maps: syntheticMaps, files: syntheticFiles })
 const mapsApi = createDirectoryApi(directoryRepository, 'maps')
@@ -47,7 +49,31 @@ assert.equal(userList.count, 2)
 assert.ok(userList.items.every((user) => user.role === 'Admin'))
 assert.equal((await api.collection(new Request(`${base}/users`, { method: 'POST', headers: writeHeaders, body: '{}' }), 'users')).status, 405)
 const profile = await api.collection(new Request(`${base}/profile`, { headers: readHeaders }), 'profile')
-assert.equal((await profile.json()).user.email, 'admin.one@staging.invalid')
+const profileData = await profile.json()
+assert.equal(profileData.user.email, 'admin.one@staging.invalid')
+assert.equal(profileData.user.role_name, 'Admin')
+assert.ok(profileData.readOnlyFields.includes('email'))
+const profileNoCsrf = await api.collection(new Request(`${base}/profile`, {
+  method: 'PATCH', headers: readHeaders, body: JSON.stringify({ name: 'Rejected Profile', bio: '' }),
+}), 'profile')
+assert.equal(profileNoCsrf.status, 403)
+const savedProfile = await api.collection(new Request(`${base}/profile`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic Admin One', bio: 'A synthetic profile biography.' }),
+}), 'profile')
+assert.equal(savedProfile.status, 200)
+assert.equal((await savedProfile.json()).user.name, 'Synthetic Admin One')
+const profileAfterSave = await api.collection(new Request(`${base}/profile`, { headers: readHeaders }), 'profile')
+assert.equal((await profileAfterSave.json()).user.bio, 'A synthetic profile biography.')
+const apiAfterRestart = createAdminDataApi(createMemoryAdminRepository(), createAdminAuth(environment, storage), storage)
+const profileAfterRestart = await apiAfterRestart.collection(new Request(`${base}/profile`, { headers: readHeaders }), 'profile')
+const persistedProfile = await profileAfterRestart.json()
+assert.equal(persistedProfile.user.name, 'Synthetic Admin One')
+assert.equal(persistedProfile.user.bio, 'A synthetic profile biography.')
+const profileEmailTamper = await api.collection(new Request(`${base}/profile`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ name: 'Synthetic Admin One', bio: '', email: 'new@example.invalid' }),
+}), 'profile')
+assert.equal(profileEmailTamper.status, 400)
+assert.equal((await api.collection(new Request(`${base}/profile`, { method: 'POST', headers: writeHeaders, body: '{}' }), 'profile')).status, 405)
 const queryCollection = await api.collection(new Request(`${base}/queries`, { headers: readHeaders }), 'queries')
 assert.equal(queryCollection.status, 200)
 const queryData = await queryCollection.json()

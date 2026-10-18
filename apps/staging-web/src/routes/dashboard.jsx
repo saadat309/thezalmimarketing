@@ -47,12 +47,18 @@ function DashboardFrame({ user }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useState(user)
+  useEffect(() => {
+    const update = (event) => setCurrentUser(event.detail)
+    window.addEventListener('staging-admin-profile-updated', update)
+    return () => window.removeEventListener('staging-admin-profile-updated', update)
+  }, [])
   const key = location.pathname.replace(/\/$/, '').split('/').at(-1) || 'dashboard'
   const title = titles[key] || 'Dashboard'
   const closeMobile = () => setMobileOpen(false)
 
   return <>
-    <StagingAppSidebar user={user} mobileOpen={mobileOpen} desktopOpen={sidebarOpen} onNavigate={closeMobile} />
+    <StagingAppSidebar user={currentUser} mobileOpen={mobileOpen} desktopOpen={sidebarOpen} onNavigate={closeMobile} />
     <div className={`dashboard-main${sidebarOpen ? ' is-sidebar-expanded' : ''}`}>
       <header className="dashboard-header">
         <button type="button" className="dashboard-menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) setMobileOpen((open) => !open); else setSidebarOpen((open) => !open) }}>

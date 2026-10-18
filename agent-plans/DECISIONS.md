@@ -180,3 +180,46 @@ This is the durable record of decisions that affect migration work. It is append
 - **Boundaries:** Synthetic in-memory data only. No production records, database/storage binding, media operation, Cloudflare provisioning/deployment, DNS, cPanel/MySQL, or `workers/ai-worker` changes. Edits remain process-local and reset on API restart.
 - **Consequences:** New label management behavior must remain protected by the existing Admin session and CSRF checks. Public projection must never include admin IDs, internal filter fields, or storage identifiers. Visual parity review remains separate from API acceptance tests.
 - **Source:** User answered “Build full synthetic label management (Recommended)” to the proposed synthetic global label CRUD/badge visibility design.
+
+### ADR-023 — Improve staging contrast, profile editing, and session convenience
+
+- **Status:** Accepted by the user on 2026-10-18 for local synthetic staging only.
+- **Decision:** Keep the existing visual layouts while correcting staging contrast problems. Port the source profile workflow with editable synthetic `name` and `bio`; keep email and the hardcoded Admin role read-only, and defer avatar upload/storage. Set staging session cookie/server expiration to seven days and allow separate concurrent sessions across browsers/devices; session state remains in memory and does not survive API restart.
+- **Boundaries:** No production auth/account changes, deployment, storage provisioning, DNS, cPanel/MySQL, production data, or `workers/ai-worker` changes. This does not authorize durable sessions or a public staging auth endpoint.
+- **Consequences:** Keep each login's independent session ID and CSRF token. Logout revokes only that session. The current in-memory cap remains 20 sessions globally; API restart/isolate loss signs all local users out. Before deployment, replace ephemeral sessions with an approved durable store and review cookie policy for the final domain.
+- **Source:** User explicitly approved the proposed measured staging contrast pass, source-derived profile edit scope, and seven-day concurrent sessions.
+
+### ADR-024 — Use local D1 for synthetic admin auth and profile persistence
+
+- **Status:** Accepted by the user on 2026-10-18 after comparing local D1 with remote D1 implementation.
+- **Decision:** Implement a local-only D1 binding (`remote: false`) for synthetic admin session hashes, login-throttle counters, and editable Profile name/bio. Keep seven-day independent concurrent sessions and the global cap of 20. Keep other property, label, calculator, query, landing-page, map, and file data in existing synthetic in-memory repositories for now. The local adapter/migrations should provide a direct path to later D1 repositories.
+- **Supersedes:** The in-memory-only session/profile persistence portion of ADR-023 and the no-local-D1-binding boundary of ADR-021. Other ADR-021/023 decisions and boundaries remain unchanged.
+- **Boundaries:** Local Wrangler D1 simulator only. No remote D1 provisioning, remote data, deployment, DNS, production MySQL/cPanel/site, credentials, or `workers/ai-worker` changes. Use synthetic values only.
+- **Consequences:** Local database state is kept under ignored `.wrangler/state`; deleting that local state resets synthetic data. Remote usage needs separate approval, verified free-tier budgets, and usage guards. Profile avatar and email remain deferred; only the approved profile fields persist.
+- **Source:** User approved proceeding with the recommended local-D1-first approach after requesting the pros and cons and alignment with the grand migration plan.
+
+### ADR-025 — Persist the synthetic Property domain in local D1
+
+- **Status:** Accepted by the user on 2026-10-18 by approving the recommended next local-D1 property CRUD slice.
+- **Decision:** Move the synthetic Property repository behind the local D1 adapter for public filter/list/cursor/detail reads and protected admin list/create/update/publish/hide/delete operations. Keep the existing API validation, public allowlist/sanitizer, ETag behavior, and staging frontend contracts. Seed only the 58 fabricated fixtures through an explicit idempotent local-only command. When a synthetic label is deleted, remove its assignment from D1 property rows; the label registry and File label data remain in-memory for now.
+- **Supersedes:** The property-record in-memory boundary in ADR-024 and the “current adapter is in-memory” implementation status in ADR-018. ADR-016's public API shape/freshness decisions and other ADR-024 boundaries remain unchanged.
+- **Boundaries:** Wrangler local D1 only (`remote: false`), synthetic fixtures only. No remote D1 provisioning, deployment, production data/site/DNS/cPanel/MySQL, credentials, or `workers/ai-worker` changes. No media is uploaded or stored.
+- **Consequences:** Local property rows survive local Worker restarts but remain isolated to this workstation. The query design uses indexed filter/sort columns and retains the full synthetic record in a JSON column for allowlisted projection/admin form mapping; remote schema/read/write budgets and representative query plans still require review. Label names/badge settings and non-property datasets remain volatile until separate slices migrate them.
+- **Source:** User approved the recommendation to implement the local-D1 property CRUD adapter with synthetic records and publish/update freshness tests.
+
+### ADR-026 — Persist synthetic Maps and Files in local D1
+
+- **Status:** Accepted by the user on 2026-10-18 as the next local-D1 migration slice.
+- **Decision:** Move synthetic Map/File records behind a JavaScript repository backed by the existing local D1 binding. Preserve public `/api/v1/maps` and `/api/v1/files` projections, filter behavior, and protected dashboard CRUD. Store city/society/phase references as stable slugs on the records, with indexed filter columns; do not expose internal storage fields publicly. Use idempotent synthetic seeds.
+- **Boundaries:** Wrangler local D1 only (`remote: false`) and fabricated records. The standalone taxonomy catalogue/editor remains in-memory in this slice. No R2/media upload, remote storage provisioning, deployment, production data/site/DNS/cPanel/MySQL, credentials, or `workers/ai-worker` changes.
+- **Consequences:** Map/File admin edits and publish/hide state now survive local Worker restarts and feed the public API from the same local rows. Label deletion also clears D1-backed File label assignments. Taxonomy CRUD/independent map assignments remain a follow-on; media remains disabled. Remote query/free-budget review is still required before any remote storage proposal.
+
+### ADR-027 — Translate source text schema into D1 before expanding imports
+
+- **Status:** Accepted by the user on 2026-10-18 for local synthetic implementation and future import compatibility.
+- **Decision:** Translate the existing MySQL text-content schema into explicit SQLite/D1 tables using source table/column semantics, numeric IDs, slugs, nullable values, timestamps, visibility flags, and foreign-key behavior. API adapters may retain the current frontend response contract without making denormalized JSON the database source of truth. Exclude media tables and binary objects; keep legacy media-reference columns as text pending a separately designed object-key mapping.
+- **Initial scope:** `categories`, `cities`, `societies`, `phases`, and `map_docs`; `map_docs.city_id`, `society_id`, and `phase_id` preserve the source `ON DELETE SET NULL` behavior. Existing Property and File prototype schemas are explicitly transitional and not yet import-ready. No production export/import is authorized by this decision.
+- **Boundaries:** Synthetic data and local D1 only. No production data, remote D1, R2, deployment, DNS, cPanel/MySQL, or `workers/ai-worker` changes.
+- **Consequences:** Future import tooling must preserve explicit numeric IDs and reconcile all foreign keys/unique slugs. Text-domain migrations must be reviewed against `docs/zalmimarketing-schema.sql`; media object paths/keys and any schema extensions remain separately documented. The current API/UI may use stable slugs while adapters map them to numeric IDs internally.
+- **Source:** User direction that future export from the checked-in DB schema must import without issues, with media tables excluded for separate object storage.
+- **Source:** User approved moving Maps/Files and their taxonomy relationships into local D1 with synthetic data.

@@ -1,6 +1,7 @@
 import { syntheticFiles, syntheticMaps } from './directory-fixtures.js'
 import { syntheticProperties } from './property-fixtures.js'
 import { syntheticCalculatorConfig } from './calculator-fixtures.js'
+import { createMemoryAdminStorage } from './admin-storage.js'
 import { applyCalculatorCsvImport, calculatorCsvTemplate, prepareCalculatorCsvImport, readBoundedCsvForm } from './calculator-import.js'
 import { createSyntheticLabel, removeSyntheticLabel, syntheticLabels, updateSyntheticLabel } from './synthetic-labels.js'
 
@@ -482,10 +483,10 @@ function validateLabelFields(input, current = null) {
   return { result, errors }
 }
 
-function handleLabelCollection(request, auth) {
+async function handleLabelCollection(request, auth) {
   if (request.method === 'OPTIONS') return auth.options(request)
   const mutation = request.method !== 'GET'
-  const guard = auth.requireAdmin(request, { csrf: mutation })
+  const guard = await auth.requireAdmin(request, { csrf: mutation })
   if (guard.response) return guard.response
   if (request.method === 'GET') {
     const items = syntheticLabels.map(adminLabelRecord)
@@ -501,15 +502,19 @@ function handleLabelCollection(request, auth) {
   })
 }
 
-async function handleLabelItem(request, auth, slug) {
+async function handleLabelItem(request, auth, slug, propertyRepository = null, directoryRepository = null) {
   if (request.method === 'OPTIONS') return auth.options(request)
   const mutation = request.method !== 'GET'
-  const guard = auth.requireAdmin(request, { csrf: mutation })
+  const guard = await auth.requireAdmin(request, { csrf: mutation })
   if (guard.response) return guard.response
   const current = syntheticLabels.find((label) => label.slug === slug)
   if (!current) return json(request, { error: { code: 'not_found' } }, 404)
   if (request.method === 'GET') return json(request, { item: adminLabelRecord(current) })
-  if (request.method === 'DELETE') return removeSyntheticLabel(slug) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
+  if (request.method === 'DELETE') {
+    if (propertyRepository) await propertyRepository.removeLabelFromProperties(slug)
+    if (directoryRepository) await directoryRepository.removeLabelFromFiles(slug)
+    return removeSyntheticLabel(slug) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
+  }
   if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
   const body = await readBody(request)
   if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
@@ -538,9 +543,9 @@ function propertyTaxonomyOption(field, slug) {
     || { slug, name: slug }
 }
 
-function directoryTaxonomyOptions(field) {
+function directoryTaxonomyOptions(field, extraRecords = []) {
   const values = new Map()
-  for (const item of [...syntheticMaps, ...syntheticFiles]) {
+  for (const item of [...syntheticMaps, ...syntheticFiles, ...extraRecords]) {
     const slug = item[field]
     const name = item[`${field}Name`]
     if (slug && name) values.set(slug, name)
@@ -556,8 +561,12 @@ function directoryTaxonomyName(field, slug) {
   return directoryTaxonomyOptions(field).find((option) => option.value === slug)?.label || slug
 }
 
-function directoryAdminOptions(domain) {
-  const taxonomies = { city_id: directoryTaxonomyOptions('city'), society_id: directoryTaxonomyOptions('society'), phase_id: directoryTaxonomyOptions('phase') }
+function directoryAdminOptions(domain, extraRecords = []) {
+  const taxonomies = {
+    city_id: directoryTaxonomyOptions('city', extraRecords),
+    society_id: directoryTaxonomyOptions('society', extraRecords),
+    phase_id: directoryTaxonomyOptions('phase', extraRecords),
+  }
   const shared = {
     property_type: [{ value: 'Residential', label: 'Residential' }, { value: 'Commercial', label: 'Commercial' }],
     purchase_type: [{ value: 'sale', label: 'Sale' }, { value: 'installment', label: 'Installment' }],
@@ -660,6 +669,23 @@ function applyPublicFields(domain, target, fields) {
   return toAdminRecord(domain, target)
 }
 
+function buildDirectoryRecord(domain, fields, existing) {
+  const source = publicSources[domain]
+  const template = source?.[0]
+  if (!template) return null
+  const baseSlug = toSlug(fields.title)
+  let slug = baseSlug
+  let suffix = 2
+  while (existing.some((item) => item.slug === slug)) slug = `${baseSlug}-${suffix++}`
+  const target = structuredClone(template)
+  target.slug = slug
+  target.title = fields.title
+  target.public = fields.hide !== true
+  target.updatedAt = new Date().toISOString().slice(0, 10)
+  applyPublicFields(domain, target, fields)
+  return target
+}
+
 function createPublicSource(domain, fields) {
   const source = publicSources[domain]
   const template = source[0]
@@ -689,6 +715,24 @@ function createPublicSource(domain, fields) {
   applyPublicFields(domain, target, fields)
   source.push(target)
   return toAdminRecord(domain, target)
+}
+
+function buildPropertyRecord(fields, source) {
+  const target = structuredClone(source[0] || syntheticProperties[0])
+  const baseSlug = toSlug(fields.title)
+  let slug = baseSlug
+  let suffix = 2
+  while (source.some((item) => item.slug === slug)) slug = `${baseSlug}-${suffix++}`
+  target.id = undefined
+  target.slug = slug
+  target.title = fields.title
+  target.public = fields.hide !== true
+  target.fileOnly = false
+  target.createdAt = new Date().toISOString()
+  if (fields.category_id) target.category = propertyTaxonomyOption('category_id', fields.category_id)
+  if (fields.city_id) target.location.city = propertyTaxonomyOption('city_id', fields.city_id)
+  applyPublicFields('properties', target, fields)
+  return target
 }
 
 function updatePublicSource(domain, id, fields) {
@@ -730,9 +774,9 @@ async function readBody(request) {
   }
 }
 
-function validateFields(domain, input) {
+function validateFields(domain, input, extraOptions = {}) {
   const schema = DOMAIN_FIELDS[domain]
-  const options = ['files', 'maps'].includes(domain) ? directoryAdminOptions(domain) : {}
+  const options = ['files', 'maps'].includes(domain) ? directoryAdminOptions(domain) : extraOptions
   const result = {}
   const errors = {}
   for (const key of Object.keys(input)) {
@@ -949,13 +993,13 @@ export function createMemoryAdminRepository() {
   }
 }
 
-export function createAdminDataApi(repository, auth) {
+export function createAdminDataApi(repository, auth, profileStorage = createMemoryAdminStorage(), propertyRepository = null, directoryRepository = null, taxonomyRepository = null) {
   return {
     async collection(request, domain) {
-      if (domain === 'labels') return handleLabelCollection(request, auth)
+      if (domain === 'labels') return await handleLabelCollection(request, auth)
       if (domain === 'users') {
         if (request.method === 'OPTIONS') return auth.options(request)
-        const guard = auth.requireAdmin(request)
+        const guard = await auth.requireAdmin(request)
         if (guard.response) return guard.response
         if (request.method !== 'GET') return json(request, { error: { code: 'read_only_resource' } }, 405)
         return json(request, {
@@ -969,18 +1013,45 @@ export function createAdminDataApi(repository, auth) {
       }
       if (domain === 'profile') {
         if (request.method === 'OPTIONS') return auth.options(request)
-        const guard = auth.requireAdmin(request)
+        const guard = await auth.requireAdmin(request, { csrf: request.method !== 'GET' })
         if (guard.response) return guard.response
-        if (request.method !== 'GET') return json(request, { error: { code: 'read_only_resource' } }, 405)
-        return json(request, { user: guard.user, readOnly: true })
+        let stored = await profileStorage.getProfile(guard.user.id)
+        let profile = stored && { name: stored.name, bio: stored.bio, profile_pic: '' }
+        if (!profile) {
+          profile = { name: guard.user.name, bio: '', profile_pic: '' }
+        }
+        const user = { ...guard.user, ...profile, role_name: guard.user.role }
+        if (request.method === 'GET') return json(request, { user, readOnlyFields: ['email', 'role', 'profile_pic'] })
+        if (request.method !== 'PATCH') return json(request, { error: { code: 'method_not_allowed' } }, 405, { Allow: 'GET, PATCH, OPTIONS' })
+        const body = await readBody(request)
+        if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
+        const input = body.value
+        const errors = {}
+        for (const key of Object.keys(input)) if (!['name', 'bio'].includes(key)) errors[key] = 'Field is not editable.'
+        if (typeof input.name !== 'string' || !input.name.trim() || input.name.trim().length > 100) errors.name = 'Enter a name from 1 to 100 characters.'
+        if (input.bio !== undefined && (typeof input.bio !== 'string' || input.bio.length > 5000)) errors.bio = 'Bio must be 5,000 characters or fewer.'
+        if (!Object.keys(errors).length && !Object.hasOwn(input, 'bio')) errors.bio = 'Provide a bio value.'
+        if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
+        profile = { ...profile, name: input.name.trim(), bio: (input.bio ?? profile.bio).trim() }
+        await profileStorage.saveProfile(guard.user.id, { name: profile.name, bio: profile.bio }, Date.now())
+        return json(request, { user: { ...guard.user, ...profile, role_name: guard.user.role } })
       }
       if (!Object.hasOwn(DOMAIN_FIELDS, domain)) return json(request, { error: { code: 'unknown_domain' } }, 404)
       if (request.method === 'OPTIONS') return auth.options(request)
       const mutation = request.method !== 'GET' && request.method !== 'OPTIONS'
-      const guard = auth.requireAdmin(request, { csrf: mutation })
+      const guard = await auth.requireAdmin(request, { csrf: mutation })
       if (guard.response) return guard.response
       if (request.method === 'GET') {
-        const items = repository.list(domain)
+        const items = ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
+          ? await taxonomyRepository.list(domain)
+          : domain === 'properties' && propertyRepository
+          ? (await propertyRepository.listAllProperties()).filter((property) => !property.fileOnly).map((property) => toAdminRecord('properties', property))
+          : ['files', 'maps'].includes(domain) && directoryRepository
+            ? (await directoryRepository.listAll(domain)).map((item) => toAdminRecord(domain, item))
+          : repository.list(domain)
+        const directoryRecords = ['files', 'maps'].includes(domain) && directoryRepository
+          ? [...await directoryRepository.listAll('maps'), ...await directoryRepository.listAll('files')]
+          : []
         const calculatorRates = domain === 'calculator-rates'
         const calculatorTransferFees = domain === 'calculator-transfer-fees'
         return json(request, {
@@ -989,7 +1060,7 @@ export function createAdminDataApi(repository, auth) {
             options: propertyAdminOptions(),
             columns: ['id', 'title', 'property_type', 'purchase_type', 'category_id', 'city_id', 'price_amount', 'area', 'unit', 'hide'],
           } : {}),
-          ...(['files', 'maps'].includes(domain) ? { options: directoryAdminOptions(domain) } : {}),
+          ...(['files', 'maps'].includes(domain) ? { options: directoryAdminOptions(domain, directoryRecords) } : {}),
           ...(calculatorRates ? {
             options: calculatorRateOptions(),
             columns: ['id', 'city_name', 'society_name', 'calculator_phase_name', 'calculator_block_name', 'category', 'property_type_label', 'unit_label', 'dc_rate', 'fbr_rate', 'is_active', 'updated_at'],
@@ -1020,7 +1091,7 @@ export function createAdminDataApi(repository, auth) {
             columns: ['id', 'category', 'property_type', 'label', 'sort_order', 'is_active', 'updated_at'],
           } : {}),
           ...(['cities', 'societies', 'phases'].includes(domain) ? {
-            options: { map_ids: syntheticMaps.map((item) => ({ value: item.slug, label: item.title })) },
+            options: { map_ids: taxonomyRepository ? await taxonomyRepository.mapOptions() : syntheticMaps.map((item) => ({ value: item.slug, label: item.title })) },
             columns: ['id', 'name', 'map_ids', 'updated_at'],
           } : {}),
           ...(domain === 'categories' ? { columns: ['id', 'name', 'pic', 'updated_at'] } : {}),
@@ -1030,6 +1101,8 @@ export function createAdminDataApi(repository, auth) {
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
+      const taxonomyFields = taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain)
+        ? { map_ids: await taxonomyRepository.mapOptions() } : {}
       const { result, errors } = domain === 'properties' ? validatePropertyFields(body.value)
         : ['files', 'maps'].includes(domain) ? validateDirectoryAdminFields(domain, body.value)
         : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
@@ -1037,28 +1110,50 @@ export function createAdminDataApi(repository, auth) {
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value)
             : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value)
-              : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value) : validateFields(domain, body.value)
-      if (!Object.keys(errors).length && taxonomyMapConflict(domain, result.map_ids)) errors.map_ids = 'A map can be associated with only one record in this taxonomy.'
+              : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value) : validateFields(domain, body.value, taxonomyFields)
+      const mapConflict = !Object.keys(errors).length && (taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain)
+        ? await taxonomyRepository.hasMapConflict(domain, result.map_ids || [])
+        : taxonomyMapConflict(domain, result.map_ids))
+      if (mapConflict) errors.map_ids = 'A map can be associated with only one record in this taxonomy.'
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (domain === 'calculator-fees' && !Object.keys(errors).length && syntheticCalculatorConfig.calculator_fees.some((item) => item.fee_key === result.fee_key)) errors.fee_key = 'A calculator fee with this key already exists.'
       if (domain === 'calculator-tax-rates' && !Object.keys(errors).length && syntheticCalculatorConfig.calculator_tax_rates.some((item) => item.rate_key === result.rate_key)) errors.rate_key = 'A tax rate with this key already exists.'
       if (['calculator-phases', 'calculator-blocks'].includes(domain) && !Object.keys(errors).length && calculatorConfigurationDuplicate(domain, result)) errors.name = 'A record with this name already exists in the selected scope.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
+      if (domain === 'properties' && propertyRepository) {
+        const source = await propertyRepository.listAllProperties()
+        const stored = await propertyRepository.insertPropertyRecord(buildPropertyRecord(result, source))
+        return stored ? json(request, { item: toAdminRecord('properties', stored) }, 201) : json(request, { error: { code: 'write_failed' } }, 500)
+      }
+      if (['files', 'maps'].includes(domain) && directoryRepository) {
+        const existing = await directoryRepository.listAll(domain)
+        const record = buildDirectoryRecord(domain, result, existing)
+        const stored = await directoryRepository.insert(domain, record)
+        return stored ? json(request, { item: toAdminRecord(domain, stored) }, 201) : json(request, { error: { code: 'write_failed' } }, 500)
+      }
+      if (['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository) {
+        try {
+          const stored = await taxonomyRepository.insert(domain, result)
+          return stored ? json(request, { item: stored }, 201) : json(request, { error: { code: 'write_failed' } }, 500)
+        } catch {
+          return json(request, { error: { code: 'write_failed' } }, 409)
+        }
+      }
       return json(request, { item: repository.insert(domain, result) }, 201)
     },
 
     async item(request, domain, id) {
-      if (domain === 'labels') return handleLabelItem(request, auth, id)
+      if (domain === 'labels') return await handleLabelItem(request, auth, id, propertyRepository, directoryRepository)
       if (domain === 'users' || domain === 'profile') {
-        const guard = auth.requireAdmin(request, { csrf: request.method !== 'GET' })
+        const guard = await auth.requireAdmin(request, { csrf: request.method !== 'GET' })
         if (guard.response) return guard.response
         return json(request, { error: { code: 'read_only_resource' } }, 405)
       }
       if (!Object.hasOwn(DOMAIN_FIELDS, domain)) return json(request, { error: { code: 'unknown_domain' } }, 404)
       if (request.method === 'OPTIONS') return auth.options(request)
       const mutation = request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE'
-      const guard = auth.requireAdmin(request, { csrf: mutation })
+      const guard = await auth.requireAdmin(request, { csrf: mutation })
       if (guard.response) return guard.response
       if (id === 'template' && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
         if (request.method !== 'GET') return json(request, { error: { code: 'method_not_allowed' } }, 405)
@@ -1066,7 +1161,7 @@ export function createAdminDataApi(repository, auth) {
       }
       if (id === 'import' && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
         if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
-        const guardWrite = auth.requireAdmin(request, { csrf: true })
+        const guardWrite = await auth.requireAdmin(request, { csrf: true })
         if (guardWrite.response) return guardWrite.response
         const form = await readBoundedCsvForm(request)
         if (form.error) {
@@ -1093,29 +1188,77 @@ export function createAdminDataApi(repository, auth) {
         return json(request, { success: true, message, total_rows: prepared.summary.total_rows, ...counts })
       }
       if (request.method === 'GET') {
-        const item = repository.find(domain, id)
+        const property = domain === 'properties' && propertyRepository ? await propertyRepository.findPropertyById(id) : null
+        const taxonomyItem = ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository ? await taxonomyRepository.find(domain, id) : null
+        const directoryItem = ['files', 'maps'].includes(domain) && directoryRepository ? await directoryRepository.find(domain, id) : null
+        const item = domain === 'properties' && propertyRepository
+          ? property ? toAdminRecord('properties', property) : null
+          : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
+            ? taxonomyItem
+          : ['files', 'maps'].includes(domain) && directoryRepository
+            ? directoryItem ? toAdminRecord(domain, directoryItem) : null
+          : repository.find(domain, id)
         return item ? json(request, { item }) : json(request, { error: { code: 'not_found' } }, 404)
       }
       if (request.method === 'DELETE') {
         if (['calculator-fees', 'calculator-tax-rates', 'calculator-property-types'].includes(domain)) return json(request, { error: { code: 'read_only_action' } }, 405)
+        if (domain === 'properties' && propertyRepository) return await propertyRepository.deletePropertyRecord(id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
+        if (['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository) return await taxonomyRepository.delete(domain, id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
+        if (['files', 'maps'].includes(domain) && directoryRepository) return await directoryRepository.delete(domain, id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
         return repository.remove(domain, id) ? json(request, { ok: true }) : json(request, { error: { code: 'not_found' } }, 404)
       }
       if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
-      const { result, errors } = domain === 'properties' ? validatePropertyUpdateFields(repository.find(domain, id), body.value)
+      const currentProperty = domain === 'properties' && propertyRepository ? await propertyRepository.findPropertyById(id) : null
+      const currentTaxonomy = ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository ? await taxonomyRepository.find(domain, id) : null
+      const currentDirectory = ['files', 'maps'].includes(domain) && directoryRepository ? await directoryRepository.find(domain, id) : null
+      const currentAdminProperty = domain === 'properties' && propertyRepository
+        ? currentProperty ? toAdminRecord('properties', currentProperty) : null
+        : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
+          ? currentTaxonomy
+        : ['files', 'maps'].includes(domain) && directoryRepository
+          ? currentDirectory ? toAdminRecord(domain, currentDirectory) : null
+        : repository.find(domain, id)
+      const { result, errors } = domain === 'properties' ? validatePropertyUpdateFields(currentAdminProperty, body.value)
         : ['files', 'maps'].includes(domain) ? validateDirectoryAdminFields(domain, body.value, { updating: true })
         : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value, { updating: true })
             : domain === 'calculator-tax-rates' ? validateCalculatorTaxRateFields(body.value, { updating: true })
-              : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value, { updating: true }) : validateFields(domain, body.value)
-      if (!Object.keys(errors).length && taxonomyMapConflict(domain, result.map_ids, id)) errors.map_ids = 'A map can be associated with only one record in this taxonomy.'
+              : domain === 'calculator-fee-rules' ? validateCalculatorFeeRuleFields(body.value, { updating: true }) : validateFields(domain, body.value,
+                taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain) ? { map_ids: await taxonomyRepository.mapOptions() } : {})
+      const updateMapConflict = !Object.keys(errors).length && (taxonomyRepository && ['cities', 'societies', 'phases'].includes(domain)
+        ? await taxonomyRepository.hasMapConflict(domain, result.map_ids || [], id)
+        : taxonomyMapConflict(domain, result.map_ids, id))
+      if (updateMapConflict) errors.map_ids = 'A map can be associated with only one record in this taxonomy.'
       if (domain === 'calculator-rates' && !Object.keys(errors).length && calculatorRateScopeExists(result, id)) errors._ = 'A rate already exists for this phase, block, and property type.'
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result, id)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (['calculator-phases', 'calculator-blocks'].includes(domain) && !Object.keys(errors).length && calculatorConfigurationDuplicate(domain, { ...repository.find(domain, id), ...result }, id)) errors.name = 'A record with this name already exists in the selected scope.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
+      if (domain === 'properties' && propertyRepository) {
+        if (!currentProperty) return json(request, { error: { code: 'not_found' } }, 404)
+        applyPublicFields('properties', currentProperty, result)
+        const updated = await propertyRepository.updatePropertyRecord(id, currentProperty)
+        return updated ? json(request, { item: toAdminRecord('properties', updated) }) : json(request, { error: { code: 'not_found' } }, 404)
+      }
+      if (['files', 'maps'].includes(domain) && directoryRepository) {
+        if (!currentDirectory) return json(request, { error: { code: 'not_found' } }, 404)
+        applyPublicFields(domain, currentDirectory, result)
+        currentDirectory.updatedAt = new Date().toISOString().slice(0, 10)
+        const updated = await directoryRepository.update(domain, id, currentDirectory)
+        return updated ? json(request, { item: toAdminRecord(domain, updated) }) : json(request, { error: { code: 'not_found' } }, 404)
+      }
+      if (['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository) {
+        if (!currentTaxonomy) return json(request, { error: { code: 'not_found' } }, 404)
+        try {
+          const updated = await taxonomyRepository.update(domain, id, result)
+          return updated ? json(request, { item: updated }) : json(request, { error: { code: 'not_found' } }, 404)
+        } catch {
+          return json(request, { error: { code: 'write_failed' } }, 409)
+        }
+      }
       const item = repository.update(domain, id, result)
       return item ? json(request, { item }) : json(request, { error: { code: 'not_found' } }, 404)
     },

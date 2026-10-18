@@ -1,8 +1,9 @@
+import { env } from 'cloudflare:workers'
 import { createFileRoute } from '@tanstack/react-router'
-import { createDirectoryApi, createMemoryDirectoryRepository } from '../lib/directory-api.js'
-import { syntheticFiles, syntheticMaps } from '../lib/directory-fixtures.js'
+import { createDirectoryApi } from '../lib/directory-api.js'
+import { createD1DirectoryRepository } from '../lib/directory-repository.js'
 
-const api = createDirectoryApi(createMemoryDirectoryRepository({ maps: syntheticMaps, files: syntheticFiles }), 'maps')
+const api = createDirectoryApi(createD1DirectoryRepository(env.STAGING_DB), 'maps')
 
 export const Route = createFileRoute('/api/v1/maps/')({
   server: {

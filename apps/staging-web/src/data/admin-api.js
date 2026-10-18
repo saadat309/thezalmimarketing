@@ -49,7 +49,9 @@ export async function readAdminSession() {
   try {
     const data = await request('/auth/session')
     csrfToken = data.csrfToken
-    return data.user
+    if (!data.user) return null
+    const profile = await request('/profile')
+    return profile.user || data.user
   } catch (error) {
     if (/session has expired/.test(error.message)) return null
     throw error
@@ -63,6 +65,14 @@ export async function logoutAdmin() {
 
 export function readAdminCollection(domain) {
   return request(`/${encodeURIComponent(domain)}`)
+}
+
+export function readAdminProfile() {
+  return request('/profile')
+}
+
+export function updateAdminProfile(data) {
+  return request('/profile', { method: 'PATCH', body: data, csrf: true })
 }
 
 export function createAdminRecord(domain, data) {

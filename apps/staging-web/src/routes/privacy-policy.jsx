@@ -11,7 +11,7 @@ export const Route = createFileRoute('/privacy-policy')({
 
 function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-background bg-grid-pattern">
+    <main className="min-h-screen bg-background bg-grid-pattern">
       <section className="relative pt-36 pb-20 sm:pt-40 sm:pb-24 bg-slate-950 border-b border-[#D4AF37]/20 text-white overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=2000&q=80')" }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/40" />
@@ -22,6 +22,6 @@ function PrivacyPolicyPage() {
         </div>
       </section>
       <div className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"><div className="space-y-8">{content.policySections.map((section) => <Card key={section.title} className="bg-card border border-border shadow-xl rounded-2xl p-2 sm:p-4"><CardHeader><CardTitle className="text-2xl font-display">{section.title}</CardTitle></CardHeader><CardContent><div className="prose dark:prose-invert text-muted-foreground leading-relaxed max-w-none text-base" dangerouslySetInnerHTML={{ __html: section.content }} /></CardContent></Card>)}</div></div>
-    </div>
+    </main>
   );
 }

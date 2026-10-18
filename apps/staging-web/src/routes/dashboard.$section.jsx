@@ -6,6 +6,7 @@ import QueriesWorkspace from '../components/dashboard/QueriesWorkspace.jsx'
 import LandingPageWorkspace from '../components/dashboard/LandingPageWorkspace.jsx'
 import CalculatorCsvImportDialog from '../components/dashboard/CalculatorCsvImportDialog.jsx'
 import SyntheticLabelControl from '../components/dashboard/SyntheticLabelControl.jsx'
+import ProfileWorkspace from '../components/dashboard/ProfileWorkspace.jsx'
 
 const titles = {
   properties: 'Manage Properties', files: 'Manage Files', maps: 'Manage Maps', cities: 'Manage Cities', categories: 'Manage Categories', societies: 'Manage Societies', phases: 'Manage Phases',
@@ -19,6 +20,7 @@ function AdminSection() {
   const { section } = Route.useParams()
   if (section === 'queries') return <QueriesWorkspace />
   if (section === 'landing-page') return <LandingPageWorkspace />
+  if (section === 'profile') return <ProfileWorkspace />
   return <GenericAdminSection section={section} />
 }
 

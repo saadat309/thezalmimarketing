@@ -3,5 +3,14 @@
   "name": "zalmi-ssr-spike-local",
   "main": "@tanstack/react-start/server-entry",
   "compatibility_date": "2026-10-17",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "STAGING_DB",
+      "database_name": "zalmi-staging-local",
+      "database_id": "d5d8d129-d7e4-4fc2-b1bc-50713cc83f51",
+      "migrations_dir": "migrations",
+      "remote": false
+    }
+  ]
 }

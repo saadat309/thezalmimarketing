@@ -58,6 +58,7 @@ This is the ordered implementation roadmap for `Website-migration`. Work one pha
 ## Phase 4 — D1 schema, seeds, and migration tooling
 
 1. Translate the 30-table MySQL schema and eight calculator tables into explicit SQLite/D1 migrations. Do not feed either MySQL SQL file directly to D1.
+   - Per ADR-027, keep text-domain D1 tables normalized and source-shaped (table/column semantics, importable numeric IDs, slugs, nullable fields, timestamps, and foreign-key behavior); adapt frontend API projections separately. Media tables and binary assets are excluded from this relational translation and require a separate object-key plan.
 2. Decide which tables/features are needed in the first release; avoid importing unrelated legacy data or columns without consumers.
 3. Recreate indexes for real query patterns, including property filtering/search, active records, slugs, relationships, leads/admin listings, and calculator scope/rules. Profile row reads to stay within D1 Free limits.
 4. Create synthetic fixtures for common/edge cases and seed only approved calculator reference rules. Use stable keys and idempotent migrations.

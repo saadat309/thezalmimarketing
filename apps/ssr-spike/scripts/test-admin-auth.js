@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict'
 import { createAdminAuth } from '../src/lib/admin-auth.js'
+import { createMemoryAdminStorage } from '../src/lib/admin-storage.js'
 
 const environment = {
   STAGING_LOCAL_AUTH: 'enabled',
   STAGING_ADMIN_1_PASSWORD: `${crypto.randomUUID()}-${crypto.randomUUID()}`,
   STAGING_ADMIN_2_PASSWORD: `${crypto.randomUUID()}-${crypto.randomUUID()}`,
 }
-const auth = createAdminAuth(environment)
+const storage = createMemoryAdminStorage()
+const auth = createAdminAuth(environment, storage)
 const origin = 'http://127.0.0.1:4182'
 const endpoint = 'http://127.0.0.1:4175/api/v1/admin/auth'
 const headers = { Origin: origin, 'Content-Type': 'application/json' }
@@ -36,6 +38,7 @@ const login = await auth.login(new Request(`${endpoint}/login`, {
 assert.equal(login.status, 200)
 assert.match(login.headers.get('Set-Cookie'), /HttpOnly/)
 assert.match(login.headers.get('Set-Cookie'), /SameSite=Strict/)
+assert.match(login.headers.get('Set-Cookie'), /Max-Age=604800/)
 const account = await login.json()
 assert.equal(account.user.role, 'Admin')
 assert.equal(account.user.id, 'staging-admin-1')
@@ -47,6 +50,18 @@ assert.equal(session.status, 200)
 const sessionData = await session.json()
 assert.equal(sessionData.user.email, 'admin.one@staging.invalid')
 
+const concurrentLogin = await auth.login(new Request(`${endpoint}/login`, {
+  method: 'POST', headers, body: JSON.stringify({ email: 'admin.one@staging.invalid', password: environment.STAGING_ADMIN_1_PASSWORD }),
+}))
+const concurrentCookie = concurrentLogin.headers.get('Set-Cookie').split(';')[0]
+assert.notEqual(concurrentCookie, cookie)
+const concurrentSession = await auth.session(new Request(`${endpoint}/session`, { headers: { ...headers, Cookie: concurrentCookie } }))
+assert.equal((await concurrentSession.json()).user.email, 'admin.one@staging.invalid')
+
+const restartedAuth = createAdminAuth(environment, storage)
+const afterWorkerRestart = await restartedAuth.session(new Request(`${endpoint}/session`, { headers: { ...headers, Cookie: concurrentCookie } }))
+assert.equal((await afterWorkerRestart.json()).user.email, 'admin.one@staging.invalid')
+
 const noCsrf = await auth.logout(new Request(`${endpoint}/logout`, { method: 'POST', headers: { ...headers, Cookie: cookie } }))
 assert.equal(noCsrf.status, 403)
 const logout = await auth.logout(new Request(`${endpoint}/logout`, {
@@ -55,6 +70,8 @@ const logout = await auth.logout(new Request(`${endpoint}/logout`, {
 assert.equal(logout.status, 200)
 const afterLogout = await auth.session(new Request(`${endpoint}/session`, { headers: { ...headers, Cookie: cookie } }))
 assert.equal((await afterLogout.json()).user, null)
+const concurrentAfterLogout = await auth.session(new Request(`${endpoint}/session`, { headers: { ...headers, Cookie: concurrentCookie } }))
+assert.equal((await concurrentAfterLogout.json()).user.email, 'admin.one@staging.invalid')
 
 const secondLogin = await auth.login(new Request(`${endpoint}/login`, {
   method: 'POST', headers, body: JSON.stringify({ email: 'admin.two@staging.invalid', password: environment.STAGING_ADMIN_2_PASSWORD }),

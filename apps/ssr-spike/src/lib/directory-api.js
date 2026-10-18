@@ -1,6 +1,8 @@
 const QUERY_KEYS = new Set(['query', 'city', 'society', 'phase', 'file_type'])
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
+export { createMemoryDirectoryRepository } from './directory-repository.js'
+
 function error(status, code, fields = {}) {
   return Response.json(
     { error: { code, fields } },
@@ -9,7 +11,7 @@ function error(status, code, fields = {}) {
 }
 
 function directoryOptions(records, kind) {
-  const visible = records.filter((item) => item.public === true)
+  const visible = records.filter((item) => item.public === true || item.public === 1)
   const unique = (key, label) => [...new Map(visible.map((item) => [item[key], item[label]])).entries()]
     .map(([slug, name]) => ({ slug, name }))
   return {
@@ -19,7 +21,6 @@ function directoryOptions(records, kind) {
     ...(kind === 'files' ? { fileTypes: [...new Set(visible.map((item) => item.fileType))].sort() } : {}),
   }
 }
-
 export function createDirectoryApi(repository, kind) {
   if (!['maps', 'files'].includes(kind)) throw new Error('Unsupported directory kind.')
 
@@ -65,24 +66,6 @@ export function createDirectoryApi(repository, kind) {
       } catch {
         return error(500, 'content_unavailable')
       }
-    },
-  }
-}
-
-export function createMemoryDirectoryRepository({ maps, files }) {
-  const source = { maps, files }
-  return {
-    async listPublic({ kind, query, city, society, phase, fileType }) {
-      const all = (source[kind] ?? []).filter((item) => item.public === true)
-      const items = all.filter((item) => {
-        if (city && item.city !== city) return false
-        if (society && item.society !== society) return false
-        if (phase && item.phase !== phase) return false
-        if (fileType && item.fileType !== fileType) return false
-        return !query || [item.title, item.cityName, item.societyName, item.phaseName, item.fileType]
-          .filter(Boolean).join(' ').toLowerCase().includes(query)
-      }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.slug.localeCompare(b.slug))
-      return { all, items }
     },
   }
 }

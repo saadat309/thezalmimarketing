@@ -1,11 +1,11 @@
+import { createMemoryAdminStorage } from './admin-storage.js'
+
 const SESSION_COOKIE = 'zalmi_admin_session'
-const SESSION_TTL_SECONDS = 30 * 60
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60
 const USERNAMES = [
   { id: 'staging-admin-1', email: 'admin.one@staging.invalid', name: 'Staging Admin One', role: 'Admin', passwordKey: 'STAGING_ADMIN_1_PASSWORD' },
   { id: 'staging-admin-2', email: 'admin.two@staging.invalid', name: 'Staging Admin Two', role: 'Admin', passwordKey: 'STAGING_ADMIN_2_PASSWORD' },
 ]
-const sessions = new Map()
-const failures = new Map()
 
 function localHost(hostname) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
@@ -60,21 +60,30 @@ function readCookie(request, name) {
   return null
 }
 
-function constantTimeEqual(left, right) {
-  const a = new TextEncoder().encode(left)
-  const b = new TextEncoder().encode(right)
-  let difference = a.length ^ b.length
-  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
-    difference |= (a[i] || 0) ^ (b[i] || 0)
-  }
+async function constantTimeEqual(left, right) {
+  const encoder = new TextEncoder()
+  const [leftHash, rightHash] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(left)),
+    crypto.subtle.digest('SHA-256', encoder.encode(right)),
+  ])
+  if (typeof crypto.subtle.timingSafeEqual === 'function') return crypto.subtle.timingSafeEqual(leftHash, rightHash)
+  const leftBytes = new Uint8Array(leftHash)
+  const rightBytes = new Uint8Array(rightHash)
+  let difference = 0
+  for (let index = 0; index < leftBytes.length; index += 1) difference |= leftBytes[index] ^ rightBytes[index]
   return difference === 0
 }
 
-function passwordMatches(candidate, expected) {
+async function passwordMatches(candidate, expected) {
   return constantTimeEqual(candidate, expected)
 }
 
-export function createAdminAuth(environment = {}) {
+async function hashValue(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export function createAdminAuth(environment = {}, storage = createMemoryAdminStorage()) {
   return {
     options(request) {
       if (!isLocalRequest(request, environment)) return json(request, { error: { code: 'not_found' } }, 404)
@@ -100,75 +109,74 @@ export function createAdminAuth(environment = {}) {
         return json(request, { error: { code: 'invalid_credentials' } }, 401)
       }
 
-      const attemptKey = body.email.trim().toLowerCase()
-      const priorFailures = failures.get(attemptKey)
+      const attemptKey = await hashValue(body.email.trim().toLowerCase())
+      const now = Date.now()
+      const priorFailures = await storage.getLoginFailure(attemptKey, now)
       if (priorFailures && priorFailures.expiresAt > Date.now() && priorFailures.count >= 5) {
         return json(request, { error: { code: 'try_later' } }, 429, { 'Retry-After': String(Math.ceil((priorFailures.expiresAt - Date.now()) / 1000)) })
       }
       let account = null
       for (const user of USERNAMES) {
-        const matched = passwordMatches(body.password, environment[user.passwordKey])
+        const matched = await passwordMatches(body.password, environment[user.passwordKey])
         if (user.email === body.email.trim().toLowerCase() && matched) account = user
       }
       if (!account) {
-        const current = priorFailures && priorFailures.expiresAt > Date.now() ? priorFailures : { count: 0, expiresAt: Date.now() + 60_000 }
-        failures.set(attemptKey, { ...current, count: current.count + 1 })
+        await storage.recordLoginFailure(attemptKey, now, now + 60_000)
         return json(request, { error: { code: 'invalid_credentials' } }, 401)
       }
-      failures.delete(attemptKey)
-
-      for (const [id, session] of sessions) if (session.expiresAt <= Date.now()) sessions.delete(id)
-      if (sessions.size >= 20) sessions.delete(sessions.keys().next().value)
+      await storage.clearLoginFailure(attemptKey)
 
       const sessionId = crypto.randomUUID()
       const csrfToken = crypto.randomUUID()
-      sessions.set(sessionId, { userId: account.id, csrfToken, expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000 })
+      const createdAt = Date.now()
+      await storage.createSession({
+        tokenHash: await hashValue(sessionId),
+        userId: account.id,
+        csrfToken,
+        createdAt,
+        expiresAt: createdAt + SESSION_TTL_SECONDS * 1000,
+      }, createdAt)
       const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : ''
       return json(request, { user: publicUser(account), csrfToken }, 200, {
         'Set-Cookie': `${SESSION_COOKIE}=${sessionId}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL_SECONDS}${secure}`,
       })
     },
 
-    session(request) {
+    async session(request) {
       if (!isLoopbackRequest(request) || !originAllowed(request)) return json(request, { error: { code: 'not_found' } }, 404)
       if (request.method !== 'GET') return json(request, { error: { code: 'method_not_allowed' } }, 405, { Allow: 'GET, OPTIONS' })
       if (environment.STAGING_LOCAL_AUTH !== 'enabled') return json(request, { enabled: false, user: null })
       const sessionId = readCookie(request, SESSION_COOKIE)
-      const session = sessionId && sessions.get(sessionId)
-      if (!session || session.expiresAt <= Date.now()) {
-        if (sessionId) sessions.delete(sessionId)
-        return json(request, { enabled: true, user: null })
-      }
+      const session = sessionId && await storage.getSession(await hashValue(sessionId), Date.now())
+      if (!session) return json(request, { enabled: true, user: null })
       const user = USERNAMES.find((item) => item.id === session.userId)
       if (!user) return json(request, { enabled: true, user: null })
       return json(request, { user: publicUser(user), csrfToken: session.csrfToken })
     },
 
-    logout(request) {
+    async logout(request) {
       if (!isLocalRequest(request, environment)) return json(request, { error: { code: 'not_found' } }, 404)
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405, { Allow: 'POST, OPTIONS' })
       const sessionId = readCookie(request, SESSION_COOKIE)
-      const session = sessionId && sessions.get(sessionId)
-      if (!session || session.expiresAt <= Date.now()) return json(request, { error: { code: 'unauthenticated' } }, 401)
-      if (!constantTimeEqual(request.headers.get('X-CSRF-Token') || '', session.csrfToken)) {
+      const tokenHash = sessionId && await hashValue(sessionId)
+      const session = tokenHash && await storage.getSession(tokenHash, Date.now())
+      if (!session) return json(request, { error: { code: 'unauthenticated' } }, 401)
+      if (!await constantTimeEqual(request.headers.get('X-CSRF-Token') || '', session.csrfToken)) {
         return json(request, { error: { code: 'csrf_failed' } }, 403)
       }
-      sessions.delete(sessionId)
+      await storage.deleteSession(tokenHash)
       const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : ''
       return json(request, { ok: true }, 200, {
         'Set-Cookie': `${SESSION_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure}`,
       })
     },
 
-    requireAdmin(request, { csrf = false } = {}) {
+    async requireAdmin(request, { csrf = false } = {}) {
       if (!isLocalRequest(request, environment)) return { response: json(request, { error: { code: 'not_found' } }, 404) }
       const sessionId = readCookie(request, SESSION_COOKIE)
-      const session = sessionId && sessions.get(sessionId)
-      if (!session || session.expiresAt <= Date.now()) {
-        if (sessionId) sessions.delete(sessionId)
-        return { response: json(request, { error: { code: 'unauthenticated' } }, 401) }
-      }
-      if (csrf && !constantTimeEqual(request.headers.get('X-CSRF-Token') || '', session.csrfToken)) {
+      const session = sessionId && await storage.getSession(await hashValue(sessionId), Date.now())
+      if (!session) return { response: json(request, { error: { code: 'unauthenticated' } }, 401) }
+      if (csrf && !await constantTimeEqual(request.headers.get('X-CSRF-Token') || '', session.csrfToken)) {
         return { response: json(request, { error: { code: 'csrf_failed' } }, 403) }
       }
       const user = USERNAMES.find((item) => item.id === session.userId)

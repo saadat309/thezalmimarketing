@@ -1,9 +1,9 @@
+import { env } from 'cloudflare:workers'
 import { createFileRoute } from '@tanstack/react-router'
 import { createPropertyApi } from '../lib/property-api.js'
-import { syntheticProperties } from '../lib/property-fixtures.js'
-import { createMemoryPropertyRepository } from '../lib/property-repository.js'
+import { createD1PropertyRepository } from '../lib/property-repository.js'
 
-const properties = createPropertyApi(createMemoryPropertyRepository(syntheticProperties))
+const properties = createPropertyApi(createD1PropertyRepository(env.STAGING_DB))
 
 export const Route = createFileRoute('/api/v1/properties/')({
   server: {

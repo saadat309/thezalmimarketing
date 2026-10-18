@@ -107,7 +107,7 @@ function StagingFooter() {
           <p className="text-sm text-slate-400">© {new Date().getFullYear()} {footerContent.copyright}</p>
           <span className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-xs font-medium text-[#f3e5ab]"><span className="h-2 w-2 rounded-full bg-emerald-500" />{footerContent.verifiedBadge}</span>
         </div>
-        <p className="mt-5 text-xs text-slate-500">Staging preview · synthetic content only · forms and subscriptions are not connected.</p>
+        <p className="mt-5 text-xs text-slate-400">Staging preview · synthetic content only · forms and subscriptions are not connected.</p>
       </div>
     </footer>
   );
