@@ -273,3 +273,10 @@ This is the durable record of decisions that affect migration work. It is append
 - **CSV boundary:** Preserve existing 512 KiB and 500-row limits; preview reads current D1 config and import is a single D1 batch. Invalid whole-file rows do not write. D1 batch is transactional, so a failed statement rolls back the import.
 - **Boundaries:** Wrangler local D1 only (`remote: false`), synthetic data, no deployment/resource provisioning/DNS/live site/production MySQL/export or import, paid services, media storage, or `workers/ai-worker` changes.
 - **Source:** User requested completing Calculator API/storage now, conditional on resolved questions, and keeping methods/rules aligned with legacy APIs and database. Fee Rule active-column behavior was confirmed from the full schema/PHP before implementation.
+
+### ADR-034 — Match dashboard selectors and selected-item ordering to source UI
+
+- **Status:** Approved by the user on 2026-10-18 for local staging UI implementation.
+- **Decision:** Use searchable selection controls across source-backed dashboard form options; use radio groups for Property Type and Purchase Type on Property forms, matching the legacy Property editor. Multi-value related properties, labels, taxonomy map assignments, and selected Landing Page cards must be reorderable by drag-and-drop and by accessible up/down controls. Keep current API payloads/storage semantics unchanged.
+- **Boundaries:** Staging UI only, synthetic data/local D1. Do not enable media upload/storage, modify the legacy `src/` frontend, provision Cloudflare resources, deploy, or connect production data.
+- **Source:** User requested closer source dashboard selection controls and drag/drop interactions across forms. Landing Page selected card order remains within fixed sections per ADR-031.

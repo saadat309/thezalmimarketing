@@ -55,13 +55,17 @@ export function calculateStagingEstimate(config, input) {
       baseTransfer = transferRef.reference_unit === 'sqft' && usesCoveredArea && coveredArea ? coveredArea * baseFee / refSqft : size * baseFee / refMarla
       transferExplanation = 'Calculated from the synthetic location/category reference fee.'
     } else {
-      const commercial = category.toLowerCase() !== 'residential' || propertyName.toLowerCase().includes('shop')
+      const commercial = category.toLowerCase() === 'commercial' || propertyName.toLowerCase().includes('shop')
       baseTransfer = usesCoveredArea && coveredArea ? coveredArea * (commercial ? 467 : 47) : size * (commercial ? 105000 : 10500)
       transferExplanation = 'Calculated using the source calculator fallback rate because no sample transfer reference matched.'
     }
-    let membership = category.toLowerCase() === 'residential' ? (size <= 10 ? 75000 : size < 40 ? 150000 : 200000) : (size <= 4 ? 150000 : 200000)
-    const rule = config.calculator_fee_rules.find((item) => {
-      if (item.property_type.toLowerCase() !== (category.toLowerCase() === 'residential' ? 'residential' : 'commercial') || item.is_active === false || item.is_active === 0) return false
+    const isResidential = category.toLowerCase() === 'residential'
+    const rules = (config.calculator_fee_rules || []).filter((item) => item.is_active !== false && item.is_active !== 0)
+    let membership = isResidential
+      ? (size <= 10 ? 75000 : size < 40 ? 150000 : 200000)
+      : (size <= 4 ? 150000 : 200000)
+    const rule = rules.find((item) => {
+      if (item.property_type.toLowerCase() !== (category.toLowerCase() === 'residential' ? 'residential' : 'commercial')) return false
       const minimum = Number(item.min_area || 0)
       const maximum = item.max_area == null ? null : Number(item.max_area)
       const area = (item.unit || 'marla').toLowerCase() === 'kanal' ? size / 20 : size
@@ -69,6 +73,7 @@ export function calculateStagingEstimate(config, input) {
       return item.property_type.toLowerCase() === 'residential' ? area >= minimum : area > minimum
     })
     if (rule) membership = Number(rule.fee_amount)
+    else if (rules.length > 0) membership = isResidential ? 150000 : 200000
     if (!isHiba && bianaIncluded === 'Included') add('Biana', fee('biana', 4000), 'Initial token/earnest money (Biana).')
     if (!isHiba && verification === 'Required') add('Verification Charges', fee('verification', 5250), 'Property and ownership verification charges.')
     add(`Transfer File (${count} owner${count > 1 ? 's' : ''})`, fee(isPlotOrFile ? 'transfer_file_plot_file' : 'transfer_file_other', isPlotOrFile ? 7000 : 8000) * count, `Charged per owner for ${count} owner(s).`)

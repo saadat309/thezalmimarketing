@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { GripVertical } from 'lucide-react'
 import { createAdminRecord, deleteAdminRecord, updateAdminRecord } from '../../data/admin-api.js'
 
-export default function SyntheticLabelControl({ options, value, onChange, onLabelsChanged }) {
+export default function SyntheticLabelControl({ id, options, value, onChange, onLabelsChanged }) {
   const selected = value || []
   const [search, setSearch] = useState('')
   const [newName, setNewName] = useState('')
@@ -27,7 +27,7 @@ export default function SyntheticLabelControl({ options, value, onChange, onLabe
   }
 
   async function createLabel(event) {
-    event.preventDefault()
+    event?.preventDefault()
     const name = newName.trim()
     if (!name) return
     setBusy('create'); setError('')
@@ -73,12 +73,12 @@ export default function SyntheticLabelControl({ options, value, onChange, onLabe
       }) : <p className="dashboard-field-help">No labels selected.</p>}
     </div>
 
-    <label className="dashboard-label-search">Search available labels<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search labels…" /></label>
+    <label className="dashboard-label-search" htmlFor={`${id}-search`}>Search available labels<input id={`${id}-search`} name={`${id}-search`} type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search labels…" /></label>
     <div className="dashboard-label-choices" role="group" aria-label="Available labels">
       {available.map((label) => <div key={label.value} className="dashboard-label-choice"><label><input type="checkbox" aria-label={`Add ${label.label}`} checked={false} disabled={Boolean(busy)} onChange={() => onChange([...selected, label.value])} /><span>{label.label}{label.isBadge ? ' · badge' : ''}</span></label><button type="button" disabled={Boolean(busy)} onClick={() => deleteLabel(label)}>Delete globally</button></div>)}
       {!available.length && <p className="dashboard-field-help">{search ? 'No matching available labels.' : 'No available labels.'}</p>}
     </div>
-    <form className="dashboard-label-create" onSubmit={createLabel}><label htmlFor="dashboard-new-label">Create a global label</label><div><input id="dashboard-new-label" value={newName} maxLength={80} onChange={(event) => setNewName(event.target.value)} placeholder="Label name" /><button type="submit" disabled={!newName.trim() || Boolean(busy)}>{busy === 'create' ? 'Adding…' : 'Add label'}</button></div></form>
+    <div className="dashboard-label-create"><label htmlFor="dashboard-new-label">Create a global label</label><div><input id="dashboard-new-label" value={newName} maxLength={80} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); createLabel() } }} onChange={(event) => setNewName(event.target.value)} placeholder="Label name" /><button type="button" onClick={() => createLabel()} disabled={!newName.trim() || Boolean(busy)}>{busy === 'create' ? 'Adding…' : 'Add label'}</button></div></div>
     {error && <p className="dashboard-label-error" role="alert">{error}</p>}
     <small className="dashboard-field-help">Label changes apply globally to synthetic Properties and Files. Drag or use arrows to set this record’s display order.</small>
   </div>
