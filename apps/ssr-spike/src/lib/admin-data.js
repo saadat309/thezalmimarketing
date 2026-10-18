@@ -5,9 +5,13 @@ import { applyCalculatorCsvImport, calculatorCsvTemplate, prepareCalculatorCsvIm
 
 const DOMAIN_FIELDS = {
   properties: {
-    title: 'text', shortDescription: 'textarea', address: 'text', propertyType: 'text', purchaseType: 'text',
-    category: 'text', city: 'text', society: 'text', phase: 'text', price: 'integer', area: 'number', areaUnit: 'text', beds: 'integer', baths: 'integer',
-    isFurnished: 'boolean', isDiscounted: 'boolean', visible: 'boolean', description: 'textarea',
+    title: 'text', short_desc: 'textarea', address: 'text', property_type: 'select', purchase_type: 'select', is_furnished: 'boolean',
+    beds: 'integer', baths: 'integer', area: 'integer', unit: 'optionalSelect', features: 'textarea', price_amount: 'optionalInteger',
+    is_discounted: 'boolean', price_original_amount: 'optionalInteger', price_period_unit: 'select', price_period_value: 'integer',
+    installment_advance_amount: 'optionalInteger', installment_total_period_text: 'optionalText', installment_amount: 'optionalInteger',
+    installment_display_mode: 'select', vat_amount: 'number', category_id: 'optionalSelect', city_id: 'optionalSelect', society_id: 'optionalSelect',
+    phase_id: 'optionalSelect', related_products: 'multiSelect', labels: 'multiSelect', detailed_description_content: 'textarea',
+    embed_link: 'optionalText', hide: 'boolean', template: 'select',
   },
   files: { title: 'text', city: 'text', society: 'text', phase: 'text', fileType: 'text', area: 'number', areaUnit: 'text', price: 'integer', visible: 'boolean' },
   maps: { title: 'text', city: 'text', society: 'text', phase: 'text', description: 'textarea', visible: 'boolean' },
@@ -398,13 +402,19 @@ function sourceId(domain, item) {
 
 function toAdminRecord(domain, item) {
   if (domain === 'properties') return {
-    id: sourceId(domain, item), title: item.title, shortDescription: item.shortDescription || '', address: item.location?.address || '',
-    propertyType: item.propertyType || 'Residential', purchaseType: item.purchaseType || 'sale', category: item.category?.name || '',
-    city: item.location?.city?.name || '', society: item.location?.society?.name || '', phase: item.location?.phase?.name || '',
-    price: Number(item.price) || 0, area: Number(item.area?.value) || 0,
-    areaUnit: item.area?.unit || 'sqft', beds: Number(item.beds) || 0, baths: Number(item.baths) || 0,
-    isFurnished: item.isFurnished === true, isDiscounted: item.isDiscounted === true, visible: item.public === true,
-    description: item.descriptionHtml || '',
+    id: sourceId(domain, item), title: item.title, short_desc: item.shortDescription || '', address: item.location?.address || '',
+    property_type: item.adminForm?.property_type || item.propertyType || 'Residential', purchase_type: item.adminForm?.purchase_type || item.purchaseType || 'sale',
+    is_furnished: item.adminForm?.is_furnished ?? item.isFurnished === true, beds: Number(item.beds) || 0, baths: Number(item.baths) || 0,
+    area: Number(item.area?.value) || 0, unit: item.area?.unit || 'sqft', features: item.adminForm?.features || '',
+    price_amount: Number(item.price) || 0, is_discounted: item.adminForm?.is_discounted ?? item.isDiscounted === true,
+    price_original_amount: item.adminForm?.price_original_amount ?? '', price_period_unit: item.adminForm?.price_period_unit || 'month',
+    price_period_value: item.adminForm?.price_period_value ?? 1, installment_advance_amount: item.adminForm?.installment_advance_amount ?? '',
+    installment_total_period_text: item.adminForm?.installment_total_period_text || '', installment_amount: item.adminForm?.installment_amount ?? '',
+    installment_display_mode: item.adminForm?.installment_display_mode || 'installment', vat_amount: item.adminForm?.vat_amount ?? 0,
+    category_id: item.category?.slug || '', city_id: item.location?.city?.slug || '', society_id: item.location?.society?.slug || '', phase_id: item.location?.phase?.slug || '',
+    related_products: item.adminForm?.related_products || [], labels: (item.labels || []).map((label) => label.slug),
+    detailed_description_content: item.descriptionHtml || '', embed_link: item.adminForm?.embed_link || '', hide: item.public !== true,
+    template: item.adminForm?.template || 'default',
   }
   if (domain === 'files') return {
     id: item.slug, title: item.title, city: item.cityName, society: item.societyName, phase: item.phaseName,
@@ -425,26 +435,97 @@ function findPublicSource(domain, id) {
   return source.find((item) => sourceId(domain, item) === String(id) && (domain !== 'properties' || item.fileOnly !== true)) || null
 }
 
+function propertyTaxonomyOptions(field) {
+  const values = new Map()
+  const read = (item) => {
+    const value = field === 'category_id' ? item.category : item.location?.[{ city_id: 'city', society_id: 'society', phase_id: 'phase' }[field]]
+    if (value?.slug && value?.name) values.set(value.slug, value.name)
+  }
+  syntheticProperties.filter((item) => item.fileOnly !== true).forEach(read)
+  if (field === 'category_id') records.get('categories')?.forEach((item) => values.set(toSlug(item.name), item.name))
+  return [...values].map(([value, label]) => ({ value, label }))
+}
+
+function propertyLabelOptions() {
+  const labels = new Map([['featured', 'Featured'], ['new-listing', 'New Listing'], ['hot-deal', 'Hot Deal']])
+  syntheticProperties.forEach((property) => (property.labels || []).forEach((label) => labels.set(label.slug, label.name)))
+  return [...labels].map(([value, label]) => ({ value, label }))
+}
+
+function propertyAdminOptions() {
+  const related = syntheticProperties.filter((item) => !item.fileOnly).map((item) => ({ value: item.slug, label: item.title }))
+  return {
+    property_type: [{ value: 'Residential', label: 'Residential' }, { value: 'Commercial', label: 'Commercial' }],
+    purchase_type: [{ value: 'sale', label: 'Sale' }, { value: 'installment', label: 'Installment' }, { value: 'rent', label: 'Rent' }],
+    unit: ['sqft', 'marla', 'kanal', 'hectare', 'acre', 'yard'].map((value) => ({ value, label: value === 'sqft' ? 'Sq. Ft.' : value[0].toUpperCase() + value.slice(1) })),
+    price_period_unit: ['day', 'week', 'month', 'year'].map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })),
+    installment_display_mode: [{ value: 'advance', label: 'Show advance' }, { value: 'installment', label: 'Show installment' }],
+    category_id: propertyTaxonomyOptions('category_id'), city_id: propertyTaxonomyOptions('city_id'),
+    society_id: propertyTaxonomyOptions('society_id'), phase_id: propertyTaxonomyOptions('phase_id'),
+    related_products: related, labels: propertyLabelOptions(),
+    template: [{ value: 'default', label: 'Default' }, { value: 'minimal', label: 'Minimal' }, { value: 'detailed', label: 'Detailed' }],
+  }
+}
+
+function propertyTaxonomyOption(field, slug) {
+  return propertyTaxonomyOptions(field).map(({ value, label }) => ({ slug: value, name: label })).find((item) => item.slug === slug)
+    || { slug, name: slug }
+}
+
+function validatePropertyFields(input) {
+  const result = {}
+  const errors = {}
+  const options = propertyAdminOptions()
+  for (const [key, value] of Object.entries(input)) {
+    const type = DOMAIN_FIELDS.properties[key]
+    if (!type) { errors[key] = 'Field is not editable.'; continue }
+    if (type === 'boolean' && typeof value === 'boolean') result[key] = value
+    else if (type === 'optionalInteger' && (value === null || value === '')) result[key] = null
+    else if (['integer', 'optionalInteger'].includes(type) && Number.isSafeInteger(value) && value >= 0) result[key] = value
+    else if (type === 'number' && typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100) result[key] = value
+    else if (type === 'multiSelect' && Array.isArray(value) && value.length <= 100 && new Set(value).size === value.length && value.every((entry) => typeof entry === 'string' && options[key].some((option) => option.value === entry))) result[key] = value
+    else if (['select', 'optionalSelect'].includes(type) && typeof value === 'string' && (value === '' && type === 'optionalSelect' || options[key]?.some((option) => option.value === value))) result[key] = value
+    else if (['text', 'textarea', 'optionalText'].includes(type) && typeof value === 'string' && (type !== 'text' || value.trim()) && value.length <= (type === 'textarea' ? 5000 : 300)) result[key] = value.trim()
+    else errors[key] = 'Value is invalid.'
+  }
+  if (!result.title && !input.title) errors.title = 'Property name is required.'
+  for (const [key, values] of Object.entries({ property_type: ['Residential', 'Commercial'], purchase_type: ['sale', 'installment', 'rent'], unit: ['sqft', 'marla', 'kanal', 'hectare', 'acre', 'yard'], price_period_unit: ['day', 'week', 'month', 'year'], installment_display_mode: ['advance', 'installment'], template: ['default', 'minimal', 'detailed'] })) {
+    if (result[key] !== undefined && !values.includes(result[key])) errors[key] = 'Value is invalid.'
+  }
+  if (result.is_discounted && !(Number(result.price_original_amount) > 0)) errors.price_original_amount = 'Original price is required for discounted properties.'
+  if (result.price_period_value !== undefined && result.price_period_value < 1) errors.price_period_value = 'Price period value must be at least one.'
+  if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'
+  return { result, errors }
+}
+
+function validatePropertyUpdateFields(current, input) {
+  const previous = Object.fromEntries(Object.entries(current || {}).filter(([key]) => key !== 'id'))
+  return validatePropertyFields({ ...previous, ...input })
+}
+
 function applyPublicFields(domain, target, fields) {
   if (fields.title !== undefined) target.title = fields.title
-  if (fields.visible !== undefined) target.public = fields.visible
   if (domain === 'properties') {
-    if (fields.shortDescription !== undefined) target.shortDescription = fields.shortDescription
+    target.adminForm = { ...(target.adminForm || {}), ...fields }
+    if (fields.hide !== undefined) target.public = !fields.hide
+    if (fields.short_desc !== undefined) target.shortDescription = fields.short_desc
     if (fields.address !== undefined) target.location.address = fields.address
-    if (fields.propertyType !== undefined) target.propertyType = fields.propertyType
-    if (fields.purchaseType !== undefined) target.purchaseType = fields.purchaseType
-    if (fields.category !== undefined) target.category = { ...target.category, name: fields.category, slug: toSlug(fields.category) }
-    if (fields.city !== undefined) target.location.city = { ...target.location.city, name: fields.city, slug: toSlug(fields.city) }
-    if (fields.society !== undefined) target.location.society = { ...target.location.society, name: fields.society, slug: toSlug(fields.society) }
-    if (fields.phase !== undefined) target.location.phase = { ...target.location.phase, name: fields.phase, slug: toSlug(fields.phase) }
-    if (fields.price !== undefined) target.price = String(fields.price)
-    if (fields.area !== undefined || fields.areaUnit !== undefined) target.area = { ...target.area, value: String(fields.area ?? target.area?.value ?? 0), unit: fields.areaUnit ?? target.area?.unit ?? 'sqft' }
+    if (fields.property_type !== undefined) target.propertyType = fields.property_type
+    if (fields.purchase_type !== undefined) target.purchaseType = fields.purchase_type
+    if (fields.category_id !== undefined) target.category = propertyTaxonomyOption('category_id', fields.category_id)
+    if (fields.city_id !== undefined) target.location.city = propertyTaxonomyOption('city_id', fields.city_id)
+    if (fields.society_id !== undefined) target.location.society = propertyTaxonomyOption('society_id', fields.society_id)
+    if (fields.phase_id !== undefined) target.location.phase = propertyTaxonomyOption('phase_id', fields.phase_id)
+    if (fields.price_amount !== undefined) target.price = String(fields.price_amount ?? '')
+    if (fields.area !== undefined || fields.unit !== undefined) target.area = { ...target.area, value: String(fields.area ?? target.area?.value ?? 0), unit: fields.unit ?? target.area?.unit ?? 'sqft' }
     if (fields.beds !== undefined) target.beds = fields.beds
     if (fields.baths !== undefined) target.baths = fields.baths
-    if (fields.isFurnished !== undefined) target.isFurnished = fields.isFurnished
-    if (fields.isDiscounted !== undefined) target.isDiscounted = fields.isDiscounted
-    if (fields.description !== undefined) target.descriptionHtml = fields.description
+    if (fields.is_furnished !== undefined) target.isFurnished = fields.is_furnished
+    if (fields.is_discounted !== undefined) target.isDiscounted = fields.is_discounted
+    if (fields.labels !== undefined) target.labels = fields.labels.map((slug) => ({ slug, name: propertyLabelOptions().find((option) => option.value === slug)?.label || slug }))
+    if (fields.detailed_description_content !== undefined) target.descriptionHtml = fields.detailed_description_content
   } else {
+    if (fields.visible !== undefined) target.public = fields.visible
     if (fields.city !== undefined) {
       target.cityName = fields.city
       target.city = toSlug(fields.city)
@@ -781,6 +862,10 @@ export function createAdminDataApi(repository, auth) {
         const calculatorTransferFees = domain === 'calculator-transfer-fees'
         return json(request, {
           items, count: items.length, fields: DOMAIN_FIELDS[domain],
+          ...(domain === 'properties' ? {
+            options: propertyAdminOptions(),
+            columns: ['id', 'title', 'property_type', 'purchase_type', 'category_id', 'city_id', 'price_amount', 'area', 'unit', 'hide'],
+          } : {}),
           ...(calculatorRates ? {
             options: calculatorRateOptions(),
             columns: ['id', 'city_name', 'society_name', 'calculator_phase_name', 'calculator_block_name', 'category', 'property_type_label', 'unit_label', 'dc_rate', 'fbr_rate', 'is_active', 'updated_at'],
@@ -821,7 +906,8 @@ export function createAdminDataApi(repository, auth) {
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
-      const { result, errors } = ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
+      const { result, errors } = domain === 'properties' ? validatePropertyFields(body.value)
+        : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value)
@@ -891,7 +977,8 @@ export function createAdminDataApi(repository, auth) {
       if (!['PUT', 'PATCH'].includes(request.method)) return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
       if (body.error) return json(request, { error: { code: body.error } }, body.error === 'too_large' ? 413 : 400)
-      const { result, errors } = ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
+      const { result, errors } = domain === 'properties' ? validatePropertyUpdateFields(repository.find(domain, id), body.value)
+        : ['calculator-phases', 'calculator-blocks', 'calculator-property-types'].includes(domain) ? validateCalculatorConfiguration(domain, body.value)
         : domain === 'calculator-rates' ? validateCalculatorRateFields(body.value)
         : domain === 'calculator-transfer-fees' ? validateCalculatorTransferFeeFields(body.value)
           : domain === 'calculator-fees' ? validateCalculatorFeeFields(body.value, { updating: true })

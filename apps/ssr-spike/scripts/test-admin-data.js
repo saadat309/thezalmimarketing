@@ -78,11 +78,18 @@ const invalidLandingItems = await api.item(new Request(`${base}/landing-page/${f
   method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: ['101', '101'] }),
 }), 'landing-page', featuredSection.id)
 assert.equal(invalidLandingItems.status, 400)
+const propertySchema = await api.collection(new Request(`${base}/properties`, { headers: readHeaders }), 'properties')
+const propertyPayload = await propertySchema.json()
+assert.deepEqual(Object.keys(propertyPayload.fields), ['title', 'short_desc', 'address', 'property_type', 'purchase_type', 'is_furnished', 'beds', 'baths', 'area', 'unit', 'features', 'price_amount', 'is_discounted', 'price_original_amount', 'price_period_unit', 'price_period_value', 'installment_advance_amount', 'installment_total_period_text', 'installment_amount', 'installment_display_mode', 'vat_amount', 'category_id', 'city_id', 'society_id', 'phase_id', 'related_products', 'labels', 'detailed_description_content', 'embed_link', 'hide', 'template'])
+assert.ok(propertyPayload.options.category_id.some((option) => option.value === 'houses'))
 const created = await api.collection(new Request(`${base}/properties`, {
   method: 'POST', headers: writeHeaders, body: JSON.stringify({
-    title: 'Synthetic test record', shortDescription: 'Staging form test', address: 'Sample Road', propertyType: 'Residential',
-    purchaseType: 'sale', category: 'Houses', city: 'Lahore', price: 12000000, area: 10, areaUnit: 'marla', beds: 3,
-    baths: 2, isFurnished: true, isDiscounted: false, description: '<p>Synthetic description</p>', visible: true,
+    title: 'Synthetic test record', short_desc: 'Staging form test', address: 'Sample Road', property_type: 'Residential',
+    purchase_type: 'sale', is_furnished: true, category_id: 'houses', city_id: 'sample-city', society_id: 'sample-society', phase_id: 'phase-one',
+    price_amount: 12000000, is_discounted: false, price_original_amount: null, price_period_unit: 'month', price_period_value: 1,
+    installment_advance_amount: null, installment_total_period_text: '', installment_amount: null, installment_display_mode: 'installment',
+    vat_amount: 0, area: 10, unit: 'marla', beds: 3, baths: 2, features: 'Synthetic feature', labels: ['featured'],
+    related_products: ['sample-residence'], detailed_description_content: '<p>Synthetic description</p>', embed_link: '', template: 'default', hide: false,
   }),
 }), 'properties')
 assert.equal(created.status, 201)
@@ -95,16 +102,38 @@ assert.equal(createdProperty.location.address, 'Sample Road')
 assert.equal(createdProperty.area.value, '10')
 assert.equal(createdProperty.shortDescription, 'Staging form test')
 assert.equal(createdProperty.beds, 3)
+assert.equal(createdProperty.adminForm.features, 'Synthetic feature')
+assert.equal(createdProperty.public, true)
+assert.deepEqual(createdProperty.labels, [{ slug: 'featured', name: 'Featured' }])
 const createdListing = await propertyApi.list(new Request('https://test.invalid/api/v1/properties'))
-assert.ok((await createdListing.json()).items.some((item) => item.slug === createdProperty.slug))
+const createdPublicItem = (await createdListing.json()).items.find((item) => item.slug === createdProperty.slug)
+assert.ok(createdPublicItem)
+assert.equal(Object.hasOwn(createdPublicItem, 'adminForm'), false)
+assert.equal(Object.hasOwn(createdPublicItem, 'categoryId'), false)
+assert.equal(Object.hasOwn(createdPublicItem, 'embed_link'), false)
 
 const updated = await api.item(new Request(`${base}/properties/${createdItem.id}`, {
-  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ title: 'Publicly Updated Synthetic Test', visible: true }),
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ title: 'Publicly Updated Synthetic Test', hide: false }),
 }), 'properties', createdItem.id)
 assert.equal(updated.status, 200)
 const updatedListing = await propertyApi.list(new Request('https://test.invalid/api/v1/properties'))
 const updatedPublicRecord = (await updatedListing.json()).items.find((item) => item.slug === createdProperty.slug)
 assert.equal(updatedPublicRecord.title, 'Publicly Updated Synthetic Test')
+const invalidDiscount = await api.item(new Request(`${base}/properties/${createdItem.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ is_discounted: true, price_original_amount: null }),
+}), 'properties', createdItem.id)
+assert.equal(invalidDiscount.status, 400)
+const hiddenUpdate = await api.item(new Request(`${base}/properties/${createdItem.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ hide: true }),
+}), 'properties', createdItem.id)
+assert.equal(hiddenUpdate.status, 200)
+assert.equal(createdProperty.public, false)
+const hiddenListing = await propertyApi.list(new Request('https://test.invalid/api/v1/properties'))
+assert.ok(!(await hiddenListing.json()).items.some((item) => item.slug === createdProperty.slug))
+const visibleAgain = await api.item(new Request(`${base}/properties/${createdItem.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ hide: false }),
+}), 'properties', createdItem.id)
+assert.equal(visibleAgain.status, 200)
 
 const rejectedField = await api.collection(new Request(`${base}/properties`, {
   method: 'POST', headers: writeHeaders, body: JSON.stringify({ title: 'Unsafe', internalStorageKey: 'should-not-pass' }),
