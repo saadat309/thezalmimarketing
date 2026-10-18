@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ArrowDown, ArrowUp, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { readAdminCollection, updateAdminRecord } from '../../data/admin-api.js'
 
 const SOURCE_FOR = { properties: 'properties', categories: 'categories', maps: 'maps', files: 'files' }
+const itemKey = (item) => String(item.source_id ?? item.id)
 
 export default function LandingPageWorkspace() {
   const [sections, setSections] = useState(null)
@@ -19,9 +20,9 @@ export default function LandingPageWorkspace() {
       ...Object.keys(SOURCE_FOR).map(readAdminCollection),
     ]).then(([landing, ...collections]) => {
       if (!active) return
-      const nextChoices = Object.fromEntries(Object.keys(SOURCE_FOR).map((domain, index) => [domain, collections[index].items.filter((item) => item.visible !== false && item.active !== false)]))
-      const validByCollection = Object.fromEntries(Object.entries(nextChoices).map(([domain, items]) => [domain, new Set(items.map((item) => String(item.id)))]))
-      setSections(landing.items.map((section) => ({ ...section, selectedItems: (section.selectedItems || []).filter((id) => validByCollection[section.collection]?.has(String(id))) })).sort((a, b) => a.order - b.order))
+      const nextChoices = Object.fromEntries(Object.keys(SOURCE_FOR).map((domain, index) => [domain, collections[index].items.filter((item) => item.hide !== true && item.active !== false)]))
+      const validByCollection = Object.fromEntries(Object.entries(nextChoices).map(([domain, items]) => [domain, new Set(items.map(itemKey))]))
+      setSections(landing.items.map((section) => ({ ...section, selectedItems: (section.selectedItems || []).filter((id) => validByCollection[section.collection]?.has(String(id))) })))
       setChoices(nextChoices)
     }).catch((caught) => { if (active) setError(caught.message) })
     return () => { active = false }
@@ -32,35 +33,17 @@ export default function LandingPageWorkspace() {
     setNotice('')
   }
 
-  function moveSection(index, direction) {
-    setSections((current) => {
-      const target = index + direction
-      if (target < 0 || target >= current.length) return current
-      const next = [...current]
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return next.map((section, position) => ({ ...section, order: position + 1 }))
-    })
-  }
-
   function toggleItem(section, itemId) {
     const selectedItems = section.selectedItems || []
     const key = String(itemId)
     patchSection(section.id, { selectedItems: selectedItems.includes(key) ? selectedItems.filter((id) => id !== key) : [...selectedItems, key] })
   }
 
-  function moveItem(section, index, direction) {
-    const selectedItems = [...(section.selectedItems || [])]
-    const target = index + direction
-    if (target < 0 || target >= selectedItems.length) return
-    ;[selectedItems[index], selectedItems[target]] = [selectedItems[target], selectedItems[index]]
-    patchSection(section.id, { selectedItems })
-  }
-
   async function save() {
     setBusy(true); setError(''); setNotice('')
     try {
-      await Promise.all(sections.map(({ id, sectionName, title, subtitle, order, active, collection, selectedItems, mediaMode, mediaUrl, delayMs }) =>
-        updateAdminRecord('landing-page', id, { sectionName, title, subtitle, order, active, collection, selectedItems, mediaMode, mediaUrl, delayMs })))
+      await Promise.all(sections.map(({ id, title, subtitle, active, selectedItems, mediaUrl, delayMs }) =>
+        updateAdminRecord('landing-page', id, { title, subtitle, active, selectedItems, mediaUrl, delayMs })))
       setNotice('Landing page settings saved to the local synthetic API.')
     } catch (caught) { setError(caught.message) } finally { setBusy(false) }
   }
@@ -70,25 +53,24 @@ export default function LandingPageWorkspace() {
   return <section className="dashboard-data-page landing-workspace">
     {error && <div className="dashboard-alert" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError('')}><X size={16} /></button></div>}
     {notice && <div className="landing-success" role="status">{notice}</div>}
-    <div className="dashboard-data-heading"><div><h2>Landing Page Configuration</h2><p>Configure section visibility, content, display order and selected synthetic items.</p></div><button type="button" className="dashboard-primary-button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save Changes'}</button></div>
+    <div className="dashboard-data-heading"><div><h2>Landing Page Configuration</h2><p>Edit section content and visibility. Display order is fixed.</p></div><button type="button" className="dashboard-primary-button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save Changes'}</button></div>
     <div className="landing-storage-note"><strong>Media uploads are paused</strong><span>Image/video upload controls will be enabled when the staging storage binding is approved. This page never uploads files.</span></div>
     <div className="landing-section-list">{sections.map((section, index) => {
       const options = choices[section.collection] || []
       const visibleOptions = options.filter((item) => String(item.title || item.name || '').toLowerCase().includes((itemSearch[section.id] || '').toLowerCase()))
-      const selected = (section.selectedItems || []).map((id) => options.find((item) => String(item.id) === String(id))).filter(Boolean)
+      const selected = (section.selectedItems || []).map((id) => options.find((item) => itemKey(item) === String(id))).filter(Boolean)
       return <article className="landing-section-card" key={section.id}>
-        <header className="landing-section-header"><div className="landing-section-position">{String(index + 1).padStart(2, '0')}</div><div className="landing-section-heading"><h3>{section.sectionName}</h3><p>{section.collection === 'popup' ? 'Timed promotional popup' : section.collection === 'video' ? 'Homepage video block' : `Homepage ${section.collection} collection`}</p></div><label className="landing-switch"><input type="checkbox" checked={section.active} onChange={(event) => patchSection(section.id, { active: event.target.checked })} /><span>{section.active ? 'Enabled' : 'Disabled'}</span></label><div className="landing-order-controls"><button type="button" aria-label={`Move ${section.sectionName} up`} disabled={index === 0} onClick={() => moveSection(index, -1)}><ArrowUp size={15} /></button><button type="button" aria-label={`Move ${section.sectionName} down`} disabled={index === sections.length - 1} onClick={() => moveSection(index, 1)}><ArrowDown size={15} /></button></div></header>
+        <header className="landing-section-header"><div className="landing-section-position">{String(index + 1).padStart(2, '0')}</div><div className="landing-section-heading"><h3>{section.sectionName}</h3><p>{section.collection === 'popup' ? 'Timed promotional popup' : section.collection === 'video' ? 'Homepage video block' : `Homepage ${section.collection} collection`}</p></div><label className="landing-switch"><input type="checkbox" checked={section.active} onChange={(event) => patchSection(section.id, { active: event.target.checked })} /><span>{section.active ? 'Enabled' : 'Disabled'}</span></label></header>
         <div className="landing-section-body">
           <div className="landing-config-grid"><label>Heading<input value={section.title} onChange={(event) => patchSection(section.id, { title: event.target.value })} /></label><label>Subheading<textarea rows="2" value={section.subtitle} onChange={(event) => patchSection(section.id, { subtitle: event.target.value })} /></label></div>
           {['popup', 'video'].includes(section.collection) ? <div className="landing-media-config">
             {section.collection === 'popup' && <label>Display delay (ms)<input type="number" min="0" max="60000" value={section.delayMs} onChange={(event) => patchSection(section.id, { delayMs: Math.min(60000, Math.max(0, Number(event.target.value))) })} /></label>}
-            <label>{section.collection === 'popup' ? 'Media type' : 'Video source'}<select value={section.mediaMode} onChange={(event) => patchSection(section.id, { mediaMode: event.target.value, mediaUrl: '' })}>{(section.collection === 'popup' ? [['image','Image'],['upload','Video Upload'],['embed','Video Link']] : [['upload','Upload Video'],['embed','Video Embed Link']]).map(([value,label]) => <option key={value} value={value}>{label}{value === 'upload' ? ' (storage not connected)' : ''}</option>)}</select></label>
             {section.mediaMode === 'embed' && <label>{section.collection === 'popup' ? 'YouTube/Vimeo URL' : 'Video embed URL'}<input type="url" placeholder="https://…" value={section.mediaUrl} onChange={(event) => patchSection(section.id, { mediaUrl: event.target.value })} /></label>}
-            {section.mediaMode === 'upload' && <p className="landing-upload-placeholder">Upload is disabled in this local migration preview; no files are accepted or stored.</p>}
-          </div> : <div className="landing-items-config"><div className="landing-items-title"><div><h4>Available Items</h4><p>Select items and arrange their public display order.</p></div><span>{selected.length} selected</span></div><input className="landing-items-search" aria-label={`Search ${section.collection}`} placeholder={`Search ${section.collection}…`} value={itemSearch[section.id] || ''} onChange={(event) => setItemSearch((current) => ({ ...current, [section.id]: event.target.value }))} /><div className="landing-available-items">{visibleOptions.map((item) => { const id = String(item.id); const label = item.title || item.name || id; return <label key={id}><input type="checkbox" checked={(section.selectedItems || []).includes(id)} onChange={() => toggleItem(section, id)} /><span>{label}</span></label> })}{!options.length && <p>No public synthetic {section.collection} records available.</p>}{options.length > 0 && !visibleOptions.length && <p>No matching items.</p>}</div><h4 className="landing-selected-title">Selected Items</h4><ol className="landing-selected-items">{selected.map((item, itemIndex) => <li key={item.id}><span>{item.title || item.name || item.id}</span><button type="button" aria-label={`Move ${item.title || item.name} up`} disabled={itemIndex === 0} onClick={() => moveItem(section, itemIndex, -1)}><ArrowUp size={14} /></button><button type="button" aria-label={`Move ${item.title || item.name} down`} disabled={itemIndex === selected.length - 1} onClick={() => moveItem(section, itemIndex, 1)}><ArrowDown size={14} /></button></li>)}</ol></div>}
+            {section.mediaMode === 'upload' && <p className="landing-upload-placeholder">Uploads are disabled in this local migration preview; no files are accepted or stored.</p>}
+          </div> : <div className="landing-items-config"><div className="landing-items-title"><div><h4>Available Items</h4><p>Select items to display in this section.</p></div><span>{selected.length} selected</span></div><input className="landing-items-search" aria-label={`Search ${section.collection}`} placeholder={`Search ${section.collection}…`} value={itemSearch[section.id] || ''} onChange={(event) => setItemSearch((current) => ({ ...current, [section.id]: event.target.value }))} /><div className="landing-available-items">{visibleOptions.map((item) => { const id = itemKey(item); const label = item.title || item.name || id; return <label key={id}><input type="checkbox" checked={(section.selectedItems || []).includes(id)} onChange={() => toggleItem(section, id)} /><span>{label}</span></label> })}{!options.length && <p>No public synthetic {section.collection} records available.</p>}{options.length > 0 && !visibleOptions.length && <p>No matching items.</p>}</div><h4 className="landing-selected-title">Selected Items</h4><ol className="landing-selected-items">{selected.map((item) => <li key={itemKey(item)}><span>{item.title || item.name || item.id}</span></li>)}</ol></div>}
         </div>
       </article>
     })}</div>
-    <div className="landing-bottom-save"><span>Configuration is stored in memory and resets when the local API restarts.</span><button type="button" className="dashboard-primary-button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save Changes'}</button></div>
+    <div className="landing-bottom-save"><span>Content and visibility are stored in local synthetic D1. Media uploads remain disabled.</span><button type="button" className="dashboard-primary-button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save Changes'}</button></div>
   </section>
 }

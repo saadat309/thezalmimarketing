@@ -5,8 +5,9 @@ import { createAdminAuth } from '../src/lib/admin-auth.js'
 import { createAdminDataApi, createMemoryAdminRepository } from '../src/lib/admin-data.js'
 import { createMemoryAdminStorage } from '../src/lib/admin-storage.js'
 import { createDirectoryApi } from '../src/lib/directory-api.js'
-import { createD1DirectoryRepository } from '../src/lib/directory-repository.js'
+import { createD1DirectoryRepository, directorySeedSql } from '../src/lib/directory-repository.js'
 import { createD1TaxonomyRepository, taxonomySeedSql } from '../src/lib/taxonomy-repository.js'
+import { createD1LandingRepository } from '../src/lib/landing-repository.js'
 import { syntheticFiles } from '../src/lib/directory-fixtures.js'
 import { syntheticTaxonomy } from '../src/lib/taxonomy-fixtures.js'
 
@@ -39,18 +40,20 @@ class LocalD1Database {
 }
 
 const database = new LocalD1Database()
-for (const migration of ['0001_staging_admin_storage.sql', '0002_staging_properties.sql', '0003_staging_directories.sql', '0004_schema_aligned_text_taxonomy.sql']) {
+for (const migration of ['0001_staging_admin_storage.sql', '0002_staging_properties.sql', '0003_staging_directories.sql', '0004_schema_aligned_text_taxonomy.sql', '0005_schema_aligned_properties.sql', '0006_property_source_indexes.sql']) {
   database.sqlite.exec(readFileSync(new URL(`../migrations/${migration}`, import.meta.url), 'utf8'))
 }
 database.sqlite.exec('PRAGMA foreign_keys = ON')
 database.sqlite.exec(taxonomySeedSql(syntheticTaxonomy))
+database.sqlite.exec(directorySeedSql(syntheticFiles.map((record) => ({ kind: 'files', record }))))
+database.sqlite.exec(readFileSync(new URL('../migrations/0008_backfill_files_to_properties.sql', import.meta.url), 'utf8'))
+database.sqlite.exec(readFileSync(new URL('../migrations/0010_schema_aligned_landing_sections.sql', import.meta.url), 'utf8'))
 const cityColumns = new Set(database.sqlite.prepare('PRAGMA table_info(cities)').all().map((column) => column.name))
 for (const column of ['id', 'name', 'pic', 'thumb', 'created_at', 'updated_at', 'hide', 'slug']) assert.ok(cityColumns.has(column))
 database.sqlite.prepare('INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)').run(41, 'Imported Synthetic Category', 'imported-synthetic-category')
 assert.equal(database.sqlite.prepare('SELECT id FROM categories WHERE slug = ?').get('imported-synthetic-category').id, 41)
 
 const directoryRepository = createD1DirectoryRepository(database)
-for (const record of syntheticFiles) await directoryRepository.insert('files', record)
 const mapsApi = createDirectoryApi(directoryRepository, 'maps')
 const filesApi = createDirectoryApi(directoryRepository, 'files')
 const request = (url, options = {}) => new Request(url.startsWith('http') ? url : `https://stage.invalid${url}`, options)
@@ -69,7 +72,12 @@ const affidavit = (await response.json()).items
 assert.deepEqual(affidavit.map((item) => item.slug), ['bahria-town-lahore-affidavit-file'])
 assert.equal(affidavit[0].price.currency, 'PKR')
 assert.equal(JSON.stringify(affidavit).includes('record_json'), false)
+assert.equal(JSON.stringify(affidavit).includes('sourceId'), false)
 assert.equal(JSON.stringify(affidavit).includes('public'), false)
+assert.equal(database.sqlite.prepare('SELECT COUNT(*) AS count FROM staging_directories WHERE kind = \'files\'').get().count, syntheticFiles.length)
+assert.equal(database.sqlite.prepare('SELECT COUNT(*) AS count FROM properties WHERE is_file = 1').get().count, syntheticFiles.length)
+assert.equal(database.sqlite.prepare('SELECT COUNT(*) AS count FROM properties WHERE is_file = 1 AND slug IN (SELECT json_extract(record_json, \'$.slug\') FROM staging_directories WHERE kind = \'files\')').get().count, syntheticFiles.length)
+assert.ok(new Set(database.sqlite.prepare('PRAGMA table_info(properties)').all().map((column) => column.name)).has('is_file'))
 
 const environment = {
   STAGING_LOCAL_AUTH: 'enabled',
@@ -78,7 +86,8 @@ const environment = {
 }
 const auth = createAdminAuth(environment, createMemoryAdminStorage())
 const taxonomyRepository = createD1TaxonomyRepository(database)
-const api = createAdminDataApi(createMemoryAdminRepository(), auth, createMemoryAdminStorage(), null, directoryRepository, taxonomyRepository)
+const landingRepository = createD1LandingRepository(database)
+const api = createAdminDataApi(createMemoryAdminRepository(), auth, createMemoryAdminStorage(), null, directoryRepository, taxonomyRepository, landingRepository)
 const base = 'http://127.0.0.1:4175/api/v1/admin'
 const origin = 'http://127.0.0.1:4182'
 assert.equal((await api.collection(request(`${base}/maps`), 'maps')).status, 401)
@@ -90,6 +99,50 @@ assert.equal(login.status, 200)
 const loginBody = await login.json()
 const cookie = login.headers.get('Set-Cookie').split(';')[0]
 const writeHeaders = { Origin: origin, Cookie: cookie, 'X-CSRF-Token': loginBody.csrfToken, 'Content-Type': 'application/json' }
+
+const landingResponse = await api.collection(request(`${base}/landing-page`, { headers: { Origin: origin, Cookie: cookie } }), 'landing-page')
+assert.equal(landingResponse.status, 200)
+const landingPayload = await landingResponse.json()
+assert.deepEqual(landingPayload.items.map((section) => section.id), ['1', '2', '3', '4', '5', '6'])
+assert.equal(landingPayload.items[2].sectionName, 'Featured Properties')
+assert.deepEqual(landingPayload.items[2].selectedItems, ['1'])
+assert.deepEqual(landingPayload.items[3].selectedItems, ['1'])
+const adminMaps = await api.collection(request(`${base}/maps`, { headers: { Origin: origin, Cookie: cookie } }), 'maps')
+const adminFiles = await api.collection(request(`${base}/files`, { headers: { Origin: origin, Cookie: cookie } }), 'files')
+const adminMapItems = (await adminMaps.json()).items
+const adminFileItems = (await adminFiles.json()).items
+assert.ok(adminMapItems.every((item) => Number.isSafeInteger(item.source_id)))
+assert.ok(adminFileItems.every((item) => Number.isSafeInteger(item.source_id)))
+const fixedLandingFields = { title: 'Synthetic Featured Homes', subtitle: 'Fresh synthetic copy.', active: false, selectedItems: ['57', '1'], mediaUrl: '', delayMs: 7500 }
+const updatedLanding = await api.item(request(`${base}/landing-page/3`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify(fixedLandingFields) }), 'landing-page', '3')
+assert.equal(updatedLanding.status, 200)
+const landingRecord = (await updatedLanding.json()).item
+assert.equal(landingRecord.order, 3)
+assert.equal(landingRecord.title, 'Synthetic Featured Homes')
+assert.equal(landingRecord.active, false)
+assert.deepEqual(landingRecord.selectedItems, ['57', '1'])
+assert.equal(database.sqlite.prepare('SELECT COUNT(*) AS count FROM landing_section_items WHERE section_id = 3').get().count, 2)
+assert.equal(database.sqlite.prepare('SELECT title FROM landing_sections WHERE id = 3').get().title, 'Synthetic Featured Homes')
+assert.equal((await landingRepository.listPublic()).some((section) => section.slug === 'featured-properties'), false)
+const mapSelection = await api.item(request(`${base}/landing-page/5`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: [String(adminMapItems[0].source_id)] }),
+}), 'landing-page', '5')
+assert.equal(mapSelection.status, 200)
+assert.deepEqual((await mapSelection.json()).item.selectedItems, [String(adminMapItems[0].source_id)])
+const fileSelection = await api.item(request(`${base}/landing-page/6`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: [String(adminFileItems[0].source_id)] }),
+}), 'landing-page', '6')
+assert.equal(fileSelection.status, 200)
+assert.deepEqual((await fileSelection.json()).item.selectedItems, [String(adminFileItems[0].source_id)])
+assert.equal((await landingRepository.listPublic()).some((section) => section.slug === 'available-files'), false)
+const rejectedLandingStructure = await api.item(request(`${base}/landing-page/3`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ order: 1 }) }), 'landing-page', '3')
+assert.equal(rejectedLandingStructure.status, 400)
+const rejectedLandingCreate = await api.collection(request(`${base}/landing-page`, { method: 'POST', headers: writeHeaders, body: '{}' }), 'landing-page')
+assert.equal(rejectedLandingCreate.status, 405)
+const rejectedNonNumericSelection = await api.item(request(`${base}/landing-page/3`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: ['not-a-source-id'] }),
+}), 'landing-page', '3')
+assert.equal(rejectedNonNumericSelection.status, 400)
 
 const cityCollection = await api.collection(request(`${base}/cities`, { headers: { Origin: origin, Cookie: cookie } }), 'cities')
 assert.equal(cityCollection.status, 200)
@@ -149,6 +202,15 @@ assert.equal(createFile.status, 201)
 const file = (await createFile.json()).item
 assert.equal((await directoryRepository.find('files', file.id)).price.amount, '8500000')
 assert.ok((await (await filesApi.list(request('/api/v1/files/'))).json()).items.some((item) => item.slug === file.id))
+const fileUpdate = await api.item(request(`${base}/files/${file.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ title: 'D1 Updated File', hide: true, price_amount: 8600000 }),
+}), 'files', file.id)
+assert.equal(fileUpdate.status, 200)
+const persistedFileId = (await directoryRepository.find('files', file.id)).sourceId
+const persistedFile = database.sqlite.prepare('SELECT title, is_file, hide, price_amount FROM properties WHERE id = ?').get(persistedFileId)
+assert.deepEqual({ ...persistedFile }, { title: 'D1 Updated File', is_file: 1, hide: 1, price_amount: 8600000 })
+assert.ok(!(await (await filesApi.list(request('/api/v1/files/'))).json()).items.some((item) => item.slug === file.id))
+assert.equal((await api.item(request(`${base}/files/${file.id}`, { method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ hide: false }) }), 'files', file.id)).status, 200)
 const fileRead = await api.item(request(`${base}/files/${file.id}`, { headers: { Origin: origin, Cookie: cookie } }), 'files', file.id)
 assert.equal((await fileRead.json()).item.id, file.id)
 
@@ -158,7 +220,7 @@ assert.deepEqual((await directoryRepository.find('files', file.id)).adminForm.la
 
 const reloadedRepository = createD1DirectoryRepository(database)
 const reloadedFilesApi = createDirectoryApi(reloadedRepository, 'files')
-assert.ok((await (await reloadedFilesApi.list(request('/api/v1/files/?query=d1%20synthetic'))).json()).items.some((item) => item.slug === file.id))
+assert.ok((await (await reloadedFilesApi.list(request('/api/v1/files/?query=d1%20updated'))).json()).items.some((item) => item.slug === file.id))
 assert.equal((await api.item(request(`${base}/files/${map.id}`, { method: 'DELETE', headers: writeHeaders }), 'files', map.id)).status, 404)
 assert.equal((await api.item(request(`${base}/files/${file.id}`, { method: 'DELETE', headers: writeHeaders }), 'files', file.id)).status, 200)
 assert.equal(await reloadedRepository.find('files', file.id), null)

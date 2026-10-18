@@ -35,6 +35,7 @@ function fromD1Row(row) {
     slug: row.slug || '',
     title: row.title,
     propertyType: row.property_type,
+    fileType: row.file_type,
     purchaseType: row.purchase_type,
     fileOnly: row.is_file === 1,
     isFurnished: row.is_furnished === 1,
@@ -58,6 +59,7 @@ function fromD1Row(row) {
     descriptionHidden: row.description_hide === 1,
     public: row.hide === 0,
     createdAt: row.created_at || '',
+    updatedAt: row.updated_at || '',
     adminForm: {
       property_type: row.property_type,
       purchase_type: row.purchase_type,
@@ -85,8 +87,8 @@ function fromD1Row(row) {
   return property
 }
 
-function clausesFor(filters) {
-  const clauses = ['p.hide = 0', 'COALESCE(p.is_file, 0) = 0', 'p.slug IS NOT NULL']
+function clausesFor(filters, isFile = false) {
+  const clauses = ['p.hide = 0', `COALESCE(p.is_file, 0) = ${isFile ? 1 : 0}`, 'p.slug IS NOT NULL']
   const values = []
   for (const [filter, column] of Object.entries({
     category: 'c.slug', city: 'ci.slug', society: 's.slug', phase: 'ph.slug',
@@ -101,6 +103,7 @@ function clausesFor(filters) {
     clauses.push('EXISTS (SELECT 1 FROM property_labels pl JOIN labels l ON l.id = pl.label_id WHERE pl.property_id = p.id AND l.slug = ? AND l.hide = 0 AND l.is_filter = 1)')
     values.push(filters.label)
   }
+  if (isFile && filters.file_type !== undefined) { clauses.push('p.file_type = ?'); values.push(filters.file_type) }
   if (filters.query !== undefined) {
     const escaped = filters.query.toLowerCase().replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')
     clauses.push(`(lower(p.title) LIKE ? ESCAPE '\\' OR lower(coalesce(p.short_desc, '')) LIKE ? ESCAPE '\\'
@@ -153,10 +156,10 @@ export function createD1PropertyRepository(database) {
     return [category, city, society, phase]
   }
 
-  async function selectById(id) {
+  async function selectById(id, isFile = false) {
     const numericId = Number(id)
     if (!Number.isSafeInteger(numericId) || numericId < 1) return null
-    const row = await database.prepare(`${PROPERTY_SELECT} WHERE p.id = ? LIMIT 1`).bind(numericId).first()
+    const row = await database.prepare(`${PROPERTY_SELECT} WHERE p.id = ? AND COALESCE(p.is_file, 0) = ? LIMIT 1`).bind(numericId, isFile ? 1 : 0).first()
     return row ? fromD1Row(row) : null
   }
 
@@ -187,12 +190,6 @@ export function createD1PropertyRepository(database) {
     return Number(result.meta?.last_row_id) || null
   }
 
-  async function existingSourceRow(id) {
-    const numericId = Number(id)
-    if (!Number.isSafeInteger(numericId) || numericId < 1) return null
-    return database.prepare('SELECT id, detail_description_id FROM properties WHERE id = ? AND COALESCE(is_file, 0) = 0').bind(numericId).first()
-  }
-
   function sourceValues(property, refs, descriptionId) {
     const form = property.adminForm || {}
     return [
@@ -212,9 +209,10 @@ export function createD1PropertyRepository(database) {
     ]
   }
 
-  async function save(property, id, create) {
-    const prior = create ? null : await existingSourceRow(id)
+  async function save(property, id, create, isFile = false) {
+    const prior = create ? null : await database.prepare('SELECT id, detail_description_id FROM properties WHERE id = ? AND COALESCE(is_file, 0) = ?').bind(Number(id), isFile ? 1 : 0).first()
     if (!create && !prior) return null
+    if (isFile) property.fileOnly = true
     const [refs, descriptionId] = await Promise.all([resolveTaxonomies(property), detailDescriptionId(property, prior)])
     const values = sourceValues(property, refs, descriptionId)
     const columns = `title, property_type, is_file, file_type, purchase_type, is_furnished, short_desc, address, features,
@@ -230,12 +228,12 @@ export function createD1PropertyRepository(database) {
       propertyId = explicitId ? Number(property.id) : Number(result.meta?.last_row_id)
     } else {
       const assignments = columns.split(',').map((column) => `${column.trim()} = ?`).join(', ')
-      const result = await database.prepare(`UPDATE properties SET ${assignments} WHERE id = ? AND COALESCE(is_file, 0) = 0`)
-        .bind(...values, propertyId).run()
+      const result = await database.prepare(`UPDATE properties SET ${assignments} WHERE id = ? AND COALESCE(is_file, 0) = ?`)
+        .bind(...values, propertyId, isFile ? 1 : 0).run()
       if (!Number(result.meta?.changes || 0)) return null
     }
     await replaceRelations(propertyId, property)
-    return selectById(propertyId)
+    return selectById(propertyId, isFile)
   }
 
   return {
@@ -246,7 +244,7 @@ export function createD1PropertyRepository(database) {
     },
 
     async listPublicProperties({ filters, limit, cursor }) {
-      const where = clausesFor(filters)
+      const where = clausesFor(filters, false)
       let anchor = null
       if (cursor) {
         const data = cursorData(cursor)
@@ -280,8 +278,53 @@ export function createD1PropertyRepository(database) {
     },
 
     async findPropertyById(id) {
-      const property = await selectById(id)
-      return property?.fileOnly ? null : property
+      return selectById(id, false)
+    },
+
+    async listPublicFiles({ query = '', city = null, society = null, phase = null, fileType = null }) {
+      const filters = Object.fromEntries(Object.entries({ city, society, phase, file_type: fileType, query })
+        .filter(([, value]) => value !== null && value !== undefined && value !== ''))
+      const where = clausesFor(filters, true)
+      const result = await database.prepare(`${PROPERTY_SELECT} WHERE ${where.sql} ORDER BY p.updated_at DESC, p.id ASC`).bind(...where.values).all()
+      const rows = (result.results || []).map(fromD1Row)
+      const allResult = await database.prepare(`${PROPERTY_SELECT} WHERE p.hide = 0 AND COALESCE(p.is_file, 0) = 1 AND p.slug IS NOT NULL ORDER BY p.updated_at DESC, p.id ASC`).all()
+      const all = (allResult.results || []).map(fromD1Row)
+      return { all: all.map(fileRecord), items: rows.map(fileRecord) }
+    },
+
+    async listAllFiles() {
+      const result = await database.prepare(`${PROPERTY_SELECT} WHERE COALESCE(p.is_file, 0) = 1 ORDER BY p.id ASC`).all()
+      return (result.results || []).map(fromD1Row).map(fileRecord)
+    },
+
+    async findFileBySlug(slug) {
+      const row = await database.prepare(`${PROPERTY_SELECT} WHERE p.slug = ? AND COALESCE(p.is_file, 0) = 1 LIMIT 1`).bind(String(slug)).first()
+      if (!row) return null
+      return fileRecord(fromD1Row(row))
+    },
+
+    async findFileById(id) {
+      const property = await selectById(id, true)
+      if (!property) return null
+      return this.findFileBySlug(property.slug)
+    },
+
+    async insertFileRecord(record) {
+      const property = fileRecordToProperty(record)
+      const saved = await save(property, null, true, true)
+      return saved ? this.findFileBySlug(saved.slug) : null
+    },
+
+    async updateFileRecord(id, record) {
+      const current = await selectById(id, true)
+      if (!current) return null
+      const saved = await save(fileRecordToProperty(record, current), id, false, true)
+      return saved ? this.findFileBySlug(saved.slug) : null
+    },
+
+    async deleteFileRecord(id) {
+      const result = await database.prepare('DELETE FROM properties WHERE id = ? AND COALESCE(is_file, 0) = 1').bind(Number(id)).run()
+      return Number(result.meta?.changes || 0) > 0
     },
 
     async listLabels() {
@@ -329,8 +372,8 @@ export function createD1PropertyRepository(database) {
       return Number(result.meta?.changes || 0) > 0
     },
 
-    async insertPropertyRecord(property) { return save(property, null, true) },
-    async updatePropertyRecord(id, property) { return save(property, id, false) },
+    async insertPropertyRecord(property) { return save(property, null, true, false) },
+    async updatePropertyRecord(id, property) { return save(property, id, false, false) },
 
     async deletePropertyRecord(id) {
       const numericId = Number(id)
@@ -342,6 +385,43 @@ export function createD1PropertyRepository(database) {
     async removeLabelFromProperties(slug) {
       await database.prepare('DELETE FROM property_labels WHERE label_id = (SELECT id FROM labels WHERE slug = ?)').bind(slug).run()
     },
+  }
+}
+
+function fileRecordToProperty(record, current = null) {
+  const form = record.adminForm || {}
+  const labelSlugs = Array.isArray(form.labels) ? form.labels : (current?.adminForm?.labels || [])
+  return {
+    ...(current || {}), id: record.id, slug: record.slug, title: record.title,
+    propertyType: form.property_type || 'Residential', purchaseType: record.purchaseType || form.purchase_type || 'sale',
+    fileOnly: true, public: record.public === true, shortDescription: record.shortDescription || '',
+    location: {
+      address: record.address || '', city: record.city ? { slug: record.city, name: record.cityName || record.city } : null,
+      society: record.society ? { slug: record.society, name: record.societyName || record.society } : null,
+      phase: record.phase ? { slug: record.phase, name: record.phaseName || record.phase } : null,
+    },
+    category: null, area: record.area || { value: '0', unit: 'marla' },
+    price: record.price?.amount ?? '0', labels: labelSlugs.map((slug) => ({ slug, name: slug })),
+    createdAt: record.updatedAt || new Date().toISOString(),
+    adminForm: {
+      ...form, property_type: form.property_type || 'Residential', file_type: record.fileType || form.file_type || 'Affidavit',
+      purchase_type: record.purchaseType || form.purchase_type || 'sale', is_furnished: true,
+      labels: labelSlugs, detailed_description_content: record.shortDescription || '',
+    },
+  }
+}
+
+function fileRecord(property) {
+  return {
+    sourceId: property.id,
+    slug: property.slug, title: property.title,
+    city: property.location.city?.slug || '', cityName: property.location.city?.name || '',
+    society: property.location.society?.slug || '', societyName: property.location.society?.name || '',
+    phase: property.location.phase?.slug || '', phaseName: property.location.phase?.name || '',
+    fileType: property.fileType, area: property.area,
+    price: { amount: property.price, currency: 'PKR' }, updatedAt: property.updatedAt || property.createdAt,
+    public: property.public, shortDescription: property.shortDescription, address: property.location.address,
+    purchaseType: property.purchaseType, adminForm: property.adminForm,
   }
 }
 

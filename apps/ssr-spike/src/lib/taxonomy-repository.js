@@ -19,6 +19,7 @@ function normalize(row, mapIds = []) {
 
 function mapRecord(row) {
   return {
+    sourceId: Number(row.id),
     slug: row.slug,
     title: row.title,
     city: row.city_slug || '', cityName: row.city_name || '',
@@ -147,7 +148,8 @@ export function createD1TaxonomyRepository(database) {
       const [items, all] = await Promise.all([
         mapRows({ ...filters, publicOnly: true }), mapRows({ publicOnly: true }),
       ])
-      return { items, all }
+      const publicRecord = ({ sourceId, ...record }) => record
+      return { items: items.map(publicRecord), all: all.map(publicRecord) }
     },
     async findMap(slug) { const row = await mapRow(slug); return row ? mapRecord(row) : null },
     async insertMap(record) {

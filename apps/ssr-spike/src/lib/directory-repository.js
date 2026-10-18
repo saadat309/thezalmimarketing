@@ -1,4 +1,5 @@
 import { createD1TaxonomyRepository } from './taxonomy-repository.js'
+import { createD1PropertyRepository } from './property-repository.js'
 
 function fromRow(row) {
   return JSON.parse(row.record_json)
@@ -20,13 +21,14 @@ function columns(kind, record) {
   ]
 }
 
-export function createD1DirectoryRepository(database) {
+export function createD1DirectoryRepository(database, properties = createD1PropertyRepository(database)) {
   if (!database) throw new Error('The local staging D1 binding is required.')
   const taxonomies = createD1TaxonomyRepository(database)
 
   return {
     async listPublic({ kind, query = '', city = null, society = null, phase = null, fileType = null }) {
       if (kind === 'maps') return taxonomies.listPublicMaps({ query, city, society, phase })
+      if (kind === 'files') return properties.listPublicFiles({ query, city, society, phase, fileType })
       const filters = { city: 'city_slug', society: 'society_slug', phase: 'phase_slug', fileType: 'file_type' }
       const clauses = ['kind = ?', 'is_public = 1']
       const values = [kind]
@@ -61,6 +63,7 @@ export function createD1DirectoryRepository(database) {
 
     async listAll(kind) {
       if (kind === 'maps') return taxonomies.listMaps()
+      if (kind === 'files') return properties.listAllFiles()
       const result = await database.prepare(`
         SELECT record_json FROM staging_directories WHERE kind = ? ORDER BY updated_at DESC, slug ASC
       `).bind(kind).all()
@@ -69,6 +72,7 @@ export function createD1DirectoryRepository(database) {
 
     async find(kind, slug) {
       if (kind === 'maps') return taxonomies.findMap(slug)
+      if (kind === 'files') return properties.findFileBySlug(slug)
       const row = await database.prepare(`
         SELECT record_json FROM staging_directories WHERE kind = ? AND slug = ? LIMIT 1
       `).bind(kind, String(slug)).first()
@@ -77,6 +81,7 @@ export function createD1DirectoryRepository(database) {
 
     async insert(kind, record) {
       if (kind === 'maps') return taxonomies.insertMap(record)
+      if (kind === 'files') return properties.insertFileRecord(record)
       await database.prepare(`
         INSERT INTO staging_directories
           (kind, slug, is_public, city_slug, society_slug, phase_slug, file_type, updated_at, search_text, record_json)
@@ -87,6 +92,10 @@ export function createD1DirectoryRepository(database) {
 
     async update(kind, slug, record) {
       if (kind === 'maps') return taxonomies.updateMap(slug, record)
+      if (kind === 'files') {
+        const prior = await properties.findFileBySlug(slug)
+        return prior ? properties.updateFileRecord(prior.sourceId, record) : null
+      }
       const values = columns(kind, record)
       const result = await database.prepare(`
         UPDATE staging_directories SET
@@ -100,20 +109,17 @@ export function createD1DirectoryRepository(database) {
 
     async delete(kind, slug) {
       if (kind === 'maps') return taxonomies.deleteMap(slug)
+      if (kind === 'files') {
+        const prior = await properties.findFileBySlug(slug)
+        return prior ? properties.deleteFileRecord(prior.sourceId) : false
+      }
       const result = await database.prepare('DELETE FROM staging_directories WHERE kind = ? AND slug = ?')
         .bind(kind, String(slug)).run()
       return Number(result.meta?.changes || 0) > 0
     },
 
     async removeLabelFromFiles(slug) {
-      const files = await this.listAll('files')
-      for (const file of files) {
-        const labels = file.adminForm?.labels
-        if (!Array.isArray(labels) || !labels.includes(slug)) continue
-        const updated = structuredClone(file)
-        updated.adminForm.labels = labels.filter((label) => label !== slug)
-        await this.update('files', file.slug, updated)
-      }
+      await properties.removeLabelFromProperties(slug)
     },
   }
 }

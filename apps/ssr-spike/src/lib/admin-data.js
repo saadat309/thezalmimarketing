@@ -29,7 +29,7 @@ const DOMAIN_FIELDS = {
   phases: { name: 'text', map_ids: 'multiSelect' },
   labels: { name: 'text', is_badge: 'boolean' },
   queries: { property_id: 'optionalText', property_title: 'optionalText', name: 'text', email: 'optionalText', phone: 'optionalText', message: 'textarea', created_at: 'text', is_read: 'boolean' },
-  'landing-page': { sectionName: 'text', title: 'text', subtitle: 'textarea', order: 'integer', active: 'boolean', collection: 'text', selectedItems: 'json', mediaMode: 'text', mediaUrl: 'optionalText', delayMs: 'integer' },
+  'landing-page': { title: 'text', subtitle: 'textarea', active: 'boolean', selectedItems: 'json', mediaUrl: 'optionalText', delayMs: 'integer' },
   'calculator-phases': { city_id: 'select', society_id: 'select', name: 'text', sort_order: 'integer', is_active: 'boolean' },
   'calculator-blocks': { calculator_phase_id: 'select', name: 'text', sort_order: 'integer', is_active: 'boolean' },
   'calculator-property-types': { category: 'text', property_type: 'text', label: 'text', sort_order: 'integer', is_active: 'boolean' },
@@ -426,7 +426,7 @@ function toAdminRecord(domain, item) {
     template: item.adminForm?.template || 'default',
   }
   if (domain === 'files') return {
-    id: item.slug, title: item.title, short_desc: item.shortDescription || '', address: item.address || '',
+    id: item.slug, source_id: item.sourceId, title: item.title, short_desc: item.shortDescription || '', address: item.address || '',
     property_type: item.adminForm?.property_type || 'Residential', file_type: item.fileType || 'Affidavit', purchase_type: item.purchaseType || 'sale',
     area: Number(item.area?.value) || 0, unit: item.area?.unit || 'marla', price_amount: Number(item.price?.amount) || 0,
     is_discounted: item.adminForm?.is_discounted === true, price_original_amount: item.adminForm?.price_original_amount ?? '',
@@ -436,7 +436,7 @@ function toAdminRecord(domain, item) {
     city_id: item.city || '', society_id: item.society || '', phase_id: item.phase || '', embed_link: item.adminForm?.embed_link || '',
     labels: item.adminForm?.labels || [], hide: item.public !== true,
   }
-  if (domain === 'maps') return { id: item.slug, title: item.title, description: item.description || '', city_id: item.city || '', society_id: item.society || '', phase_id: item.phase || '', embed_link: item.embedLink || '', hide: item.public !== true }
+  if (domain === 'maps') return { id: item.slug, source_id: item.sourceId, title: item.title, description: item.description || '', city_id: item.city || '', society_id: item.society || '', phase_id: item.phase || '', embed_link: item.embedLink || '', hide: item.public !== true }
   return { id: item.slug, title: item.title, city: item.cityName, visible: item.public === true }
 }
 
@@ -814,6 +814,15 @@ function validateFields(domain, input, extraOptions = {}) {
     else errors[key] = 'Value is invalid.'
   }
   if (['cities', 'categories', 'societies', 'phases'].includes(domain) && !result.name) errors.name ||= 'Name is required.'
+  if (domain === 'landing-page' && result.selectedItems?.some((itemId) => !/^\d+$/.test(itemId))) errors.selectedItems = 'Choose items using numeric source IDs.'
+  if (domain === 'landing-page' && result.delayMs > 60000) errors.delayMs = 'Delay must be no more than 60,000 milliseconds.'
+  if (domain === 'landing-page' && result.mediaUrl) {
+    try {
+      const url = new URL(result.mediaUrl)
+      const allowedHosts = ['youtube.com', 'www.youtube.com', 'youtu.be', 'vimeo.com', 'www.vimeo.com', 'player.vimeo.com']
+      if (url.protocol !== 'https:' || !allowedHosts.includes(url.hostname.toLowerCase())) errors.mediaUrl = 'Use an HTTPS YouTube or Vimeo URL.'
+    } catch { errors.mediaUrl = 'Enter a valid HTTPS YouTube or Vimeo URL.' }
+  }
   if (!Object.keys(result).length && !Object.keys(errors).length) errors._ = 'Provide at least one editable field.'
   return { result, errors }
 }
@@ -1004,7 +1013,7 @@ export function createMemoryAdminRepository() {
   }
 }
 
-export function createAdminDataApi(repository, auth, profileStorage = createMemoryAdminStorage(), propertyRepository = null, directoryRepository = null, taxonomyRepository = null) {
+export function createAdminDataApi(repository, auth, profileStorage = createMemoryAdminStorage(), propertyRepository = null, directoryRepository = null, taxonomyRepository = null, landingRepository = null) {
   return {
     async collection(request, domain) {
       if (domain === 'labels') return await handleLabelCollection(request, auth, propertyRepository)
@@ -1053,7 +1062,9 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       const guard = await auth.requireAdmin(request, { csrf: mutation })
       if (guard.response) return guard.response
       if (request.method === 'GET') {
-        const items = ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
+        const items = domain === 'landing-page' && landingRepository
+          ? await landingRepository.list()
+          : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
           ? await taxonomyRepository.list(domain)
           : domain === 'properties' && propertyRepository
           ? (await propertyRepository.listAllProperties()).filter((property) => !property.fileOnly).map((property) => toAdminRecord('properties', property))
@@ -1111,6 +1122,7 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
           ...(domain === 'categories' ? { columns: ['id', 'name', 'pic', 'updated_at'] } : {}),
         })
       }
+      if (domain === 'landing-page') return json(request, { error: { code: 'read_only_action' } }, 405, { Allow: 'GET, OPTIONS' })
       if (domain === 'calculator-property-types') return json(request, { error: { code: 'read_only_action' } }, 405)
       if (request.method !== 'POST') return json(request, { error: { code: 'method_not_allowed' } }, 405)
       const body = await readBody(request)
@@ -1170,6 +1182,7 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       const mutation = request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE'
       const guard = await auth.requireAdmin(request, { csrf: mutation })
       if (guard.response) return guard.response
+      if (domain === 'landing-page' && request.method === 'DELETE') return json(request, { error: { code: 'read_only_action' } }, 405)
       if (id === 'template' && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
         if (request.method !== 'GET') return json(request, { error: { code: 'method_not_allowed' } }, 405)
         return calculatorCsvTemplate(domain, request)
@@ -1206,7 +1219,9 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
         const property = domain === 'properties' && propertyRepository ? await propertyRepository.findPropertyById(id) : null
         const taxonomyItem = ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository ? await taxonomyRepository.find(domain, id) : null
         const directoryItem = ['files', 'maps'].includes(domain) && directoryRepository ? await directoryRepository.find(domain, id) : null
-        const item = domain === 'properties' && propertyRepository
+        const item = domain === 'landing-page' && landingRepository
+          ? await landingRepository.find(id)
+          : domain === 'properties' && propertyRepository
           ? property ? toAdminRecord('properties', property) : null
           : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
             ? taxonomyItem
@@ -1228,7 +1243,9 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       const currentProperty = domain === 'properties' && propertyRepository ? await propertyRepository.findPropertyById(id) : null
       const currentTaxonomy = ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository ? await taxonomyRepository.find(domain, id) : null
       const currentDirectory = ['files', 'maps'].includes(domain) && directoryRepository ? await directoryRepository.find(domain, id) : null
-      const currentAdminProperty = domain === 'properties' && propertyRepository
+      const currentAdminProperty = domain === 'landing-page' && landingRepository
+        ? await landingRepository.find(id)
+        : domain === 'properties' && propertyRepository
         ? currentProperty ? toAdminRecord('properties', currentProperty) : null
         : ['categories', 'cities', 'societies', 'phases'].includes(domain) && taxonomyRepository
           ? currentTaxonomy
@@ -1253,6 +1270,10 @@ export function createAdminDataApi(repository, auth, profileStorage = createMemo
       if (domain === 'calculator-transfer-fees' && !Object.keys(errors).length && calculatorTransferFeeScopeExists(result, id)) errors._ = 'A transfer fee already exists for this phase, block, and category.'
       if (['calculator-phases', 'calculator-blocks'].includes(domain) && !Object.keys(errors).length && calculatorConfigurationDuplicate(domain, { ...repository.find(domain, id), ...result }, id)) errors.name = 'A record with this name already exists in the selected scope.'
       if (Object.keys(errors).length) return json(request, { error: { code: 'invalid_fields', fields: errors } }, 400)
+      if (domain === 'landing-page' && landingRepository) {
+        const updated = await landingRepository.update(id, result)
+        return updated ? json(request, { item: updated }) : json(request, { error: { code: 'not_found' } }, 404)
+      }
       if (domain === 'properties' && propertyRepository) {
         if (!currentProperty) return json(request, { error: { code: 'not_found' } }, 404)
         applyPublicFields('properties', currentProperty, result)

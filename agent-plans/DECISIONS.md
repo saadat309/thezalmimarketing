@@ -233,3 +233,19 @@ This is the durable record of decisions that affect migration work. It is append
 - **Boundaries:** Fabricated data and local Wrangler D1 only; zero remote provisioning, deployment, DNS, production site/MySQL/data, or `workers/ai-worker` changes.
 - **Open compatibility limits:** MySQL unsigned `BIGINT` values above SQLite's signed 64-bit range require import-time validation. The existing admin-only `vat_amount` and `template` controls have no source Property columns and are not persisted by these source-shaped tables; whether they need a separately documented staging extension remains open. SQLite does not reproduce MySQL full-text indexes; public filtering uses bound SQL predicates and needs later query-budget validation.
 - **Source:** User direction that future text-based DB exports must import without schema mismatch, excluding media tables and binary content; user approved continuing with the recommended Property slice.
+
+### ADR-029 — Store Files as source Properties rows
+
+- **Status:** Accepted by the user on 2026-10-18 as the next local synthetic D1 slice.
+- **Decision:** Represent File records in the source-shaped `properties` table with `is_file = 1`; keep Map data in `map_docs`. Preserve the established `/api/v1/files` public projection, filters, and protected dashboard contract through the repository adapter. Backfill prior synthetic-only File JSON rows into source columns and retain the transitional table during the transition.
+- **Boundaries:** Local Wrangler D1 (`remote: false`), synthetic records only. Keep media rows, media paths, PDFs, and binaries out of the migration. No remote storage, deployment, production export/import, live site/DNS/cPanel/MySQL, or `workers/ai-worker` changes.
+- **Consequences:** File reads, admin CRUD, labels, and public visibility now share normalized property text storage. The `is_file` discriminator excludes files from the public Property API. CMS/Landing Page, Queries, and Calculator storage/API work remains separate; Query privacy/retention and its processed-user FK require review before persistence.
+- **Source:** User asked to continue with the recommended migration task to align File storage to the source schema and proceed toward the remaining text-domain APIs.
+
+### ADR-030 — Persist synthetic Landing Page content without editable section structure
+
+- **Status:** Accepted by the user on 2026-10-18 for local synthetic implementation.
+- **Decision:** Translate source `landing_sections` and `landing_section_items` into local D1 and preserve the existing API projection. The six known synthetic sections remain in deterministic numeric-ID order; section names, collection types, and order are fixed, not admin-editable. Admin edits are limited to title, subtitle, visibility, selected numeric item IDs, popup delay, and embed text. Public reads include visible sections only.
+- **Media boundary:** Do not accept uploads or copy/store media paths. Source media/video columns remain nullable; embed text is stored only for an explicitly embed-mode section.
+- **Boundaries:** Local D1 (`remote: false`) and synthetic content only. No production export, remote storage, deployment, DNS, live site/cPanel/MySQL, credentials, or `workers/ai-worker` changes.
+- **Source:** User clarified that section display order must remain unchanged and only content and visibility need editing, within the previously approved local D1/schema-alignment work.

@@ -30,11 +30,23 @@ add source-shaped `properties`, `detail_descriptions`, `labels`,
 `property_labels`, and `property_related_properties` tables. The Property
 repository translates stable-slug editor/API values to numeric foreign keys,
 and migration 0007 backfills the prior synthetic-only `staging_properties`
-rows without deleting that legacy table. It does not copy media rows or assets.
+rows without deleting that legacy table. Files now share the normalized
+`properties` table with `is_file = 1`; migration 0008 bridges prior synthetic
+File JSON rows without deleting `staging_directories`. File reads and admin CRUD
+use the shared table while preserving the existing `/api/v1/files` projection.
+Neither bridge copies media rows or assets.
+Migration 0009 adds all eight normalized source-shaped Calculator tables and
+their indexes/foreign keys. Source `DECIMAL` fields use SQLite `TEXT` affinity
+to preserve exact imported values; the current Calculator API still uses
+in-memory fixtures and does not yet read or write those tables.
 
 This is a schema-alignment foundation, not a completed production import
-pipeline. Files still use a staging-specific directory representation and
-should next be mapped to source `properties.is_file = 1`. The staging-only
+pipeline. The Calculator schema is present but its API adapter still uses
+in-memory data. Migration 0010 adds source-shaped CMS/Landing Page tables and a
+local D1 adapter; synthetic section identity/order are fixed while content and
+visibility are editable. Query persistence remains open pending
+privacy/retention handling for contact data and its legacy user FK.
+The staging-only
 Property `vat_amount` and `template` form controls have no columns in the
 checked-in source schema and are not persisted by the normalized tables; a
 separate extension decision is still open. Media tables and binary objects are
@@ -71,7 +83,9 @@ Restart the local API after changing `.dev.vars`. From the staging frontend,
 open `/login`; its dev build uses `http://127.0.0.1:4175` by default. Do not
 copy these passwords into tracked files or reuse any production credential.
 The helper checks can be run with `npm run test:admin-auth`; directory API and
-local-storage checks can be run with `npm run test:directory`. Test password
+local-storage checks can be run with `npm run test:directory`; source-shaped
+Calculator schema and decimal-preservation checks can be run with
+`npm run test:calculator-storage`. Test password
 values are generated in memory and are not fixed or printed. The D1 storage
 test uses Node's built-in SQLite module and requires Node.js 22.5 or later.
 

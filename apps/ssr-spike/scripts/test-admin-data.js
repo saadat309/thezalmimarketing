@@ -94,12 +94,21 @@ const landingCollection = await api.collection(new Request(`${base}/landing-page
 assert.equal(landingCollection.status, 200)
 const landingData = await landingCollection.json()
 assert.equal(landingData.count, 6)
-const featuredSection = landingData.items.find((item) => item.id === 'section-featured')
+const featuredSection = landingData.items.find((item) => item.sectionName === 'Featured Properties')
 const landingUpdate = await api.item(new Request(`${base}/landing-page/${featuredSection.id}`, {
-  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Home Picks', order: 1, selectedItems: ['101'], active: true }),
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ title: 'Synthetic Home Picks', selectedItems: ['101'], active: true }),
 }), 'landing-page', featuredSection.id)
 assert.equal(landingUpdate.status, 200)
 assert.deepEqual((await landingUpdate.json()).item.selectedItems, ['101'])
+assert.deepEqual(Object.keys(landingData.fields), ['title', 'subtitle', 'active', 'selectedItems', 'mediaUrl', 'delayMs'])
+const rejectedLandingReorder = await api.item(new Request(`${base}/landing-page/${featuredSection.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ order: 1 }),
+}), 'landing-page', featuredSection.id)
+assert.equal(rejectedLandingReorder.status, 400)
+const rejectedLandingEmbed = await api.item(new Request(`${base}/landing-page/${featuredSection.id}`, {
+  method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ mediaUrl: 'javascript:alert(1)' }),
+}), 'landing-page', featuredSection.id)
+assert.equal(rejectedLandingEmbed.status, 400)
 const invalidLandingItems = await api.item(new Request(`${base}/landing-page/${featuredSection.id}`, {
   method: 'PATCH', headers: writeHeaders, body: JSON.stringify({ selectedItems: ['101', '101'] }),
 }), 'landing-page', featuredSection.id)
