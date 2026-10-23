@@ -651,3 +651,10 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Summary:** Matched the legacy Calculator Rates and Transfer Fees forms by clearing `calculator_block_id` whenever `calculator_phase_id` changes. This prevents an old phase-scoped block from remaining in the draft and being submitted with a different phase; existing field names and API payloads remain unchanged.
 - **Verification:** Authenticated Chrome review opened the Calculator Rates editor and its accessible Phase combobox/search list. File, Map, and Calculator selector reviews remained clean. Direct source inspection confirmed the legacy forms already clear the block on phase changes. `git diff --check` passed; the local staging build is the next verification command before commit.
 - **Safety:** No form was submitted, no import/upload/storage action was made, and no production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, or `workers/ai-worker` change was made. Changes are ready for the user-authorized commit/push on `Website-migration`.
+
+## 2026-10-23 — Lock Calculator Tax Rate keys during edits
+
+- **Type:** User-approved, staging-only Calculator form parity correction under ADR-034; synthetic data only.
+- **Summary:** Matched the legacy Calculator Tax Rate editor by disabling `rate_key` as well as the fixed percent `rate_unit` when editing an existing tax rate. Create behavior, field names, and staging API payloads remain unchanged.
+- **Verification:** Authenticated local Chrome opened Calculator Tax Rates and the edit sheet exposed both Rate Key and Rate Unit as disabled controls. No form was submitted. Direct source inspection confirmed the legacy editor locks the key during edits and keeps the unit fixed. Build and `git diff --check` follow before commit/push.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, or `workers/ai-worker` change was made.
