@@ -450,6 +450,8 @@ html.dark [class~="text-[#D4AF37]"],html.dark [class~="text-[#d4af37]"] { color:
 .dashboard-rich-text-toolbar { display: flex; flex-wrap: wrap; gap: .15rem; padding: .35rem; border-bottom: 1px solid var(--border); background: color-mix(in srgb,var(--muted) 55%,transparent); }
 .dashboard-rich-text-toolbar button { width: 2rem; height: 2rem; display: grid; place-items: center; border: 0; border-radius: .3rem; color: var(--foreground); background: transparent; cursor: pointer; }
 .dashboard-rich-text-toolbar button:hover,.dashboard-rich-text-toolbar button:focus-visible { background: var(--muted); outline: 2px solid color-mix(in srgb,var(--ring) 55%,transparent); outline-offset: 1px; }
+.dashboard-rich-text-select-label { display: inline-flex!important; align-items: center; gap: .3rem!important; padding: 0 .3rem; color: var(--muted-foreground)!important; font-size: .65rem!important; font-weight: 500!important; }
+.dashboard-rich-text-select-label select { min-height: 2rem; padding: .2rem 1.35rem .2rem .35rem; border: 1px solid var(--border); border-radius: .3rem; color: var(--foreground); background: var(--background); font: .68rem 'Inter',sans-serif; }
 .dashboard-rich-text-content { min-height: 15rem; padding: .8rem; outline: 0; color: var(--foreground); font: .82rem/1.6 'Inter',sans-serif; }
 .dashboard-rich-text-content:empty::before { content: attr(data-placeholder); color: var(--muted-foreground); pointer-events: none; }
 .dashboard-rich-text-content:focus { box-shadow: inset 0 0 0 2px color-mix(in srgb,var(--ring) 20%,transparent); }
