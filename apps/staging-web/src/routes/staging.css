@@ -493,3 +493,5 @@ html.dark [class~="text-[#D4AF37]"],html.dark [class~="text-[#d4af37]"] { color:
 .landing-selected-actions{display:flex;gap:.25rem}
 .landing-selected-items li{touch-action:pan-y}.landing-sort-handle{flex:none}.dashboard-search-select .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:640px){.landing-section-header{flex-wrap:wrap}.landing-section-heading{flex-basis:calc(100% - 4rem)}.landing-switch{margin-left:2.8rem}.landing-config-grid,.landing-media-config,.landing-available-items{grid-template-columns:1fr}.landing-bottom-save{align-items:flex-start;flex-direction:column}}
+
+.dashboard-search-select.is-open{z-index:20}.landing-section-card{position:relative;overflow:visible}

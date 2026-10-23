@@ -43,7 +43,7 @@ export default function SearchableSelectionField({
   }
 
   const currentLabel = selected[0]?.label
-  return <div className="dashboard-search-select">
+  return <div className={`dashboard-search-select${open ? ' is-open' : ''}`}>
     <button id={id} type="button" className="dashboard-search-select-trigger" role="combobox" aria-label={label} aria-expanded={open} disabled={disabled} onClick={() => { setOpen((current) => !current); setQuery('') }}>
       <span>{multiple ? `${selected.length} item${selected.length === 1 ? '' : 's'} selected` : currentLabel || placeholder}</span><ChevronsUpDown size={16} aria-hidden="true" />
     </button>

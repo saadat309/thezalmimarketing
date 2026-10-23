@@ -610,6 +610,13 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Verification:** Authenticated local browser review confirmed the Featured Properties selector opens with searchable options, a temporary property selection appeared in the reorderable selected list, and the temporary selection was removed without saving. Maps and Files selectors opened with their synthetic option lists. `node scripts/run-vite.js build` passed for `apps/staging-web`; `git diff --check` passed.
 - **Safety:** No form was submitted, no upload/storage action was made, and no production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, or `workers/ai-worker` change was made. Changes remain uncommitted on `Website-migration`.
 
+## 2026-10-23 — Fix Landing selector popover overflow
+
+- **Type:** User-requested, staging-only UI correction; synthetic data only.
+- **Summary:** Landing Page searchable selector menus were being clipped by their section cards and could render underneath adjacent card content. Added an open-state stacking layer to the shared selector and allowed Landing section cards to expose overflow, keeping the option list visible above the card boundary.
+- **Verification:** Opened the Featured Properties selector in the authenticated local browser after the CSS/stacking fix; its searchable option list remained available above the card content. The staging build passed and `git diff --check` passed. No selection was saved.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media storage, or `workers/ai-worker` change was made. Changes remain uncommitted on `Website-migration`.
+
 ## 2026-10-23 — Align Query related-property selector
 
 - **Type:** User-approved, staging-only dashboard parity correction; synthetic data only.
