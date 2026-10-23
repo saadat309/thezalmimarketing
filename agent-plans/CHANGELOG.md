@@ -603,6 +603,13 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Verification:** Authenticated browser AX/UI review completed on local loopback routes for Property, Files, Maps, Calculator Rates, and Calculator Transfer Fees. The isolated Chrome password was used only for the local synthetic Admin One login and was not recorded. No DevTools console/network assertion is claimed from this pass; the visual/accessibility-tree checks are the evidence recorded here. The staging build passed and `git diff --check` passed after this tracking update.
 - **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media storage, or `workers/ai-worker` change was made. Changes remain uncommitted on `Website-migration`.
 
+## 2026-10-23 — Make Landing Page collection selection searchable
+
+- **Type:** User-approved, staging-only dashboard interaction parity correction; synthetic data only.
+- **Summary:** Replaced the Landing Page Featured Properties, Property Categories, Location Maps, and Available Files always-visible checkbox lists with the shared closed searchable multi-select. Opening a collection now reveals its searchable options; selecting an item adds it to the selected reorderable view, which retains drag, arrow, and remove controls.
+- **Verification:** Authenticated local browser review confirmed the Featured Properties selector opens with searchable options, a temporary property selection appeared in the reorderable selected list, and the temporary selection was removed without saving. Maps and Files selectors opened with their synthetic option lists. `node scripts/run-vite.js build` passed for `apps/staging-web`; `git diff --check` passed.
+- **Safety:** No form was submitted, no upload/storage action was made, and no production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, or `workers/ai-worker` change was made. Changes remain uncommitted on `Website-migration`.
+
 ## 2026-10-23 — Align Query related-property selector
 
 - **Type:** User-approved, staging-only dashboard parity correction; synthetic data only.
