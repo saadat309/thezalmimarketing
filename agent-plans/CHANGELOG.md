@@ -603,6 +603,13 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Verification:** Authenticated browser AX/UI review completed on local loopback routes for Property, Files, Maps, Calculator Rates, and Calculator Transfer Fees. The isolated Chrome password was used only for the local synthetic Admin One login and was not recorded. No DevTools console/network assertion is claimed from this pass; the visual/accessibility-tree checks are the evidence recorded here. The staging build passed and `git diff --check` passed after this tracking update.
 - **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media storage, or `workers/ai-worker` change was made. Changes remain uncommitted on `Website-migration`.
 
+## 2026-10-23 — Align Query related-property selector
+
+- **Type:** User-approved, staging-only dashboard parity correction; synthetic data only.
+- **Summary:** Audited the separate Queries workspace after the generic dashboard selector fix and found its Related Property field still used a native select. Replaced it with the shared searchable selector while preserving the existing hidden `property_id` and `property_title` form payload fields.
+- **Verification:** Authenticated local browser review showed the Query editor’s Related Property control as an accessible searchable combobox with an optional empty state. The editor was closed without submission. No production systems, uploads, storage, or credentials were used.
+- **Safety:** Changes are currently uncommitted on `Website-migration` pending the requested follow-up commit/push after verification.
+
 ## 2026-10-23 — Align single-value dashboard selectors
 
 - **Type:** User-approved, staging-only dashboard parity correction under ADR-034; no source frontend changes.
