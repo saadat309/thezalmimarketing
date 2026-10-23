@@ -22,6 +22,7 @@ export const Route = createFileRoute('/files')({
       { name: 'description', content: 'Explore synthetic plot file listings in the isolated staging preview.' },
       { name: 'robots', content: 'noindex, nofollow' },
     ],
+    links: [{ rel: 'canonical', href: 'https://migration.local.invalid/files' }],
   }),
   component: FilesDirectory,
 });

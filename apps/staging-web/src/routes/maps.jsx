@@ -21,6 +21,7 @@ export const Route = createFileRoute('/maps')({
       { name: 'description', content: 'Explore synthetic society map listings in the isolated staging preview.' },
       { name: 'robots', content: 'noindex, nofollow' },
     ],
+    links: [{ rel: 'canonical', href: 'https://migration.local.invalid/maps' }],
   }),
   component: MapsDirectory,
 });

@@ -17,6 +17,7 @@ export const Route = createFileRoute('/calculator')({
       { property: 'og:title', content: calculatorContent.seo.ogTitle },
       { property: 'og:description', content: calculatorContent.seo.ogDescription },
     ],
+    links: [{ rel: 'canonical', href: 'https://migration.local.invalid/calculator' }],
   }),
   errorComponent: CalculatorUnavailable,
   component: CalculatorPage,

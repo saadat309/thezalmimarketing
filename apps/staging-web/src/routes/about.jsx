@@ -17,7 +17,7 @@ export const Route = createFileRoute('/about')({
 
 function AboutPage() {
   return (
-    <div className="min-h-screen bg-background bg-about-pattern text-foreground">
+    <main className="min-h-screen bg-background bg-about-pattern text-foreground">
       <section className="relative pt-36 pb-24 sm:pt-44 sm:pb-32 bg-slate-950 border-b border-[#D4AF37]/20 text-white overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center opacity-40" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541888946425-d0fbb18f7253?auto=format&fit=crop&w=2000&q=80')" }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/50" />
@@ -48,6 +48,6 @@ function AboutPage() {
 
         <Card className="p-8 sm:p-12 bg-slate-950 text-white border border-[#D4AF37]/30 rounded-3xl shadow-2xl"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">{content.nationalCoverage.badge}</Badge><h2 className="mt-4 text-3xl font-bold font-display">{content.nationalCoverage.heading}</h2><p className="mt-3 text-slate-300 max-w-2xl">{content.nationalCoverage.description}</p><div className="flex flex-wrap gap-3 mt-7">{content.nationalCoverage.cities.map((city) => <span key={city} className="px-4 py-2 rounded-full bg-white/5 border border-[#D4AF37]/25 text-sm">{city}</span>)}</div></Card>
       </div>
-    </div>
+    </main>
   );
 }

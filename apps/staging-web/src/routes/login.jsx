@@ -5,7 +5,7 @@ import { loginAdmin } from '../data/admin-api.js'
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search) => ({ redirect: typeof search.redirect === 'string' ? search.redirect : '/dashboard' }),
-  head: () => ({ meta: [{ title: 'Login | The Zalmi Marketing' }, { name: 'robots', content: 'noindex, nofollow' }] }),
+  head: () => ({ meta: [{ title: 'Login | The Zalmi Marketing' }, { name: 'robots', content: 'noindex, nofollow' }], links: [{ rel: 'canonical', href: 'https://migration.local.invalid/login' }] }),
   component: LoginPage,
 })
 

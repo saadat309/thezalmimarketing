@@ -30,7 +30,7 @@ function ContactPreview() {
   }
 
   return (
-    <div className="min-h-screen bg-background bg-contact-pattern text-foreground transition-colors duration-300">
+    <main className="min-h-screen bg-background bg-contact-pattern text-foreground transition-colors duration-300">
       <section className="relative pt-36 pb-24 sm:pt-44 sm:pb-32 bg-slate-950 border-b border-[#D4AF37]/20 text-white overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80')" }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/40" />
@@ -138,6 +138,6 @@ function ContactPreview() {
         <div className="text-center mb-10"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">Helpful answers</Badge><h2 className="mt-4 text-3xl sm:text-4xl font-bold font-display">Frequently Asked Questions</h2></div>
         <div className="space-y-4">{content.faqs.map((item) => <details key={item.q} className="rounded-2xl border border-border bg-card p-5 sm:p-6"><summary className="cursor-pointer font-semibold marker:text-[#D4AF37]">{item.q}</summary><p className="mt-4 text-sm leading-relaxed text-muted-foreground">{item.a}</p></details>)}</div>
       </section>
-    </div>
+    </main>
   );
 }
