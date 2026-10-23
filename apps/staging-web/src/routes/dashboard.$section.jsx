@@ -177,7 +177,11 @@ function GenericAdminSection({ section }) {
       <section className="dashboard-sheet" role="dialog" aria-modal="true" aria-labelledby="dashboard-editor-title"><header><div><h3 id="dashboard-editor-title">{editor.kind === 'edit' ? `Edit ${singularFor(section)}` : `Add New ${singularFor(section)}`}</h3><p>{editor.kind === 'edit' ? `Make changes to your ${singularFor(section)} here.` : `Add a new ${singularFor(section)} to your list.`}</p></div><button type="button" aria-label="Close editor" onClick={() => setEditor(null)}><X size={18} /></button></header>
         <form onSubmit={save}><div className="dashboard-sheet-groups">{fieldGroups.map((group) => <fieldset className="dashboard-sheet-group" key={group.title}><legend>{group.title}</legend><div className="dashboard-sheet-fields">{group.fields.map((field) => {
           const options = (payload?.options?.[field.name] || []).filter((option) => (field.name !== 'calculator_block_id' || option.phaseId === draft.calculator_phase_id) && (!['cities', 'societies', 'phases'].includes(section) || field.name !== 'map_ids' || draft[field.name]?.includes(option.value) || !unavailableMapIds.has(option.value)) && !(section === 'properties' && field.name === 'related_products' && String(option.value) === String(items.find((item) => item.id === editor.id)?.slug)))
-          const setField = (value) => setDraft((current) => ({ ...current, [field.name]: value }))
+          const setField = (value) => setDraft((current) => ({
+            ...current,
+            [field.name]: value,
+            ...(['calculator-rates', 'calculator-transfer-fees'].includes(section) && field.name === 'calculator_phase_id' ? { calculator_block_id: '' } : {}),
+          }))
           const disabled = (field.name === 'calculator_block_id' && !draft.calculator_phase_id) || (section === 'calculator-fees' && editor.kind === 'edit' && field.name === 'charge_unit') || (section === 'calculator-tax-rates' && editor.kind === 'edit' && field.name === 'rate_unit')
           const required = field.type === 'select' && (section.startsWith('calculator-') || ['property_type', 'purchase_type', 'file_type', 'price_period_unit', 'installment_display_mode', 'template'].includes(field.name))
           const fieldLabelFor = section === 'properties' && ['property_type', 'purchase_type'].includes(field.name) ? undefined : `${fieldInputId(field.name)}${field.name === 'labels' ? '-search' : ''}`
