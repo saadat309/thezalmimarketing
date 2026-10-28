@@ -116,7 +116,7 @@ export function createD1CalculatorRepository(db) {
     for (const row of rows) {
       const phaseKey = `${row.cityId}|${row.societyId}|${row.phaseName.trim().toLowerCase()}`
       let phase = phases.get(phaseKey)
-      if (!phase && domain === 'calculator-rates') {
+      if (!phase && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
         if (!addedPhases.has(phaseKey)) {
         statements.push(db.prepare('INSERT OR IGNORE INTO calculator_phases (city_id,society_id,name) VALUES (?,?,?)').bind(Number(row.cityId), Number(row.societyId), row.phaseName))
           addedPhases.add(phaseKey); created_phases++
@@ -127,7 +127,7 @@ export function createD1CalculatorRepository(db) {
       if (row.blockName) {
         const blockKey = `${phase?.id || phaseKey}|${row.blockName.trim().toLowerCase()}`
         block = blocks.get(blockKey)
-        if (!block && domain === 'calculator-rates') {
+        if (!block && ['calculator-rates', 'calculator-transfer-fees'].includes(domain)) {
           if (!addedBlocks.has(blockKey)) {
             statements.push(db.prepare(`INSERT OR IGNORE INTO calculator_blocks (calculator_phase_id,name) VALUES (${phaseIdSql},?)`).bind(row.blockName))
             addedBlocks.add(blockKey); created_blocks++
@@ -147,12 +147,12 @@ export function createD1CalculatorRepository(db) {
           statements.push(db.prepare(`INSERT INTO calculator_rates (calculator_phase_id,calculator_block_id,calculator_property_type_id,dc_per_marla,dc_per_sqft,fbr_per_marla,fbr_per_sqft,is_active) VALUES (${phaseIdSql},${blockSql},${typeSql},?,?,?,?,?)`).bind(row.category || '', row.propertyType, ...fields, row.is_active ? 1 : 0)); inserted++
         }
       } else {
-        const scope = `${row.phaseId}|${row.blockId || ''}|${row.category.trim().toLowerCase()}`
+        const scope = `${row.phaseId || phase?.id || phaseKey}|${row.blockId || block?.id || (row.blockName ? `${phase?.id || phaseKey}:${row.blockName.trim().toLowerCase()}` : '')}|${row.category.trim().toLowerCase()}`
         const existing = transferFees.get(scope)
         if (existing) {
           statements.push(db.prepare('UPDATE calculator_transfer_fees SET reference_amount=?,reference_size=?,reference_unit=?,is_active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(row.reference_amount_text, row.reference_size_text, row.reference_unit, row.is_active ? 1 : 0, Number(existing.id))); updated++
         } else {
-          statements.push(db.prepare('INSERT INTO calculator_transfer_fees (calculator_phase_id,calculator_block_id,category,reference_amount,reference_size,reference_unit,is_active) VALUES (?,?,?,?,?,?,?)').bind(Number(row.phaseId),row.blockId == null ? null : Number(row.blockId),row.category,row.reference_amount_text,row.reference_size_text,row.reference_unit,row.is_active ? 1 : 0)); inserted++
+          statements.push(db.prepare(`INSERT INTO calculator_transfer_fees (calculator_phase_id,calculator_block_id,category,reference_amount,reference_size,reference_unit,is_active) VALUES (${phaseIdSql},${blockSql},?,?,?,?,?)`).bind(row.category,row.reference_amount_text,row.reference_size_text,row.reference_unit,row.is_active ? 1 : 0)); inserted++
         }
       }
     }

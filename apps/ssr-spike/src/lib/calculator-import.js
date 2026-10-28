@@ -110,6 +110,19 @@ function activeValue(text) {
   return !['0', 'false', 'no'].includes(text.toLowerCase())
 }
 
+function compactName(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '')
+}
+
+function findSociety(societies, cityRecord, input) {
+  const exact = societies.get(input.toLowerCase())
+  if (exact) return exact
+  const compact = compactName(input)
+  if (!compact || !cityRecord) return null
+  const matches = [...societies.values()].filter((item) => item.city_id === cityRecord.id && compactName(item.name).includes(compact))
+  return matches.length === 1 ? matches[0] : null
+}
+
 function decimalTextFits(text, precision, scale) {
   if (!/^\d+(?:\.\d+)?$/.test(text)) return false
   const [whole, fraction = ''] = text.split('.')
@@ -135,7 +148,7 @@ function summarize(domain, parsedRows, config) {
     const phase = value(row, 'phase', 'phase_name', 'calculator_phase')
     const block = value(row, 'block', 'block_name', 'calculator_block')
     const cityRecord = cities.get(city.toLowerCase())
-    const societyRecord = societies.get(society.toLowerCase())
+    const societyRecord = findSociety(societies, cityRecord, society)
     if (!cityRecord) errors.push(`City '${city}' does not exist in the synthetic dataset.`)
     if (!societyRecord) errors.push(`Society '${society}' does not exist in the synthetic dataset.`)
     if (!phase) errors.push('Missing required Phase name.')
@@ -159,13 +172,13 @@ function summarize(domain, parsedRows, config) {
       normalized = { cityId: cityRecord?.id, societyId: societyRecord?.id, phaseName: phase, blockName: block, propertyTypeId: type?.id, propertyType: type?.property_type, category: type?.category, unit, dcRate: dc ?? 0, fbrRate: fbr ?? 0, dcText: dcText || '0', fbrText: fbrText || '0', is_active: activeValue(value(row, 'active', 'is_active') || '1') }
     } else {
       const phaseRecord = config.calculator_phases.find((item) => item.city_id === cityRecord?.id && item.society_id === societyRecord?.id && item.name.trim().toLowerCase() === phase.toLowerCase())
-      if (cityRecord && societyRecord && phase && !phaseRecord) errors.push(`Phase '${phase}' does not exist for City '${city}' and Society '${society}'.`)
+      if (domain === 'calculator-rates' && cityRecord && societyRecord && phase && !phaseRecord) errors.push(`Phase '${phase}' does not exist for City '${city}' and Society '${society}'.`)
       const blockRecord = block && phaseRecord ? config.calculator_blocks.find((item) => item.calculator_phase_id === phaseRecord.id && item.name.trim().toLowerCase() === block.toLowerCase()) : null
-      if (block && phaseRecord && !blockRecord) errors.push(`Block '${block}' does not exist for Phase '${phase}'.`)
+      if (domain === 'calculator-rates' && block && phaseRecord && !blockRecord) errors.push(`Block '${block}' does not exist for Phase '${phase}'.`)
       const category = value(row, 'category')
       if (!category) errors.push('Missing required Category (e.g. Residential, Commercial, Sector Shop).')
-      const sizeText = value(row, 'reference size marla', 'reference_size_marla', 'reference size', 'reference_size')
-      const amountText = value(row, 'reference transfer fee', 'reference_transfer_fee', 'reference_amount', 'amount')
+      const sizeText = value(row, 'reference size marla', 'reference_size_marla', 'reference size', 'reference_size', 'ref size', 'ref_size')
+      const amountText = value(row, 'reference transfer fee', 'reference_transfer_fee', 'reference_amount', 'amount', 'ref fee (rs.)', 'ref fee (rs)', 'ref fee', 'ref_fee')
       const size = sizeText !== '' && Number.isFinite(Number(sizeText)) ? Number(sizeText) : 0
       const amount = amountText !== '' && Number.isFinite(Number(amountText)) ? Number(amountText) : 0
       if (size <= 0) errors.push('Reference size must be greater than 0.')
@@ -229,9 +242,25 @@ export function applyCalculatorCsvImport(domain, rows) {
   let inserted = 0
   let updated = 0
   for (const row of rows) {
-    const fee = config.calculator_transfer_fees.find((item) => item.calculator_phase_id === row.phaseId && (item.calculator_block_id || null) === row.blockId && item.category.toLowerCase() === row.category.toLowerCase())
+    let phase = config.calculator_phases.find((item) => item.id === row.phaseId)
+      || config.calculator_phases.find((item) => item.city_id === row.cityId && item.society_id === row.societyId && item.name.toLowerCase() === row.phaseName.toLowerCase())
+    if (!phase) {
+      phase = { id: `phase-import-${crypto.randomUUID()}`, city_id: row.cityId, society_id: row.societyId, name: row.phaseName, sort_order: 0, is_active: true, updated_at: new Date().toISOString().slice(0, 10) }
+      config.calculator_phases.push(phase)
+    }
+    let blockId = row.blockId || null
+    if (row.blockName) {
+      let block = config.calculator_blocks.find((item) => item.id === blockId)
+        || config.calculator_blocks.find((item) => item.calculator_phase_id === phase.id && item.name.toLowerCase() === row.blockName.toLowerCase())
+      if (!block) {
+        block = { id: `block-import-${crypto.randomUUID()}`, calculator_phase_id: phase.id, name: row.blockName, sort_order: 0, is_active: true, updated_at: new Date().toISOString().slice(0, 10) }
+        config.calculator_blocks.push(block)
+      }
+      blockId = block.id
+    }
+    const fee = config.calculator_transfer_fees.find((item) => item.calculator_phase_id === phase.id && (item.calculator_block_id || null) === blockId && item.category.toLowerCase() === row.category.toLowerCase())
     const feeFields = {
-      calculator_phase_id: row.phaseId, calculator_block_id: row.blockId, category: row.category,
+      calculator_phase_id: phase.id, calculator_block_id: blockId, category: row.category,
       reference_size: row.reference_size, reference_unit: row.reference_unit,
       reference_amount: row.reference_amount, is_active: row.is_active,
     }

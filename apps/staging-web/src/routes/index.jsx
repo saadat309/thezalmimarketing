@@ -21,6 +21,9 @@ import { Link } from '@tanstack/react-router';
 import content from '@/content/pages/home.json';
 import { getSyntheticHomeData } from '../data/home-fixtures.js';
 import { listStagingProperties } from '../data/property-api.js';
+import { listStagingFiles, listStagingMaps } from '../data/directory-api.js';
+import { listPublicLandingSections } from '../data/landing-api.js';
+import StagingPopup from '../components/StagingPopup.jsx';
 
 const Reveal = ({ children, className = '' }) => (
   <motion.div
@@ -35,31 +38,84 @@ const Reveal = ({ children, className = '' }) => (
 );
 const introPhrases = ['Discover Luxury Living', 'Premium DHA Homes', 'Your Dream Property', 'Elite Residential Estates'];
 
+async function listAllStagingProperties() {
+  const items = [];
+  let cursor;
+  for (let pageNumber = 0; pageNumber < 10; pageNumber += 1) {
+    const page = await listStagingProperties({ data: { limit: 50, ...(cursor ? { cursor } : {}) } });
+    items.push(...page.items);
+    if (!page.page.hasMore || !page.page.nextCursor) break;
+    cursor = page.page.nextCursor;
+  }
+  return { items };
+}
+
 export const Route = createFileRoute('/')({
   loader: async () => {
     const homeData = await getSyntheticHomeData();
-    try {
-      const page = await listStagingProperties({ data: { limit: 3 } });
-      return {
-        ...homeData,
-        featuredProperties: page.items.map((property) => ({
+    const [propertyResult, fileResult, mapsResult, landingSections] = await Promise.allSettled([
+      listAllStagingProperties(),
+      listStagingFiles({ data: {} }),
+      listStagingMaps({ data: {} }),
+      listPublicLandingSections({ data: { cacheBust: Date.now() } }),
+    ]);
+    const page = propertyResult.status === 'fulfilled' ? propertyResult.value : null;
+    const files = fileResult.status === 'fulfilled' ? fileResult.value.items : [];
+    const configuredSections = landingSections.status === 'fulfilled' ? landingSections.value : null;
+    const publicMaps = mapsResult?.status === 'fulfilled' ? mapsResult.value.items : [];
+    return {
+      ...homeData,
+      featuredProperties: page ? page.items.map((property) => ({
           slug: property.slug,
+          id: property.id,
           title: property.title,
           short_desc: property.shortDescription,
           price: property.price.amount,
           labels: property.labels,
           image: '/dha birdeye view.webp',
+        })) : [],
+      allFileProperties: files.map((file) => ({
+        id: file.id || file.slug,
+        slug: file.slug,
+        title: file.title,
+        price: Number(file.price?.amount || 0),
+        currency: file.price?.currency || 'Rs.',
+        area: Number(file.area?.value || 0),
+        unit: file.area?.unit || 'Sq.Ft.',
+        society_name: file.societyName,
+        phase: file.phaseName,
+        block: file.blockName,
+        badges: file.labels || [],
+      })),
+      filePropertiesSection: {
+        ...homeData.filePropertiesSection,
+        items: files.slice(0, 3).map((file) => ({
+          id: file.id || file.slug,
+          slug: file.slug,
+          title: file.title,
+          short_desc: `${file.societyName || ''}${file.phaseName ? ` · ${file.phaseName}` : ''}`.trim(),
+          price: file.price?.amount || 0,
+          labels: file.labels || [],
+          image: '/dha birdeye view.webp',
         })),
-        propertyApiAvailable: true,
-      };
-    } catch {
-      return { ...homeData, featuredProperties: [], propertyApiAvailable: false };
-    }
+      },
+      publicMaps: publicMaps.map((map) => ({
+        id: map.id || map.slug,
+        slug: map.slug,
+        title: map.title,
+        description: map.description,
+        image: '/dha birdeye view.webp',
+        pdfPath: `/maps#${map.slug}`,
+      })),
+      landingSections: configuredSections || [],
+      landingApiAvailable: Boolean(configuredSections),
+      propertyApiAvailable: Boolean(page),
+    };
   },
   head: () => ({
     meta: [
-      { title: `${content.seo.title} | Staging Preview` },
-      { name: 'description', content: 'A noindex staging preview of the existing Zalmi Marketing homepage, using synthetic display fixtures.' },
+      { title: content.seo.title },
+      { name: 'description', content: content.seo.description || 'The Zalmi Marketing real estate and property services.' },
       { name: 'robots', content: 'noindex, nofollow' },
     ],
     links: [{ rel: 'canonical', href: 'https://migration.local.invalid/' }],
@@ -76,13 +132,42 @@ function HomePage() {
     reviews,
     filePropertiesSection,
     allFileProperties,
+    publicMaps,
+    landingSections,
     featuredProperties,
     propertyApiAvailable,
   } = Route.useLoaderData();
 
+  const section = (collection) => landingSections.find((item) => item.collection === collection);
+  const isEnabled = (collection) => Boolean(section(collection));
+  const propertySection = section('properties');
+  const fileSection = section('files');
+  const mapSection = section('maps');
+  const categorySection = section('categories');
+  const videoSection = section('video');
+  const popupSection = section('popup');
+  const selected = (collection) => section(collection)?.selectedItems || [];
+  const matchesSelection = (item, collection) => {
+    const ids = selected(collection).map(String);
+    if (!ids.length) return false;
+    return [item.id, item.slug, item.sourceId].filter((value) => value !== undefined && value !== null).map(String).some((value) => ids.includes(value));
+  };
+  const selectedCategories = categoriesSection.items.filter((item, index) => matchesSelection({ ...item, id: item.id, sourceId: String(index + 1) }, 'categories'));
+  const selectedProperties = featuredProperties.filter((item) => matchesSelection(item, 'properties'));
+  const selectedFiles = allFileProperties.filter((item) => matchesSelection(item, 'files')).map((item) => ({
+    ...item,
+    slug: item.slug,
+    short_desc: `${item.society_name || ''}${item.phase ? ` · ${item.phase}` : ''}`.trim(),
+    price: item.price,
+    labels: item.badges,
+    image: '/dha birdeye view.webp',
+  }));
+  const selectedMaps = publicMaps.filter((item) => matchesSelection(item, 'maps'));
+
   return (
     <main className="flex flex-col items-center justify-center w-full text-center mx-auto bg-background text-foreground transition-colors duration-300">
-      <HeroSection categories={categoriesSection.items} items={allFileProperties} />
+      <HeroSection categories={selectedCategories} items={allFileProperties} />
+      {popupSection && <StagingPopup isVisible title={popupSection.title} description={popupSection.subtitle} delayMs={popupSection.delayMs} mediaType={popupSection.mediaType} mediaPath={popupSection.mediaUrl} />}
 
       <div className="w-full relative overflow-hidden bg-background text-foreground py-0">
         <div className="absolute inset-0 opacity-60 dark:opacity-30 bg-group1-pattern pointer-events-none" />
@@ -101,9 +186,9 @@ function HomePage() {
           </Reveal>
         </section>
         <div className="relative z-10 w-full py-4 sm:py-8"><div className="staging-shape-banner"><p>THE ZALMI STANDARD</p><span>Thoughtful guidance. Confident decisions.</span></div></div>
-        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
-          <Reveal className="w-full"><CategoriesSection items={categoriesSection.items} heading={categoriesSection.heading} subheading={categoriesSection.subheading} className="my-0" /></Reveal>
-        </section>
+        {isEnabled('categories') && <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto">
+          <Reveal className="w-full"><CategoriesSection items={selectedCategories} heading={categorySection?.title || categoriesSection.heading} subheading={categorySection?.subtitle || categoriesSection.subheading} className="my-0" /></Reveal>
+        </section>}
         <div className="w-full relative z-10"><Reveal className="w-full"><ServicesOverviewSection /></Reveal></div>
         <div className="w-full relative z-10"><Reveal className="w-full"><CalculatorFeatureSection {...content.calculatorFeatureSection} /></Reveal></div>
       </div>
@@ -112,14 +197,14 @@ function HomePage() {
 
       <div className="w-full relative overflow-x-hidden bg-background text-foreground py-0">
         <div className="absolute inset-0 opacity-60 dark:opacity-30 bg-group2-pattern pointer-events-none" />
-        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><SyntheticCardsSection title={propertiesSection.heading} description={propertiesSection.subheading} items={featuredProperties} kind="property" emptyMessage={propertyApiAvailable ? 'No public synthetic properties are currently available.' : 'Start the isolated synthetic API to load sample properties.'} /></Reveal></section>
-        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="relative z-10 w-full max-w-7xl mx-auto"><SyntheticCardsSection title={filePropertiesSection.heading} description={filePropertiesSection.subheading} items={filePropertiesSection.items} kind="file" /></Reveal></section>
+        {isEnabled('properties') && <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><SyntheticCardsSection title={propertySection?.title || propertiesSection.heading} description={propertySection?.subtitle || propertiesSection.subheading} items={selectedProperties} kind="property" emptyMessage={propertyApiAvailable ? 'No selected public properties are currently available.' : 'The property service is unavailable.'} /></Reveal></section>}
+        {isEnabled('files') && <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="relative z-10 w-full max-w-7xl mx-auto"><SyntheticCardsSection title={fileSection?.title || filePropertiesSection.heading} description={fileSection?.subtitle || filePropertiesSection.subheading} items={selectedFiles} kind="file" emptyMessage="No selected public files are currently available." /></Reveal></section>}
         <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto hidden md:block"><Reveal className="w-full max-w-7xl mx-auto"><InvestmentOpportunitiesSection /></Reveal></section>
       </div>
 
       <div className="w-full relative bg-background text-foreground py-0 overflow-visible">
         <div className="absolute inset-0 opacity-55 dark:opacity-28 bg-group3-pattern pointer-events-none" />
-        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><SyntheticMapsSection {...mapsSection} /></Reveal></section>
+        {isEnabled('maps') && <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><SyntheticMapsSection heading={mapSection?.title || mapsSection.heading} subheading={mapSection?.subtitle || mapsSection.subheading} items={selectedMaps} /></Reveal></section>}
         <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><HowItWorksSection {...content.howItWorksSection} className="my-0" /></section>
         <div className="w-full relative z-10"><Reveal className="w-full"><SyntheticReviewsSection reviews={reviews} /></Reveal></div>
         <div className="w-full relative z-10"><Reveal className="w-full"><FeaturedFeature {...content.featuredFeatureSection} /></Reveal></div>
@@ -127,7 +212,7 @@ function HomePage() {
 
       <div className="w-full relative overflow-hidden bg-background text-foreground py-0">
         <div className="absolute inset-0 opacity-80 dark:opacity-60 bg-group4-pattern pointer-events-none" />
-        <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><SyntheticVideoSection /></Reveal></section>
+        {isEnabled('video') && <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><SyntheticVideoSection title={videoSection?.title} subtitle={videoSection?.subtitle} mediaUrl={videoSection?.mediaUrl} /></Reveal></section>}
         <section className="w-full px-4 sm:px-6 lg:px-8 relative z-10 max-w-7xl mx-auto"><Reveal className="w-full max-w-7xl mx-auto"><DhaServicesSection /></Reveal></section>
       </div>
 
@@ -167,7 +252,7 @@ function RotatingIntroPhrase() {
   );
 }
 
-function SyntheticCardsSection({ title, description, items, kind, emptyMessage = 'Synthetic samples will appear here.' }) {
+function SyntheticCardsSection({ title, description, items, kind, emptyMessage = 'Listings will appear here.' }) {
   const isProperty = kind === 'property';
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
@@ -178,8 +263,8 @@ function SyntheticCardsSection({ title, description, items, kind, emptyMessage =
       {items.length ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-left">
         {items.map((item) => (
           <Card key={item.slug} className="py-0 gap-0 overflow-hidden rounded-3xl border border-border bg-card shadow-xl hover:-translate-y-1 transition-transform">
-            <img src={item.image} alt="Synthetic staging sample" className="w-full aspect-[16/10] object-cover" />
-            <CardContent className="p-6 space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">SYNTHETIC SAMPLE</Badge><div className="flex flex-wrap gap-2">{item.labels?.filter((label) => label.isBadge).map((label) => <Badge key={label.slug} variant="secondary">{label.name}</Badge>)}</div><h3 className="font-display font-bold text-xl">{item.title}</h3><p className="text-sm text-muted-foreground">{item.short_desc || 'Synthetic sample returned by the staging API.'}</p><div className="text-[#D4AF37] font-bold">PKR {Number(item.price).toLocaleString()}</div><Button asChild variant="outline" className="w-full"><Link to={isProperty ? `/properties/${item.slug}` : '/files'}>Preview only <ArrowRight size={16} className="ml-2" /></Link></Button></CardContent>
+            <img src={item.image} alt="Property listing visual" className="w-full aspect-[16/10] object-cover" />
+            <CardContent className="p-6 space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">FEATURED LISTING</Badge><div className="flex flex-wrap gap-2">{item.labels?.filter((label) => label.isBadge).map((label) => <Badge key={label.slug} variant="secondary">{label.name}</Badge>)}</div><h3 className="font-display font-bold text-xl">{item.title}</h3><p className="text-sm text-muted-foreground">{item.short_desc || 'Explore this listing and its available details.'}</p><div className="text-[#D4AF37] font-bold">PKR {Number(item.price).toLocaleString()}</div><Button asChild variant="outline" className="w-full"><Link to={isProperty ? `/properties/${item.slug}` : '/files'}>View details <ArrowRight size={16} className="ml-2" /></Link></Button></CardContent>
           </Card>
         ))}
       </div> : <Card className="rounded-3xl border-border bg-card"><CardContent className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent></Card>}
@@ -205,16 +290,16 @@ function SyntheticMapsSection({ heading, subheading, items }) {
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 text-left"><div className="space-y-4 max-w-2xl"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">Master Blueprints</Badge><h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-display">{heading}</h2><p className="text-sm sm:text-lg text-muted-foreground">{subheading}</p></div><Button asChild className="amber-gradient-vibrant text-slate-950 font-extrabold rounded-2xl"><Link to="/maps">View All Maps <ArrowRight size={18} className="ml-2" /></Link></Button></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-left">{items.map((item) => <Card key={item.id} className="overflow-hidden rounded-3xl border border-border bg-card shadow-xl"><img src={item.image} alt="Synthetic map preview" className="w-full aspect-[16/10] object-cover" /><CardContent className="p-6 space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">SYNTHETIC PREVIEW</Badge><h3 className="font-display font-bold text-xl">{item.title}</h3><p className="text-sm text-muted-foreground">{item.description}</p><Button asChild variant="outline" className="w-full"><Link to="/maps">Map files will be added in the next data task</Link></Button></CardContent></Card>)}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-left">{items.map((item) => <Card key={item.id} className="overflow-hidden rounded-3xl border border-border bg-card shadow-xl"><img src={item.image} alt="Society map preview" className="w-full aspect-[16/10] object-cover" /><CardContent className="p-6 space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">MASTER PLAN</Badge><h3 className="font-display font-bold text-xl">{item.title}</h3><p className="text-sm text-muted-foreground">{item.description}</p><Button asChild variant="outline" className="w-full"><Link to="/maps">View maps</Link></Button></CardContent></Card>)}</div>
     </section>
   );
 }
 
-function SyntheticVideoSection() {
+function SyntheticVideoSection({ title, subtitle, mediaUrl }) {
   return (
     <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 space-y-8">
-      <div className="text-center max-w-3xl mx-auto space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">Virtual tours</Badge><h2 className="text-3xl sm:text-4xl font-extrabold font-display">Experience Luxury in <span className="gold-text-gradient">Motion &amp; Detail</span></h2><p className="text-sm sm:text-base text-muted-foreground">The source homepage’s video section is preserved as a media-free staging placeholder.</p></div>
-      <Card className="aspect-video max-w-5xl mx-auto rounded-3xl border border-[#D4AF37]/30 shadow-2xl bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.14),rgba(2,6,18,0.96)_65%)]"><CardContent className="h-full flex flex-col items-center justify-center text-center gap-4"><span className="w-16 h-16 rounded-full border border-[#D4AF37]/60 text-[#D4AF37] grid place-items-center"><Play aria-hidden="true" /></span><p className="text-sm text-slate-300">Video media will be connected later.</p></CardContent></Card>
+      <div className="text-center max-w-3xl mx-auto space-y-3"><Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">Virtual tours</Badge><h2 className="text-3xl sm:text-4xl font-extrabold font-display">{title || <>Experience Luxury in <span className="gold-text-gradient">Motion &amp; Detail</span></>}</h2><p className="text-sm sm:text-base text-muted-foreground">{subtitle || 'Explore the latest property showcase.'}</p></div>
+      <Card className="aspect-video max-w-5xl mx-auto rounded-3xl border border-[#D4AF37]/30 shadow-2xl bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.14),rgba(2,6,18,0.96)_65%)]"><CardContent className="h-full flex flex-col items-center justify-center text-center gap-4">{mediaUrl ? <iframe className="h-full w-full rounded-3xl" src={mediaUrl} title={title || 'Featured video'} loading="lazy" allowFullScreen /> : <><span className="w-16 h-16 rounded-full border border-[#D4AF37]/60 text-[#D4AF37] grid place-items-center"><Play aria-hidden="true" /></span><p className="text-sm text-slate-300">Video media is not configured.</p></>}</CardContent></Card>
     </section>
   );
 }

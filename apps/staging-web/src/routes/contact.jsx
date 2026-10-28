@@ -11,8 +11,8 @@ const iconMap = { Phone, FaWhatsapp: MessageCircle, Mail, MapPin };
 export const Route = createFileRoute('/contact')({
   head: () => ({
     meta: [
-      { title: 'Contact Us | The Zalmi Marketing — Staging' },
-      { name: 'description', content: 'Staging preview of the existing Contact page. The form is local-only and does not send inquiries.' },
+      { title: 'Contact Us | The Zalmi Marketing' },
+      { name: 'description', content: 'Contact The Zalmi Marketing for property, plot file, and investment guidance.' },
       { name: 'robots', content: 'noindex, nofollow' },
     ],
     links: [{ rel: 'canonical', href: 'https://migration.local.invalid/contact' }],
@@ -25,7 +25,7 @@ function ContactPreview() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    setNotice('Preview only: your information was not sent or saved.');
+    setNotice('Your message is ready for review. The form is not connected yet, so nothing was sent or saved.');
     event.currentTarget.reset();
   }
 

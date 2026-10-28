@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, Plus } from 'lucide-react'
 import { createAdminRecord, deleteAdminRecord, updateAdminRecord } from '../../data/admin-api.js'
 
 export default function SyntheticLabelControl({ id, options, value, onChange, onLabelsChanged }) {
@@ -75,7 +75,7 @@ export default function SyntheticLabelControl({ id, options, value, onChange, on
 
     <label className="dashboard-label-search" htmlFor={`${id}-search`}>Search available labels<input id={`${id}-search`} name={`${id}-search`} type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search labels…" /></label>
     <div className="dashboard-label-choices" role="group" aria-label="Available labels">
-      {available.map((label) => <div key={label.value} className="dashboard-label-choice"><label><input type="checkbox" aria-label={`Add ${label.label}`} checked={false} disabled={Boolean(busy)} onChange={() => onChange([...selected, label.value])} /><span>{label.label}{label.isBadge ? ' · badge' : ''}</span></label><button type="button" disabled={Boolean(busy)} onClick={() => deleteLabel(label)}>Delete globally</button></div>)}
+      {available.map((label) => <div key={label.value} className="dashboard-label-choice"><button type="button" className="dashboard-label-add" aria-label={`Add ${label.label}`} disabled={Boolean(busy)} onClick={() => onChange([...selected, label.value])}><Plus size={14} aria-hidden="true" /><span>{label.label}{label.isBadge ? ' · badge' : ''}</span></button><button type="button" disabled={Boolean(busy)} onClick={() => deleteLabel(label)}>Delete globally</button></div>)}
       {!available.length && <p className="dashboard-field-help">{search ? 'No matching available labels.' : 'No available labels.'}</p>}
     </div>
     <div className="dashboard-label-create"><label htmlFor="dashboard-new-label">Create a global label</label><div><input id="dashboard-new-label" value={newName} maxLength={80} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); createLabel() } }} onChange={(event) => setNewName(event.target.value)} placeholder="Label name" /><button type="button" onClick={() => createLabel()} disabled={!newName.trim() || Boolean(busy)}>{busy === 'create' ? 'Adding…' : 'Add label'}</button></div></div>

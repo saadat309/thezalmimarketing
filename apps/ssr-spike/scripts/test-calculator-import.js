@@ -69,12 +69,17 @@ const transferCsv = 'City,Society,Phase,Block,Category,Reference Size,Reference 
 const validatedTransfers = await importFile('calculator-transfer-fees', transferCsv, 'transfer.csv', true)
 assert.equal(validatedTransfers.status, 200)
 const transferSummary = await validatedTransfers.json()
-assert.deepEqual([transferSummary.total_rows, transferSummary.valid_rows, transferSummary.invalid_rows], [2, 1, 1])
-assert.match(transferSummary.details[1].errors.join(' '), /Block 'Missing Block' does not exist/)
+assert.deepEqual([transferSummary.total_rows, transferSummary.valid_rows, transferSummary.invalid_rows], [2, 2, 0])
 const transferImport = await importFile('calculator-transfer-fees', transferCsv, 'transfer.csv')
 assert.equal(transferImport.status, 200)
-assert.equal((await transferImport.json()).updated, 1)
+const transferImportResult = await transferImport.json()
+assert.deepEqual([transferImportResult.inserted, transferImportResult.updated], [1, 1])
 assert.equal(syntheticCalculatorConfig.calculator_transfer_fees.find((item) => item.id === 'transfer-demo-residential').reference_amount, 42000)
+
+const legacyHeaderCsv = 'City,Society,Phase,Block,Category,Ref Size,Ref Fee (Rs.),Base Fee (Rs.),Per Marla (Rs.),Per Sq.Ft. (Rs.)\nLahore,DHA,Phase-1,A,Commercial,2.0000,220500.00,210000,105000,466.6667'
+const legacyHeaderResult = prepareCalculatorCsvImport('calculator-transfer-fees', legacyHeaderCsv)
+assert.equal(legacyHeaderResult.summary.valid_rows, 1)
+assert.equal(legacyHeaderResult.summary.invalid_rows, 0)
 
 assert.equal((await importFile('calculator-rates', rateCsv, 'sample.txt', true)).status, 400)
 assert.equal((await importFile('calculator-rates', rateCsv, 'sample.csv', true, { ...readHeaders })).status, 403)

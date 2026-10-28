@@ -11,7 +11,7 @@ import teamContent from '@/content/components/team.json';
 const icons = { Trophy, TrendingUp, ShieldCheck, Users };
 
 export const Route = createFileRoute('/about')({
-  head: () => ({ meta: [{ title: 'About Us | The Zalmi Marketing — Staging' }, { name: 'description', content: 'Staging preview of the existing About page.' }, { name: 'robots', content: 'noindex, nofollow' }], links: [{ rel: 'canonical', href: 'https://migration.local.invalid/about' }] }),
+  head: () => ({ meta: [{ title: 'About Us | The Zalmi Marketing' }, { name: 'description', content: 'Learn about The Zalmi Marketing and our real estate advisory services.' }, { name: 'robots', content: 'noindex, nofollow' }], links: [{ rel: 'canonical', href: 'https://migration.local.invalid/about' }] }),
   component: AboutPage,
 });
 

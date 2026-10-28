@@ -12,6 +12,7 @@ export default function SearchableSelectionField({
   placeholder = 'Select an option…',
   emptyMessage = 'No options found.',
   disabled = false,
+  allowNone = false,
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -50,7 +51,7 @@ export default function SearchableSelectionField({
     {open && <div className="dashboard-search-select-popover">
       <label className="dashboard-search-select-search" htmlFor={`${id}-search`}><Search size={15} aria-hidden="true" /><span className="sr-only">Search {label}</span><input id={`${id}-search`} name={`${id}-search`} autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${label.toLowerCase()}…`} onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false) }} /></label>
       <div className="dashboard-search-select-options" role="listbox" aria-label={`${label} options`} aria-multiselectable={multiple || undefined}>
-        {!multiple && <button type="button" role="option" aria-selected={!values[0]} onClick={() => { onChange(''); setOpen(false) }}><Check size={15} aria-hidden="true" />None</button>}
+        {!multiple && allowNone && <button type="button" role="option" aria-selected={!values[0]} onClick={() => { onChange(''); setOpen(false) }}><Check size={15} aria-hidden="true" />None</button>}
         {filtered.map((option) => { const active = values.includes(String(option.value)); return <button key={option.value} type="button" role="option" aria-selected={active} onClick={() => toggle(option)}><Check className={active ? '' : 'is-hidden'} size={15} aria-hidden="true" />{option.label}</button> })}
         {!filtered.length && <p className="dashboard-field-help">{emptyMessage}</p>}
       </div>

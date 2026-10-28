@@ -61,7 +61,7 @@ function DashboardFrame({ user }) {
     <StagingAppSidebar user={currentUser} mobileOpen={mobileOpen} desktopOpen={sidebarOpen} onNavigate={closeMobile} />
     <div className={`dashboard-main${sidebarOpen ? ' is-sidebar-expanded' : ''}`}>
       <header className="dashboard-header">
-        <button type="button" className="dashboard-menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) setMobileOpen((open) => !open); else setSidebarOpen((open) => !open) }}>
+        <button type="button" className="dashboard-menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen || sidebarOpen} aria-controls="dashboard-navigation" onClick={() => { if (window.matchMedia('(max-width: 767px)').matches) setMobileOpen((open) => !open); else setSidebarOpen((open) => !open) }}>
           {mobileOpen ? <X aria-hidden="true" size={18} /> : <Menu aria-hidden="true" size={18} />}
         </button>
         <span className="dashboard-header-divider" aria-hidden="true" />

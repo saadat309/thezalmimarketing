@@ -148,7 +148,7 @@ export function createD1TaxonomyRepository(database) {
       const [items, all] = await Promise.all([
         mapRows({ ...filters, publicOnly: true }), mapRows({ publicOnly: true }),
       ])
-      const publicRecord = ({ sourceId, ...record }) => record
+      const publicRecord = ({ sourceId, ...record }) => ({ ...record, id: sourceId })
       return { items: items.map(publicRecord), all: all.map(publicRecord) }
     },
     async findMap(slug) { const row = await mapRow(slug); return row ? mapRecord(row) : null },

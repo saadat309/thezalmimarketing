@@ -54,6 +54,9 @@ export function createD1LandingRepository(database) {
         subtitle: row.subtitle || '',
         collection: row.collection_type,
         selectedItems: await itemIds(row.id),
+        mediaType: row.media_type || 'image',
+        mediaUrl: row.video_embed_link || '',
+        delayMs: Number(row.delay_ms ?? 5000),
       })))
     },
     async update(id, fields) {

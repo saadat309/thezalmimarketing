@@ -78,6 +78,7 @@ async function publicProperty(property, detail = false) {
     ?? images[0]
 
   const result = {
+    id: property.id,
     slug: property.slug,
     title: property.title,
     propertyType: property.propertyType,

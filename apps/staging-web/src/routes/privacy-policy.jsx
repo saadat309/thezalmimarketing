@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import content from '@/content/pages/privacy-policy.json';
 
 export const Route = createFileRoute('/privacy-policy')({
-  head: () => ({ meta: [{ title: 'Privacy Policy | The Zalmi Marketing — Staging' }, { name: 'description', content: 'Staging preview of the existing Privacy Policy page.' }, { name: 'robots', content: 'noindex, nofollow' }], links: [{ rel: 'canonical', href: 'https://migration.local.invalid/privacy-policy' }] }),
+  head: () => ({ meta: [{ title: 'Privacy Policy | The Zalmi Marketing' }, { name: 'description', content: 'Read the privacy policy for The Zalmi Marketing.' }, { name: 'robots', content: 'noindex, nofollow' }], links: [{ rel: 'canonical', href: 'https://migration.local.invalid/privacy-policy' }] }),
   component: PrivacyPolicyPage,
 });
 

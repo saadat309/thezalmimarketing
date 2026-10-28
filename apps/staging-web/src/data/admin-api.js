@@ -87,6 +87,29 @@ export function deleteAdminRecord(domain, id) {
   return request(`/${encodeURIComponent(domain)}/${encodeURIComponent(id)}`, { method: 'DELETE', csrf: true })
 }
 
+export function readAdminMedia(ownerType, ownerId) {
+  return request(`/media?owner_type=${encodeURIComponent(ownerType)}&owner_id=${encodeURIComponent(ownerId)}`)
+}
+
+export async function uploadAdminMedia({ ownerType, ownerId, kind, file }) {
+  const form = new FormData()
+  form.append('owner_type', ownerType)
+  form.append('owner_id', String(ownerId))
+  form.append('kind', kind)
+  form.append('file', file)
+  const response = await fetch(new URL(`${ADMIN_API}/media`, apiOrigin()), {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { Accept: 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }, body: form,
+  })
+  const data = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(data?.error?.message || 'The local media upload was rejected.')
+  return data
+}
+
+export function removeAdminMedia(id) {
+  return request(`/media/${encodeURIComponent(id)}`, { method: 'DELETE', csrf: true })
+}
+
 export async function calculatorCsvAction(domain, action, { file, validateOnly = false } = {}) {
   if (!['calculator-rates', 'calculator-transfer-fees'].includes(domain) || !['import', 'template'].includes(action)) {
     throw new Error('This calculator CSV action is not available.')

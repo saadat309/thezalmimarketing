@@ -45,7 +45,7 @@ export function StagingAppSidebar({ user, mobileOpen, desktopOpen, onNavigate })
 
   return <>
     <button className={`dashboard-mobile-scrim${mobileOpen ? ' is-open' : ''}`} type="button" aria-label="Close navigation menu" onClick={onNavigate} />
-    <aside className={`dashboard-sidebar${mobileOpen ? ' is-open' : ''}${desktopOpen ? ' is-desktop-open' : ''}`} aria-label="Dashboard navigation">
+    <aside id="dashboard-navigation" className={`dashboard-sidebar${mobileOpen ? ' is-open' : ''}${desktopOpen ? ' is-desktop-open' : ''}`} aria-label="Dashboard navigation">
       <div className="dashboard-sidebar-brand"><Link to="/" onClick={onNavigate}><span className="dashboard-brand-icon"><Building2 size={20} aria-hidden="true" /></span><span>The Zalmi Marketing</span></Link></div>
       <nav className="dashboard-sidebar-nav">
         <div className="dashboard-nav-group">{mainNavItems.map((item) => renderLink(item))}</div>

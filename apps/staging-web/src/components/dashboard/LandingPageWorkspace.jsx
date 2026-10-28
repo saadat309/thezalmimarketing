@@ -36,8 +36,10 @@ export default function LandingPageWorkspace() {
   async function save() {
     setBusy(true); setError(''); setNotice('')
     try {
-      await Promise.all(sections.map(({ id, title, subtitle, active, selectedItems, mediaUrl, delayMs }) =>
-        updateAdminRecord('landing-page', id, { title, subtitle, active, selectedItems, mediaUrl, delayMs })))
+      await Promise.all(sections.map(({ id, title, subtitle, active, selectedItems, mediaMode, mediaUrl, delayMs }) =>
+        updateAdminRecord('landing-page', id, { title, subtitle, active, selectedItems, mediaMode, mediaUrl, delayMs })))
+      const refreshed = await readAdminCollection('landing-page')
+      setSections(refreshed.items)
       setNotice('Landing page settings saved to the local synthetic API.')
     } catch (caught) { setError(caught.message) } finally { setBusy(false) }
   }
@@ -57,6 +59,9 @@ export default function LandingPageWorkspace() {
         <div className="landing-section-body">
           <div className="landing-config-grid"><label>Heading<input value={section.title} onChange={(event) => patchSection(section.id, { title: event.target.value })} /></label><label>Subheading<textarea rows="2" value={section.subtitle} onChange={(event) => patchSection(section.id, { subtitle: event.target.value })} /></label></div>
           {['popup', 'video'].includes(section.collection) ? <div className="landing-media-config">
+            <label>Media source<select value={section.mediaMode || 'image'} onChange={(event) => patchSection(section.id, { mediaMode: event.target.value, mediaUrl: event.target.value === 'embed' ? section.mediaUrl : '' })}>
+              <option value="image">Image / existing media</option><option value="embed">Embed URL</option><option value="upload" disabled>Upload (disabled locally)</option>
+            </select></label>
             {section.collection === 'popup' && <label>Display delay (ms)<input type="number" min="0" max="60000" value={section.delayMs} onChange={(event) => patchSection(section.id, { delayMs: Math.min(60000, Math.max(0, Number(event.target.value))) })} /></label>}
             {section.mediaMode === 'embed' && <label>{section.collection === 'popup' ? 'YouTube/Vimeo URL' : 'Video embed URL'}<input type="url" placeholder="https://…" value={section.mediaUrl} onChange={(event) => patchSection(section.id, { mediaUrl: event.target.value })} /></label>}
             {section.mediaMode === 'upload' && <p className="landing-upload-placeholder">Uploads are disabled in this local migration preview; no files are accepted or stored.</p>}

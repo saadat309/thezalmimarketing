@@ -8,6 +8,9 @@ import {
 } from '@tanstack/react-router';
 import { ExternalLink, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import StagingNavbar from '../components/StagingNavbar.jsx';
+import DhaAssistancePopup from '../components/DhaAssistancePopup.jsx';
+import StagingFloatingWidgets from '../components/StagingFloatingWidgets.jsx';
+import StagingAIChatWidget from '../components/StagingAIChatWidget.jsx';
 import footerContent from '@/content/components/footer.json';
 import './app.css';
 
@@ -16,10 +19,10 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Zalmi Marketing — Staging' },
+      { title: 'Zalmi Marketing — Real Estate & Property' },
       {
         name: 'description',
-        content: 'Isolated synthetic staging environment for Zalmi Marketing.',
+        content: 'The Zalmi Marketing real estate and property services.',
       },
       { name: 'robots', content: 'noindex, nofollow' },
     ],
@@ -45,8 +48,10 @@ function RootDocument() {
       <body>
         <a className="staging-skip-link" href="#main">Skip to content</a>
         {!isAdminPage && <StagingNavbar />}
-        {!isAdminPage && <div className="staging-preview-banner" role="status">Staging preview · synthetic sample content · no inquiries are sent</div>}
         <div id="main"><Outlet /></div>
+        {!isAdminPage && <DhaAssistancePopup />}
+        {!isAdminPage && <StagingFloatingWidgets />}
+        {!isAdminPage && <StagingAIChatWidget />}
         {!isAdminPage && <StagingFooter />}
         <Scripts />
       </body>
@@ -61,7 +66,7 @@ function StagingFooter() {
       <div className="staging-footer-container">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-9">
           <section className="space-y-6 lg:col-span-4">
-            <Link to="/" className="inline-block" aria-label="Return to staging home"><img className="staging-footer-logo" src="/Zalmi Marketing Logo White.webp" alt="The Zalmi Marketing" /></Link>
+            <Link to="/" className="inline-block" aria-label="Return to home"><img className="staging-footer-logo" src="/Zalmi Marketing Logo White.webp" alt="The Zalmi Marketing" /></Link>
             <p className="max-w-sm text-sm leading-relaxed text-slate-300 sm:text-base">{footerContent.brandDescription}</p>
             <p lang="ur" dir="rtl" className="staging-footer-motto">{footerContent.brandMotto}</p>
             <nav aria-label="Social links" className="flex flex-wrap gap-2.5">
@@ -95,9 +100,9 @@ function StagingFooter() {
               <form className="mt-4 space-y-3" aria-describedby="staging-newsletter-note" onSubmit={(event) => event.preventDefault()}>
                 <label className="sr-only" htmlFor="staging-newsletter-email">{footerContent.marketIntelligence.placeholder}</label>
                 <input id="staging-newsletter-email" type="email" disabled placeholder={footerContent.marketIntelligence.placeholder} className="staging-newsletter-input" />
-                <button type="submit" disabled className="staging-newsletter-button">Subscription unavailable in staging</button>
+                <button type="submit" disabled className="staging-newsletter-button">Subscriptions are currently unavailable</button>
               </form>
-              <p id="staging-newsletter-note" className="mt-3 text-xs leading-relaxed text-slate-400">Email subscriptions are disabled here. Nothing is collected or sent.</p>
+            <p id="staging-newsletter-note" className="mt-3 text-xs leading-relaxed text-slate-400">Email subscriptions are currently unavailable. Nothing is collected or sent.</p>
             </section>
           </div>
         </div>
@@ -107,7 +112,6 @@ function StagingFooter() {
           <p className="text-sm text-slate-400">© {new Date().getFullYear()} {footerContent.copyright}</p>
           <span className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-xs font-medium text-[#f3e5ab]"><span className="h-2 w-2 rounded-full bg-emerald-500" />{footerContent.verifiedBadge}</span>
         </div>
-        <p className="mt-5 text-xs text-slate-400">Staging preview · synthetic content only · forms and subscriptions are not connected.</p>
       </div>
     </footer>
   );
@@ -128,10 +132,10 @@ function SocialLink({ href, label }) {
 function NotFoundPage() {
   return (
     <section className="staging-not-found">
-      <p className="staging-eyebrow">404 · STAGING</p>
-      <h1>This route is not available in the preview.</h1>
-      <p>No production services or records are connected to this application.</p>
-      <Link to="/">Return to staging home</Link>
+      <p className="staging-eyebrow">404 · NOT FOUND</p>
+      <h1>This route is not available.</h1>
+      <p>Please return to the homepage and choose another page.</p>
+      <Link to="/">Return home</Link>
     </section>
   );
 }

@@ -679,3 +679,198 @@ Append one factual entry for each completed planning or implementation task. Inc
 - **Summary:** Changed the About and Contact page roots from generic `div` containers to semantic `main` landmarks. Added staging canonical links for Maps, Files, Calculator, and Login so all reviewed public/admin entry routes expose consistent noindex metadata and canonical targets.
 - **Verification:** Local SSR responses returned HTTP 200 for the reviewed routes; About and Contact now emit `<main>`, and Maps, Files, Calculator, and Login emit the expected `https://migration.local.invalid/...` canonical links. Direct Vite client/SSR build completed successfully; Wrangler emitted the known local log-directory permission warning. `git diff --check` passed. Chrome DevTools MCP was unavailable, so no console, network-trace, or Core Web Vitals claims are made.
 - **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Validate Phase 8 local responsive and SSR boundaries
+
+- **Type:** User-requested, staging-only responsive/visual, accessibility, SEO, security, and build validation; synthetic data only.
+- **Summary:** Reviewed the staging homepage and Maps directory in local Chrome, inspected responsive CSS coverage for homepage, directories, calculator, and dashboard layouts, and confirmed no horizontal overflow at the available desktop viewport. The local synthetic API was started on port 4175 for dependent SSR checks; all reviewed routes then returned the expected 200 status, while the unknown route returned 404. No confirmed staging code issue required a fix.
+- **Verification:** Synthetic calculator parity checks passed; direct Vite client/SSR build passed; SSR route checks covered `/`, Properties listing/detail, Maps, Files, Calculator, Login, About, Contact, and Privacy Policy plus an unknown route; reviewed routes emitted `noindex, nofollow`, expected staging canonicals, and main landmarks. `git diff --check` passed. A secret-pattern scan found only legacy password field names in the unchanged `src/` auth forms. Chrome DevTools MCP was unavailable, so no console, network, Core Web Vitals, or performance-trace claims are made.
+- **Safety:** No application code, source frontend, production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, calculator Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Complete responsive rule and desktop overflow review
+
+- **Type:** User-authorized, staging-only Phase 8 responsive/accessibility review; synthetic data only.
+- **Summary:** Audited the responsive CSS and local browser DOM for the public homepage, property listing, directory layouts, calculator, and dashboard shell. Confirmed the intended mobile breakpoints for the marketing navigation, directory filters/cards, calculator controls, and dashboard off-canvas sidebar. The available browser session has no viewport-emulation control, so no narrow-viewport screenshot claim was made and no unverified CSS change was introduced.
+- **Verification:** Local Chrome accessibility/screenshot review covered the property listing and synthetic navigation/filter controls. Read-only DOM inspection found no page-level horizontal overflow at the available desktop viewport; only the expected visually-hidden label exceeded its 1px box. SSR checks returned 200 for all reviewed routes and 404 for the unknown route with expected staging metadata. Calculator formula checks, Vite client/SSR build, and `git diff --check` passed.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, unsupported calculator workflow, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Harden staging crawl boundary
+
+- **Type:** User-authorized, staging-only local security and SEO correction; synthetic data only.
+- **Summary:** Replaced the permissive staging `robots.txt` policy with `Disallow: /` and removed the stale static `sitemap.xml`. The old sitemap advertised localhost URLs and inactive legacy-replica property slugs, while every current staging route is explicitly `noindex,nofollow`; the corrected policy prevents staging crawl discovery and removes the inconsistent sitemap artifact.
+- **Verification:** Local `robots.txt` returned HTTP 200 with `User-agent: *` and `Disallow: /`; `/sitemap.xml` returned 404. Reviewed SSR routes returned expected 200 statuses, the unknown route returned 404, and route metadata retained staging noindex/canonical values. Secret-pattern scan found no matches in staging/worker files. Vite client/SSR build, synthetic calculator formula checks, and `git diff --check` passed.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, calculator Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Harden authenticated dashboard metadata and navigation semantics
+
+- **Type:** User-authorized, staging-only Phase 8 authenticated dashboard accessibility/SEO correction; synthetic data only.
+- **Summary:** Verified the local protected dashboard with synthetic session state and added staging canonical links for `/dashboard` and mapped dashboard sections. Added `aria-expanded` and `aria-controls` to the shared dashboard menu button and a stable navigation-region ID so its collapsed/expanded state is exposed to assistive technology.
+- **Verification:** Chrome accessibility-tree review showed labeled dashboard navigation, tables, filters, row actions, synthetic-data/media-disabled notices, and the updated menu state. Synthetic admin auth, admin API, and local D1 storage checks passed. The staging client/SSR build passed and `git diff --check` passed. No form was submitted and no file was uploaded; Chrome DevTools MCP remains unavailable, so no console, network, Core Web Vitals, or performance-trace claims are made.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, calculator Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Complete Phase 8 local staging acceptance
+
+- **Type:** User-authorized, staging-only Phase 8 acceptance validation; synthetic data only.
+- **Summary:** Completed the available local acceptance checks for the migration validation gate. Updated the SSR property smoke assertion to verify the approved media-disabled local D1 boundary rather than expecting media URLs that are intentionally out of scope.
+- **Verification:** Auth/session/CSRF/throttling, admin API/storage, Property API/storage, Maps/Files API/storage, Calculator API/schema/storage/import, formula parity, route smoke, SSR health-method behavior, staging and SSR builds, secret-pattern scan, and `git diff --check` passed. Route smoke covered expected 200/404 responses, canonical/noindex metadata, ETags, pagination, validation errors, and no internal/media storage keys. Browser accessibility checks covered the authenticated dashboard and synthetic controls. Chrome DevTools MCP is unavailable, so console, network, Core Web Vitals, and performance-trace results remain unmeasured; narrow viewport emulation and production manifest reconciliation were not available or authorized.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, calculator Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Add local responsive validation tooling
+
+- **Type:** User-requested, staging-only Phase 8 validation tooling; synthetic data only.
+- **Summary:** Added an isolated `.mcp.json` configuration for Chrome DevTools MCP and used the bundled Playwright Chromium fallback to run explicit 375px, 768px, and 1440px viewport checks on the public staging routes. No project browser dependency was added.
+- **Verification:** Homepage, Properties, Maps, Files, Calculator, and Login returned HTTP 200 at all three emulated widths, retained one canonical and `noindex,nofollow`, and had matching document/body widths with their viewport. No horizontal overflow was observed. The Chrome DevTools server is configured but requires a Codex app reload before it can be active in this thread.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, media upload/storage, calculator Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made.
+
+## 2026-10-24 — Add loopback-only synthetic media lifecycle checks
+
+- **Type:** User-authorized, staging-only Phase 8 media validation; synthetic data only.
+- **Summary:** Added a loopback-only in-memory media adapter for existing Property, File, Map, and Category dashboard records. The protected admin API supports listing, multipart upload, and CSRF-protected deletion without writing media to D1, R2, production, or external services. Dashboard controls select the source-supported local media kinds: image, video, and Map PDF.
+- **Validation:** Image JPEG/PNG/WebP, video MP4/WebM, and PDF MIME allowlists; owner validation; empty-file rejection; sanitized filenames; lifecycle list/bytes/remove cleanup; and local limits of 10 MiB image, 500 MiB video, and 100 MiB PDF. The local media test passed; staging client/SSR builds passed; `git diff --check` follows this entry.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, unsupported Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made. Production media inventory/reconciliation and durable storage remain open decisions.
+
+## 2026-10-24 — Run Chrome DevTools local parity audit
+
+- **Type:** User-authorized, staging-only Phase 8 browser/source parity validation; synthetic data only.
+- **Summary:** After reloading the app to activate Chrome DevTools MCP, audited the public staging routes against the checked-in legacy route/API inventory. The synthetic SSR API was started locally for the dependent frontend. Homepage, Properties listing/detail, Maps, Files, Calculator, Login, About, Contact, and Privacy routes rendered successfully at available desktop/mobile sizes without horizontal overflow. The earlier dependent-route error screens were caused by the API process being stopped, not confirmed route defects.
+- **Feature verification:** Property search changed the URL and returned the matching synthetic record. The calculator completed Location, Property, and Transfer steps and produced a detailed synthetic estimate. Console checks were clean for the Maps, Files, Property, and completed Calculator flows. Lighthouse mobile audits for Properties and Calculator scored 100 Accessibility, 100 Best Practices, and 100 Agentic Browsing; SEO scored 69 because staging intentionally uses `noindex,nofollow`. An unthrottled homepage trace observed LCP 1.585s and CLS 0.02; image delivery, DOM size, render-blocking, network-chain, and forced-reflow insights remain optimization candidates rather than release blockers.
+- **Parity findings:** The source inventory confirms intentional staging gaps for invite/reset authentication, user management, real inquiry/subscription submission, durable media, and calculator PDF output. DevTools also reported inherited legacy-component issues for unlabeled hero search inputs and lazy-image dimensions; `src/` was not changed. No production records, credentials, deployment, DNS, paid service, unsupported import, or `workers/ai-worker` change was involved.
+
+## 2026-10-24 — Correct dashboard radio parity and verify local inquiry preview
+
+- **Type:** User-authorized, staging-only Phase 8 source-parity implementation and validation; synthetic data only.
+- **Summary:** Updated the staging Property Type and Purchase Type editors to use accessible radio groups matching ADR-034 and the source behavior, without changing field names, storage shape, or API payloads. Re-verified the existing Contact preview flow: required fields validate locally, the confirmation is explicitly preview-only, and no fetch/XHR, persistence, email, or real inquiry submission occurs.
+- **Verification:** Staging client/SSR build, synthetic admin auth, admin data, directory API, calculator API, local media lifecycle, SSR/property smoke, and `git diff --check` passed. Chrome DevTools verified the contact preview message and no fetch/XHR request during the preview interaction. Legacy `src/` remains unchanged.
+- **Safety:** No production site/data/MySQL/DNS, remote Cloudflare resources, deployment, paid service, credential storage, unsupported Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made. Media remains loopback-only and ephemeral.
+
+## 2026-10-28 — Align legacy transfer import and Landing Page frontend wiring
+
+- **Type:** User-authorized, high-priority dashboard/public parity correction; local synthetic data only.
+- **Summary:** Matched the calculator transfer-fee importer to the checked-in legacy CSV contract. The staging importer now accepts the legacy `Ref Size` and `Ref Fee (Rs.)` headers, resolves the unique local `DHA` society alias, preserves source DECIMAL checks, and auto-creates missing transfer-fee phases and blocks as the legacy importer does. Required searchable selectors no longer show a false `None` option; available labels use styled add actions while selected labels retain reorder controls. Restored the homepage file marquee and wired public Landing Page visibility/title/subtitle settings to `/api/v1/landing-sections`.
+- **Verification:** The attached 477-row CSV validated 477/477 rows with no importer errors. Synthetic calculator import and D1 storage tests passed. The staging client/SSR build passed and `git diff --check` passed.
+- **Safety:** The attached CSV was used only as a local validation fixture and was not copied into the repository. No production data, credentials, DNS, deployment, paid service, or `workers/ai-worker` change was made. AI widget parity remains a separate Worker decision.
+
+## 2026-10-28 — Record dashboard and public parity implementation plan
+
+- **Type:** User-requested planning and tracking update; no application behavior changed.
+- **Summary:** Saved the active high-priority parity plan in `agent-plans/2026-10-28-dashboard-public-parity-plan.md`. The plan covers dashboard form/UI parity, attached transfer-fee import verification, Landing Page frontend wiring, public visual/motion/filter parity, popup/floating controls, and a bounded AI-widget audit.
+- **Safety:** The plan preserves the legacy `src/` boundary, synthetic/local data rules, zero-cost requirement, unsupported calculator workflow exclusions, and the instruction not to modify `workers/ai-worker`. No production data, credentials, deployment, DNS, paid service, commit, or push was made.
+
+## 2026-10-28 — Verify transfer import, Landing Page wiring, and popup runtime
+
+- **Type:** User-authorized, local dashboard/public parity implementation and verification; synthetic/local data only.
+- **Summary:** Verified the attached legacy Transfer Fees CSV through the current preparation path: 477 rows were valid with no duplicate or precision errors. Confirmed the calculator import regression suite passes, the public homepage reads visible Landing Page sections from the local API, and the restored homepage file marquee renders. Replaced the staging homepage's dependency on the legacy Radix popup with a staging-native accessible popup shell supporting delayed display, Escape/outside-click close, image/embed media, and dialog semantics.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools reload of `/` showed meaningful homepage content, the file marquee, no console errors/warnings, and no dynamic-import failure. The local landing endpoint returned HTTP 200. Calculator CSV import checks passed; `git diff --check` remains required after the next tracking update.
+- **Safety:** No legacy `src/` change, production data, credentials, deployment, DNS, paid service, calculator Fee Rules import, calculator PDF workflow, or `workers/ai-worker` change was made. The attached CSV was read as test data only and was not copied into the repository.
+
+## 2026-10-28 — Correct homepage marquee and Landing Page selection parity
+
+- **Type:** User-authorized, local staging parity correction; synthetic/local data only.
+- **Summary:** Removed the duplicate route-level file marquee because the legacy HeroSection already renders the source marquee. Added stable public identifiers to Property/File/Map projections, increased the homepage property read to the bounded local API maximum, and filtered homepage categories, properties, files, and maps by the selected Landing Page IDs. Landing Page popup/video editors now expose and persist the media source mode while keeping local uploads disabled. Added a staging-native DHA assistance popup with the legacy shuffled multi-step questions, timed sequence, close/reset behavior, and WhatsApp handoff.
+- **Verification:** Staging client/SSR build passed through the repository's bundled Node/Vite runtime. Chrome DevTools reloaded `/` successfully, showed one file-marquee container, rendered configured selected content, and reported no route/runtime errors. `git diff --check` passed before this tracking append; it is rerun after the append.
+- **Safety:** No legacy `src/` file, production data, credential, deployment, DNS, paid service, calculator Fee Rules import, calculator PDF workflow, media binding, or `workers/ai-worker` file was changed. The assistance flow only opens the existing public WhatsApp URL; it does not submit or persist inquiry data.
+
+## 2026-10-28 — Persist Landing Page media mode through admin validation
+
+- **Type:** User-authorized, local staging parity correction; synthetic/local data only.
+- **Summary:** Added `mediaMode` to the Landing Page admin field schema with the supported `image`, `embed`, and `upload` values, allowing the dashboard popup/video editor to persist the setting through the local D1-backed admin API. Kept public directory responses limited to a stable public `id`; internal directory `sourceId` is not exposed.
+- **Verification:** Focused synthetic admin API test now patches and verifies `mediaMode: embed`; Maps/Files local D1 storage test passed; staging client/SSR build passed; `git diff --check` passed.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Restore Landing Page selected property and map rendering
+
+- **Type:** User-reported staging defect correction; synthetic/local data only.
+- **Summary:** Fixed public Maps to return a stable numeric `id` matching dashboard selections while keeping internal `sourceId` private. Updated the homepage property loader to follow bounded cursor pages so selected records beyond the first API page are not silently omitted.
+- **Verification:** Local Maps API now returns numeric public IDs; Maps/Files storage test passed; staging client/SSR build passed; Chrome DevTools fresh homepage navigation rendered the configured two featured properties and three maps; `git diff --check` passed before this tracking append.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Make Landing Page changes visible and diagnosable
+
+- **Type:** User-reported staging defect correction; synthetic/local data only.
+- **Summary:** Added a cache-busted public Landing Page read, removed the homepage’s silent fallback to default configurable sections when that read fails, and made the dashboard refresh its saved section state from the admin API after all writes complete. This prevents failed or stale Landing Page updates from appearing successful while the homepage continues showing defaults.
+- **Verification:** Fresh Chrome DevTools navigation rendered the configured Property Categories, Featured Properties, Location Maps, and Featured Video sections plus the selected property/map cards. Staging client/SSR build and `git diff --check` passed.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Complete first three dashboard/public parity tasks
+
+- **Type:** User-authorized, local staging visual-parity batch; synthetic/local data only.
+- **Summary:** Reworked the public Maps and Files directories to follow the checked-in legacy layout pattern: sticky filter rail, separate result column, grouped filter controls, apply/reset affordances, and responsive collapse to a single column. Refined the calculator result breakdown with explicit line/sub-line styling and a highlighted grand-total footer. Tightened dashboard editor field-group backgrounds, spacing, and radio hover states without changing field names or API payload behavior.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools rendered Maps and Files with the filter rail and Calculator at a 500px emulated viewport; the calculator reported no horizontal overflow. `git diff --check` was run before the tracking append and only line-ending normalization warnings were reported.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported Fee Rules import, calculator PDF workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Align editor shell and public directory composition with source
+
+- **Type:** User-reported source-parity correction; local synthetic staging only.
+- **Summary:** Property editing now uses the wide full-height side-sheet treatment reflected by the legacy Property editor, while other dashboard sections keep the normal drawer treatment. Properties, Maps, and Files now include the legacy quick-search-plus-sticky-filter composition, source-aligned filter ordering, and two-column property results. Map/file card actions remain disabled or deferred because staging media/storage is intentionally not connected.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools rendered Properties, Maps, and Files at 1440px; Maps had no console errors, and Properties reported no horizontal overflow. The legacy PropertyCard could not be imported because its `react-icons` dependency is absent from staging; no dependency was added just for this pass.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported Fee Rules import, calculator PDF workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Correct shallow directory and dashboard parity pass
+
+- **Type:** User-reported parity defect correction; local synthetic staging only.
+- **Summary:** Replaced the simplified Properties horizontal filter card with a legacy-derived advanced filter rail and result-column layout, adding city/society/phase, property type, price type, beds/baths, area/unit, and reset controls. Applied the same structural standard to the shared dashboard editor by widening the sheet, centering it as a workspace, and using responsive two-column grouped fields with full-width descriptions/relations/multi-selects. Existing source-shaped field names, synthetic API payloads, and media restrictions remain unchanged.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools verified the Properties advanced filter rail and 20 synthetic results at 1440px; document width remained within the viewport. Maps, Files, and Calculator were previously verified in the same local browser session. `git diff --check` remains clean apart from Windows line-ending warnings.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported Fee Rules import, calculator PDF workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Correct editor and directory geometry
+
+- **Type:** User-reported source-parity correction; local synthetic staging only.
+- **Summary:** Restored normal full-height drawer geometry for non-Property dashboard editors, kept the Property editor as the wide full-height sheet, constrained dashboard radio controls to a normal 14px size, removed the Properties filter rail's negative hero overlap, and aligned Maps/Files to the legacy 3/9 filter/results proportion. Properties remains a two-column desktop result grid.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools at 1440px verified Properties, Maps, and Files render without horizontal overflow; each filter rail begins below its hero, and the Properties rail begins after the hero rather than inside it. `git diff --check` reported no whitespace errors; only existing Windows line-ending warnings were emitted.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Match legacy public directory presentation
+
+- **Type:** User-requested legacy public-route parity correction; local synthetic staging only.
+- **Summary:** Revisited the legacy Properties, Maps, and Files route structures and aligned staging hero composition, centered typography, image-backed dark overlays, contrast, filter rail sizing/padding, 44px-class controls, result-card treatment, and responsive spacing. The Properties hero now uses the legacy source image treatment; Maps and Files use their corresponding legacy hero imagery. Media actions remain disabled in staging.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools rendered `/properties`, `/maps`, and `/files` at 1440px with centered hero headings, filter rails below the hero, and no horizontal overflow. `git diff --check` reported no whitespace errors; only existing Windows line-ending warnings were emitted.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Simplify and center public search
+
+- **Type:** User-requested public directory parity correction; local synthetic staging only.
+- **Summary:** Removed duplicate Search fields from the Properties, Maps, and Files filter rails so the hero search is the single query control. Centered all hero search bars and aligned hero/filter typography with the legacy route values: Playfair Display 36/48/60px hero headings, Inter 16/18px hero copy, 18px filter headings, 12px semibold labels, and 16px control text.
+- **Verification:** Staging client/SSR build passed and `git diff --check` reported no whitespace errors beyond existing Windows line-ending warnings.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed.
+
+## 2026-10-28 — Complete public parity and shared widget slice
+
+- **Type:** User-authorized Phase 8 public parity and shared-widget work; local synthetic staging only.
+- **Summary:** Verified the completed dashboard/import/Landing foundation with synthetic admin, calculator CSV, and local media checks. Added `StagingFloatingWidgets` with the legacy-derived WhatsApp quick action, scroll-to-top control, and document progress ring; enabled native smooth scrolling with reduced-motion fallback. Existing popup and DHA assistance behavior remains active. AI chat remains deferred under the protected Worker boundary.
+- **Verification:** Synthetic admin checks, calculator import checks, and local media checks passed. Chrome DevTools fresh homepage navigation confirmed the marquee, floating widget container, WhatsApp control, and no horizontal overflow. Staging client/SSR build passed and `git diff --check` reported no whitespace errors beyond existing Windows line-ending warnings.
+- **Safety:** No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, legacy `src/` file, or `workers/ai-worker` file was changed. Lenis/GSAP were not added to staging because the isolated package runtime lacks an npm installer; native smooth scrolling was used instead.
+
+## 2026-10-28 — Remove public staging copy and add AI assistant boundary
+
+- **Type:** User-authorized Phase 8 public-shell cleanup and widget work; local synthetic staging only.
+- **Summary:** Removed public-facing staging/preview wording from route titles, descriptions, directory labels, property labels, calculator notices, and homepage cards while retaining crawl safety metadata and dashboard safety notices. Added the local `StagingAIChatWidget` with a legacy-derived assistant icon, attention card, draggable closed state, suggestions, chat panel, and safe local fallback. Corrected the attention-card action positioning after browser visual review.
+- **Verification:** Staging client/SSR build passed. Chrome DevTools verified the AI attention card and action button have separate non-overlapping bounds, the chat panel opens, and the homepage still exposes the floating controls. `git diff --check` reported no whitespace errors beyond existing Windows line-ending warnings.
+- **Safety:** `workers/ai-worker` was not modified. No production AI endpoint is used by default; a separately approved staging Worker endpoint is still required for live AI responses. No production data, credentials, deployment, DNS, paid service, media binding, unsupported calculator workflow, or legacy `src/` file was changed.
+
+## 2026-10-28 — Restore legacy click-versus-drag interaction
+
+- **Type:** User-requested interaction correction; local synthetic staging only.
+- **Summary:** Fixed AI widget launch/close behavior and matched the legacy press/move interaction: normal clicks open or close, pointer movement beyond the threshold drags, and the open chat panel is not draggable. Applied the same pointer-capture correction to the shared WhatsApp/scroll widget group.
+- **Verification:** Chrome DevTools verified opening through the AI icon and closing through the explicit close control. Staging client/SSR build passed and `git diff --check` reported no whitespace errors beyond existing Windows line-ending warnings.
+- **Safety:** No worker, production endpoint, credentials, deployment, DNS, paid service, media binding, legacy `src/` file, or production data was changed.
+
+## 2026-10-28 — Phase 8 handoff checkpoint
+
+- **Type:** User-requested save-and-push checkpoint.
+- **Summary:** Recorded the remaining open issue: shared WhatsApp and scroll-to-top controls drag correctly but click activation is still unresolved. AI widget click/drag behavior is accepted. All current migration work is prepared for the `Website-migration` handoff.
+- **Verification:** Current branch/status were checked; prior staging client/SSR build and Chrome DevTools checks remain recorded above. No new production or remote-service test was performed.
+- **Safety:** No production deployment, DNS change, paid service, production credential, production data, or `workers/ai-worker` change was made.
+
+## 2026-10-28 — Restore floating-button click activation
+
+- **Type:** User-requested floating-button click correction; local synthetic staging only.
+- **Summary:** Fixed pointer-capture release on the shared WhatsApp/scroll widget group so native clicks are not lost while retaining drag support. Added the required touch gesture boundary to the group.
+- **Verification:** Chrome DevTools successfully clicked the scroll-to-top control after the fix. The user confirmed AI icon drag/click behavior remains correct. `git diff --check` was run; no whitespace errors were reported beyond existing Windows line-ending warnings.
+- **Safety:** No worker, production endpoint, credentials, deployment, DNS, paid service, media binding, legacy `src/` file, or production data was changed.
+
+## 2026-10-28 — Preserve first-click activation after drag
+
+- **Type:** User-requested floating-widget interaction correction; local synthetic staging only.
+- **Summary:** Kept the closed AI icon draggable while restoring normal first-click activation. Drag suppression now applies only to the release that actually moved the widget, and the shared WhatsApp/scroll controls use the same thresholded gesture handling.
+- **Verification:** Chrome DevTools verified AI opening and closing after the interaction update. Staging client/SSR build passed and `git diff --check` reported no whitespace errors beyond existing Windows line-ending warnings.
+- **Safety:** No worker, production endpoint, credentials, deployment, DNS, paid service, media binding, legacy `src/` file, or production data was changed.

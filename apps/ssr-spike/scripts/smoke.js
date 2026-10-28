@@ -152,11 +152,11 @@ for (const slug of ['sample-residence', 'private-video-home', 'hidden-home', '12
       !/<script\b|<iframe\b|\son[a-z]+=|javascript:|href="\/\\evil/i.test(html)
     ),
     videoRequiresBothPublicFlags: slug !== 'private-video-home' || detailBody.media?.video === null,
-    explicitThumbnailAndOrderedPublicImages: slug !== 'sample-residence' || (
-      detailBody.media.thumbnail.url.endsWith('sample-main.jpg') &&
-      detailBody.media.images.map((image) => image.url).join(',').endsWith('sample-main.jpg,https://images.example.invalid/sample-secondary.jpg')
+    mediaStorageDisabled: !isVisible || (
+      detailBody.media.thumbnail === null &&
+      detailBody.media.images.length === 0 &&
+      detailBody.media.video === null
     ),
-    publicVideoIncluded: slug !== 'sample-residence' || detailBody.media.video?.url === 'https://video.example.invalid/sample.mp4',
     internalFieldsHidden: !('id' in detailBody) && !JSON.stringify(detailBody).includes('synthetic-private-key'),
   }
   if (Object.values(detailChecks).some((passed) => !passed)) failed = true

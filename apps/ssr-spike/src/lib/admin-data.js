@@ -29,7 +29,7 @@ const DOMAIN_FIELDS = {
   phases: { name: 'text', map_ids: 'multiSelect' },
   labels: { name: 'text', is_badge: 'boolean' },
   queries: { property_id: 'optionalText', property_title: 'optionalText', name: 'text', email: 'optionalText', phone: 'optionalText', message: 'textarea', created_at: 'text', is_read: 'boolean' },
-  'landing-page': { title: 'text', subtitle: 'textarea', active: 'boolean', selectedItems: 'json', mediaUrl: 'optionalText', delayMs: 'integer' },
+  'landing-page': { title: 'text', subtitle: 'textarea', active: 'boolean', selectedItems: 'json', mediaMode: 'select', mediaUrl: 'optionalText', delayMs: 'integer' },
   'calculator-phases': { city_id: 'select', society_id: 'select', name: 'text', sort_order: 'integer', is_active: 'boolean' },
   'calculator-blocks': { calculator_phase_id: 'select', name: 'text', sort_order: 'integer', is_active: 'boolean' },
   'calculator-property-types': { category: 'text', property_type: 'text', label: 'text', sort_order: 'integer', is_active: 'boolean' },
@@ -787,7 +787,11 @@ async function readBody(request) {
 
 function validateFields(domain, input, extraOptions = {}) {
   const schema = DOMAIN_FIELDS[domain]
-  const options = ['files', 'maps'].includes(domain) ? directoryAdminOptions(domain) : extraOptions
+  const options = ['files', 'maps'].includes(domain)
+    ? directoryAdminOptions(domain)
+    : domain === 'landing-page'
+      ? { ...extraOptions, mediaMode: [{ value: 'image' }, { value: 'embed' }, { value: 'upload' }] }
+      : extraOptions
   const result = {}
   const errors = {}
   for (const key of Object.keys(input)) {

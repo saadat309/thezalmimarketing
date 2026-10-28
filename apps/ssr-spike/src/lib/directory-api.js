@@ -53,8 +53,8 @@ export function createDirectoryApi(repository, kind) {
           fileType: url.searchParams.get('file_type'),
         })
         const project = kind === 'maps'
-          ? ({ slug, title, cityName, societyName, phaseName, description, updatedAt }) => ({ slug, title, cityName, societyName, phaseName, description, updatedAt })
-          : ({ slug, title, cityName, societyName, phaseName, fileType, area, price, updatedAt }) => ({ slug, title, cityName, societyName, phaseName, fileType, area, price, updatedAt })
+          ? ({ id, sourceId, slug, title, cityName, societyName, phaseName, description, updatedAt }) => ({ id: id ?? sourceId ?? slug, slug, title, cityName, societyName, phaseName, description, updatedAt })
+          : ({ id, sourceId, slug, title, cityName, societyName, phaseName, fileType, area, price, updatedAt }) => ({ id: id ?? sourceId ?? slug, slug, title, cityName, societyName, phaseName, fileType, area, price, updatedAt })
         const body = { items: result.items.map(project), filters: directoryOptions(result.all, kind) }
         return new Response(JSON.stringify(body), {
           status: 200,

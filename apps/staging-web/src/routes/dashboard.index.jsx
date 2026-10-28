@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { readAdminCollection } from '../data/admin-api.js'
 
-export const Route = createFileRoute('/dashboard/')({ component: DashboardIndex })
+export const Route = createFileRoute('/dashboard/')({
+  head: () => ({ links: [{ rel: 'canonical', href: 'https://migration.local.invalid/dashboard' }] }),
+  component: DashboardIndex,
+})
 
 const cards = [
   ['Total Properties', 'properties', '/properties.svg', '/dashboard/properties'],
